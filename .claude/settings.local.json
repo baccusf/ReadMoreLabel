@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(rm:*)",
+      "Bash(find:*)",
+      "Bash(xcodebuild:*)",
+      "Bash(xcrun -sdk iphonesimulator swiftc -typecheck:*)",
+      "Bash(xcrun simctl launch:*)",
+      "Bash(xcrun simctl boot:*)",
+      "Bash(xcrun simctl install:*)",
+      "Bash(xcrun simctl spawn:*)",
+      "Bash(swift build:*)",
+      "WebFetch(domain:developer.apple.com)",
+      "WebFetch(domain:github.com)",
+      "Bash(xcrun:*)",
+      "Bash(grep:*)",
+      "Bash(git restore:*)"
+    ],
+    "deny": [],
+    "defaultMode": "acceptEdits"
+  }
+}
