@@ -14,7 +14,9 @@
       "WebFetch(domain:github.com)",
       "Bash(xcrun:*)",
       "Bash(grep:*)",
-      "Bash(git restore:*)"
+      "Bash(git restore:*)",
+      "WebSearch",
+      "WebFetch(domain:shadowfacts.net)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"
