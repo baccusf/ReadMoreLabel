@@ -35,9 +35,9 @@ class ViewController: UIViewController {
 //            language: "en"
 //        ),
         SampleData(
-            text: "This is a longer English text that demonstrates the basic 'More..' functionality at the end position. ReadMoreLabel provides a clean and intuitive way to handle text truncation in your iOS applications. Users can tap the 'More..' button to reveal the complete content with smooth animations.",
+            text: "This is a longer English text that demonstrates the basic 'More..' functionality at the newLine position. ReadMoreLabel provides a clean and intuitive way to handle text truncation in your iOS applications. Users can tap the 'More..' button to reveal the complete content with smooth animations.",
             style: .basic,
-            position: .end,
+            position: .newLine,
             language: "en"
         ),
         SampleData(
@@ -55,9 +55,9 @@ class ViewController: UIViewController {
         
         // Korean Examples
         SampleData(
-            text: "이것은 긴 한국어 텍스트로 beginningNewLine 위치를 보여주는 예제입니다. ReadMoreLabel은 iOS 앱에서 텍스트 자르기를 처리하는 깔끔하고 직관적인 방법을 제공합니다. 사용자는 '더보기..' 버튼을 탭하여 부드러운 애니메이션과 함께 전체 내용을 볼 수 있습니다. 모든 허용된 줄이 표시된 후 완전히 새로운 줄에 더보기 버튼이 나타납니다.",
+            text: "이것은 긴 한국어 텍스트로 newLine 위치를 보여주는 예제입니다. ReadMoreLabel은 iOS 앱에서 텍스트 자르기를 처리하는 깔끔하고 직관적인 방법을 제공합니다. 사용자는 '더보기..' 버튼을 탭하여 부드러운 애니메이션과 함께 전체 내용을 볼 수 있습니다. 모든 허용된 줄이 표시된 후 완전히 새로운 줄에 더보기 버튼이 나타납니다.",
             style: .bold,
-            position: .end,
+            position: .newLine,
             language: "ko"
         ),
         SampleData(
@@ -86,9 +86,9 @@ class ViewController: UIViewController {
 //            language: "ja"
 //        ),
         SampleData(
-            text: "📱 これは日本語のモバイルファーストデザインの例です。beginningNewLine位置を使用しています。このReadMoreLabelは、適切なタップターゲットとアクセシビリティサポートを備えたタッチインターフェース用に最適化されています。すべてのiOSデバイスで一貫した動作を維持します。",
+            text: "📱 これは日本語のモバイルファーストデザインの例です。newLine位置を使用しています。このReadMoreLabelは、適切なタップターゲットとアクセシビリティサポートを備えたタッチインターフェース用に最適化されています。すべてのiOSデバイスで一貫した動作を維持します。",
             style: .mobile,
-            position: .end,
+            position: .newLine,
             language: "ja"
         ),
         SampleData(
