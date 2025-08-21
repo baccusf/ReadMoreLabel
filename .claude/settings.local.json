@@ -16,7 +16,12 @@
       "Bash(grep:*)",
       "Bash(git restore:*)",
       "WebSearch",
-      "WebFetch(domain:shadowfacts.net)"
+      "WebFetch(domain:shadowfacts.net)",
+      "Bash(open:*)",
+      "Bash(swiftc:*)",
+      "Bash(swift package:*)",
+      "Bash(killall:*)",
+      "Bash(swift:*)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"

@@ -75,7 +75,6 @@ public class ReadMoreLabel: UILabel {
     // 캐시 시스템
     private var cachedIsExpandable: Bool?
     private var cachedExpandableKey: String?
-    private var lastLayoutBounds: CGRect = .zero
     
     // TextKit 재사용을 위한 캐시
     private var reusableTextLayoutManager: NSTextLayoutManager?
@@ -677,7 +676,6 @@ public class ReadMoreLabel: UILabel {
         invalidateExpandableCache()
         invalidateIntrinsicContentSize()
         setNeedsLayout()
-        lastLayoutBounds = .zero // 레이아웃 캐시 무효화
     }
     
     private func generateExpandableCacheKey(text: String, width: CGFloat) -> String {
@@ -713,224 +711,7 @@ public class ReadMoreLabel: UILabel {
             setExpanded(true, animated: true)
         }
     }
-    
-    /// TextKit 2를 사용하여 탭 위치의 문자 속성 직접 확인 (newLine position 대응)
-    /// - Parameters:
-    ///   - location: 확인할 CGPoint 위치 (view coordinate space)
-    ///   - attributedText: 속성 문자열
-    /// - Returns: "더보기" 텍스트 여부
-    /// - Note: newLine position에서 textLayoutFragment 실패 시 fallback 로직 포함
-    private func hasReadMoreTextAtLocation(_ location: CGPoint, in attributedText: NSAttributedString) -> Bool {
-        // 1. 기본 조건 확인
-        guard attributedText.length > 0 else { return false }
-        
-        // 2. readMoreTextRange 직접 확인 (빠른 검증)
-        if let readMoreRange = readMoreTextRange {
-            // newLine position이나 다른 경우에도 안전한 범위 기반 검증
-            return isLocationInReadMoreRange(location, attributedText: attributedText, range: readMoreRange)
-        }
-        
-        // 3. TextKit 2 설정 및 레이아웃 수행
-        let (textLayoutManager, textContainer, _) = getReusableTextKit(
-            containerWidth: bounds.width,
-            attributedText: attributedText
-        )
-        textLayoutManager.ensureLayout(for: textLayoutManager.documentRange)
-        
-        // 4. 좌표 공간 변환: view → text container coordinate space
-        let pointInTextContainer = location
-        
-        // 5. TextKit 2 방식으로 layout fragment 가져오기 (newLine position 대응)
-        guard let layoutFragment = textLayoutManager.textLayoutFragment(for: pointInTextContainer) else {
-            // newLine position에서 textLayoutFragment 실패 시 AttributeKey.isReadMore 기반 fallback
-            return searchByReadMoreAttribute(location, in: attributedText, textLayoutManager: textLayoutManager)
-        }
-        
-        // 6. 좌표 공간 변환: text container → layout fragment coordinate space
-        let pointInLayoutFragment = CGPoint(
-            x: pointInTextContainer.x - layoutFragment.layoutFragmentFrame.minX,
-            y: pointInTextContainer.y - layoutFragment.layoutFragmentFrame.minY
-        )
-        
-        // 7. line fragment에서 정확한 문자 인덱스 찾기
-        for lineFragment in layoutFragment.textLineFragments {
-            let lineFrame = lineFragment.typographicBounds
-            
-            // 탭 위치가 이 라인에 포함되는지 확인
-            if pointInLayoutFragment.y >= lineFrame.minY && pointInLayoutFragment.y <= lineFrame.maxY {
-                let characterRange = lineFragment.characterRange
-                
-                // 정확한 문자 인덱스 계산 (TextKit 2 방식)
-                let relativeX = max(0, pointInLayoutFragment.x - lineFrame.minX)
-                let progress = min(1.0, relativeX / max(1, lineFrame.width))
-                let charOffset = Int(progress * Double(characterRange.length))
-                
-                let characterIndex = characterRange.location + min(charOffset, characterRange.length - 1)
-                
-                // 8. 문자 인덱스에서 isReadMore 속성 직접 확인
-                guard characterIndex >= 0, characterIndex < attributedText.length else {
-                    return false
-                }
-                
-                let attributes = attributedText.attributes(at: characterIndex, effectiveRange: nil)
-                return (attributes[AttributeKey.isReadMore] as? Bool) == true
-            }
-        }
-        
-        return false
-    }
-    
-    /// readMoreTextRange 기반 위치 검증 (newLine position 안전 처리)
-    private func isLocationInReadMoreRange(_ location: CGPoint, attributedText: NSAttributedString, range: NSRange) -> Bool {
-        // newLine position 특화: Y축 좌표 기반 관대한 히트 테스트
-        if readMorePosition == .newLine {
-            return newLinePositionHitTest(location, in: attributedText, range: range)
-        }
-        
-        let (textLayoutManager, _, _) = getReusableTextKit(
-            containerWidth: bounds.width,
-            attributedText: attributedText
-        )
-        textLayoutManager.ensureLayout(for: textLayoutManager.documentRange)
-        
-        // readMoreTextRange의 실제 레이아웃 위치 계산
-        var foundReadMoreArea = false
-        
-        textLayoutManager.enumerateTextLayoutFragments(
-            from: textLayoutManager.documentRange.location,
-            options: [.ensuresLayout]
-        ) { layoutFragment in
-            for lineFragment in layoutFragment.textLineFragments {
-                let characterRange = lineFragment.characterRange
-                let lineFrame = lineFragment.typographicBounds
-                
-                // readMoreTextRange와 겹치는 부분이 있는지 확인
-                let intersection = NSIntersectionRange(characterRange, range)
-                if intersection.length > 0 {
-                    // 탭 위치가 이 라인에 있는지 확인 (관대한 범위)
-                    if location.y >= lineFrame.minY - 10 && location.y <= lineFrame.maxY + 10 {
-                        foundReadMoreArea = true
-                        return false // 찾았으므로 중단
-                    }
-                }
-            }
-            return true // 계속 탐색
-        }
-        
-        return foundReadMoreArea
-    }
-    
-    /// newLine position 전용 히트 테스트 - Y축 기반 관대한 범위
-    private func newLinePositionHitTest(_ location: CGPoint, in attributedText: NSAttributedString, range: NSRange) -> Bool {
-        // newLine position에서는 "더보기"가 마지막 줄에 있으므로
-        // 전체 레이블의 하단 영역에서 관대하게 히트 테스트
-        let labelHeight = bounds.height
-        let lineHeight = font?.lineHeight ?? 20
-        
-        // 마지막 1-2줄 영역에서 히트 허용 (관대한 범위)
-        let lastLineAreaMinY = labelHeight - (lineHeight * 2)
-        let lastLineAreaMaxY = labelHeight + 10 // 여유 공간
-        
-        let isInLastLineArea = location.y >= lastLineAreaMinY && location.y <= lastLineAreaMaxY
-        
-        return isInLastLineArea
-    }
-    
-    
-    /// textLayoutFragment 실패 시 fallback hit test (newLine position 특화)
-    private func fallbackHitTest(_ location: CGPoint, in attributedText: NSAttributedString, textLayoutManager: NSTextLayoutManager) -> Bool {
-        // readMoreTextRange가 nil인 경우, isReadMore 속성으로 직접 검색
-        if readMoreTextRange == nil {
-            return searchByReadMoreAttribute(location, in: attributedText, textLayoutManager: textLayoutManager)
-        }
-        
-        guard let readMoreRange = readMoreTextRange else { return false }
-        
-        // newLine position의 경우 마지막 부분에서 더 관대하게 검사
-        var isInReadMoreArea = false
-        
-        textLayoutManager.enumerateTextLayoutFragments(
-            from: textLayoutManager.documentRange.location,
-            options: [.ensuresLayout]
-        ) { layoutFragment in
-            for lineFragment in layoutFragment.textLineFragments {
-                let characterRange = lineFragment.characterRange
-                let lineFrame = lineFragment.typographicBounds
-                
-                // readMore 범위와 겹치는지 확인
-                let intersection = NSIntersectionRange(characterRange, readMoreRange)
-                if intersection.length > 0 {
-                    // newLine position을 고려한 관대한 Y축 범위
-                    let extendedMinY = lineFrame.minY - 15
-                    let extendedMaxY = lineFrame.maxY + 15
-                    
-                    if location.y >= extendedMinY && location.y <= extendedMaxY {
-                        isInReadMoreArea = true
-                        return false // 찾았으므로 중단
-                    }
-                }
-            }
-            return true // 계속 탐색
-        }
-        
-        return isInReadMoreArea
-    }
-    
-    /// isReadMore 속성을 가진 문자들을 직접 검색하여 히트 테스트 (readMoreTextRange가 nil일 때)
-    private func searchByReadMoreAttribute(_ location: CGPoint, in attributedText: NSAttributedString, textLayoutManager: NSTextLayoutManager) -> Bool {
-        // 모든 layout fragment를 순회하며 isReadMore 속성을 가진 문자들의 위치 확인
-        var foundReadMoreHit = false
-        
-        textLayoutManager.enumerateTextLayoutFragments(
-            from: textLayoutManager.documentRange.location,
-            options: [.ensuresLayout]
-        ) { layoutFragment in
-            for lineFragment in layoutFragment.textLineFragments {
-                let characterRange = lineFragment.characterRange
-                let lineFrame = lineFragment.typographicBounds
-                
-                // 이 라인에 탭이 있는지 확인 (Y축 관대한 범위)
-                if location.y >= lineFrame.minY - 15 && location.y <= lineFrame.maxY + 15 {
-                    // 이 라인의 모든 문자를 검사하여 isReadMore 속성 확인
-                    for charIndex in characterRange.location..<(characterRange.location + characterRange.length) {
-                        if charIndex < attributedText.length {
-                            let attributes = attributedText.attributes(at: charIndex, effectiveRange: nil)
-                            if (attributes[AttributeKey.isReadMore] as? Bool) == true {
-                                foundReadMoreHit = true
-                                return false // 찾았으므로 중단
-                            }
-                        }
-                    }
-                }
-            }
-            return true // 계속 탐색
-        }
-        
-        return foundReadMoreHit
-    }
-    
-    
-    /// 주어진 인덱스의 텍스트가 "더보기" 텍스트인지 커스텀 속성으로 확인
-    /// - Parameters:
-    ///   - index: 확인할 문자 인덱스
-    ///   - attributedText: 속성 문자열
-    /// - Returns: "더보기" 텍스트 여부
-    private func isReadMoreTextAtIndex(_ index: Int, in attributedText: NSAttributedString) -> Bool {
-        guard index >= 0 && index < attributedText.length else {
-            return false
-        }
-        
-        // 커스텀 속성으로 "더보기" 텍스트 확인
-        let attributes = attributedText.attributes(at: index, effectiveRange: nil)
-        
-        // isReadMore 속성이 있고 true인지 확인
-        if let isReadMore = attributes[AttributeKey.isReadMore] as? Bool, isReadMore {
-            return true
-        }
-        
-        return false
-    }
-    
+
     // MARK: - Overrides
     
     public override var numberOfLines: Int {
@@ -975,14 +756,8 @@ public class ReadMoreLabel: UILabel {
     public override func layoutSubviews() {
         super.layoutSubviews()
         
-        // 크기 변경이 있을 때만 업데이트
-        if bounds != lastLayoutBounds {
-            lastLayoutBounds = bounds
-            if bounds.width > 0 {
-                invalidateExpandableCache()
-                updateDisplay()
-            }
-        }
+        invalidateExpandableCache()
+        updateDisplay()
     }
     
     public override var intrinsicContentSize: CGSize {
@@ -1021,6 +796,80 @@ public class ReadMoreLabel: UILabel {
         attributes[.paragraphStyle] = paragraphStyle
         
         return attributes
+    }
+    
+    /// TextKit 1 기반 hit testing (.end 및 .newLine position 통합 지원)
+    /// - Parameters:
+    ///   - location: 확인할 CGPoint 위치
+    ///   - attributedText: 속성 문자열
+    /// - Returns: "더보기" 텍스트 여부
+    /// - Note: TextKit 2의 API 제한으로 인해 TextKit 1을 사용
+    private func hasReadMoreTextAtLocation(_ location: CGPoint, in attributedText: NSAttributedString) -> Bool {
+        // 1. 기본 조건 확인
+        guard attributedText.length > 0, let readMoreRange = readMoreTextRange else {
+            return false
+        }
+        
+        // 2. TextKit 1 스택 생성 및 설정
+        let textStorage = NSTextStorage(attributedString: attributedText)
+        let containerSize = CGSize(width: bounds.width, height: .greatestFiniteMagnitude)
+        
+        let textContainer = NSTextContainer(size: containerSize)
+        let layoutManager = NSLayoutManager()
+        
+        // TextKit 1 스택 연결
+        layoutManager.addTextContainer(textContainer)
+        textStorage.addLayoutManager(layoutManager)
+        
+        // 컨테이너 설정
+        textContainer.lineFragmentPadding = lineFragmentPadding
+        textContainer.lineBreakMode = .byWordWrapping
+        textContainer.maximumNumberOfLines = 0
+        
+        // 레이아웃 강제 완료
+        layoutManager.ensureLayout(for: textContainer)
+        
+        let readMoreStartIndex = readMoreRange.location
+        
+        // 3. .newLine position 특별 처리: 줄바꿈 문자 고려
+        if readMorePosition == .newLine && readMoreStartIndex > 0 {
+            let stringIndex = attributedText.string.index(attributedText.string.startIndex, offsetBy: readMoreStartIndex - 1)
+            let previousChar = attributedText.string[stringIndex]
+            if previousChar == "\n" {
+                // "더보기" 텍스트 앞에 \n이 있는 경우, 줄 영역 확장하여 검사
+                let lineRect = layoutManager.lineFragmentRect(forGlyphAt: readMoreStartIndex, effectiveRange: nil)
+                // 단말기에서 인식이 안되는 경우 확장
+//                let expandedRect = lineRect.insetBy(dx: -10, dy: -5)
+//                return expandedRect.contains(location)
+                
+                return lineRect.contains(location)
+            }
+        }
+        
+        // 4. 일반적인 hit testing 수행 (.end position 및 .newLine의 일반 경우)
+        let usedRect = layoutManager.usedRect(for: textContainer)
+        let clampedLocation = CGPoint(
+            x: max(0, min(location.x, usedRect.maxX)),
+            y: max(0, min(location.y, usedRect.maxY))
+        )
+        
+        let characterIndex = layoutManager.characterIndex(
+            for: clampedLocation,
+            in: textContainer,
+            fractionOfDistanceBetweenInsertionPoints: nil
+        )
+        
+        // 5. 인덱스 유효성 및 범위 검사
+        guard characterIndex != NSNotFound,
+              characterIndex >= 0,
+              characterIndex < attributedText.length,
+              NSLocationInRange(characterIndex, readMoreRange) else {
+            return false
+        }
+        
+        // 6. AttributeKey.isReadMore 속성 확인
+        let attributes = attributedText.attributes(at: characterIndex, effectiveRange: nil)
+        return (attributes[AttributeKey.isReadMore] as? Bool) == true
     }
     
     // MARK: - TextKit 2 Text Alignment Helper
