@@ -27,13 +27,13 @@ class ViewController: UIViewController {
     private let tableView = UITableView()
     
     private let sampleData = [
+        SampleData(
+            text: "✨ English emoji example with beginningNewLine position! 🚀 This ReadMoreLabel uses emoji bullets and styled text to create a more visually appealing user experience. The 'Read More' button appears on a completely new line after all allowed lines are displayed. Perfect for social media apps and news readers.",
+            style: .emoji,
+            position: .newLine,
+            language: "en"
+        ),
         // English Examples
-//        SampleData(
-//            text: "Short text example that fits within the line limit.",
-//            style: .basic,
-//            position: .end,
-//            language: "en"
-//        ),
         SampleData(
             text: "This is a longer English text that demonstrates the basic 'More..' functionality at the newLine position. ReadMoreLabel provides a clean and intuitive way to handle text truncation in your iOS applications. Users can tap the 'More..' button to reveal the complete content with smooth animations.",
             style: .basic,
@@ -47,7 +47,7 @@ class ViewController: UIViewController {
             language: "en"
         ),
         SampleData(
-            text: "✨ English emoji example with beginningNewLine position! 🚀 This ReadMoreLabel uses emoji bullets and styled text to create a more visually appealing user experience. The 'Read More' button appears on a completely new line after all allowed lines are displayed. Perfect for social media apps and news readers.",
+            text: "✨ English emoji example with beginningNewLine position! 🚀 This ReadMoreLabel uses emoji bullets and styled text to create a more visually appealing user experience. The 'Read More' button appears on a completely new line after all allowed lines are displayed. Perfect for social media apps and news readers. 📱💻🎨 This extended text ensures that even on iPhone 16's wide screen (393pt), the content will definitely require more than 3 lines to display properly, triggering the ReadMore functionality as expected. 🌟✨🔥",
             style: .emoji,
             position: .end,
             language: "en"
@@ -78,13 +78,6 @@ class ViewController: UIViewController {
             position: .end,
             language: "ko"
         ),
-//        // Japanese Examples
-//        SampleData(
-//            text: "短い日本語テキストの例です。",
-//            style: .mobile,
-//            position: .end,
-//            language: "ja"
-//        ),
         SampleData(
             text: "📱 これは日本語のモバイルファーストデザインの例です。newLine位置を使用しています。このReadMoreLabelは、適切なタップターゲットとアクセシビリティサポートを備えたタッチインターフェース用に最適化されています。すべてのiOSデバイスで一貫した動作を維持します。",
             style: .mobile,
@@ -96,15 +89,7 @@ class ViewController: UIViewController {
             style: .gradient,
             position: .end,
             language: "ja"
-        ),
-//        
-//        // Mixed Examples
-//        SampleData(
-//            text: "🌍 Multilingual support example! This demonstrates how ReadMoreLabel works across different languages and writing systems. 다국어 지원 예제입니다! 多言語対応の例です！",
-//            style: .colorful,
-//            position: .end,
-//            language: "en"
-//        )
+        )
     ]
     
     private var expandedStates: [Bool] = []
@@ -198,12 +183,28 @@ extension ViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         if #available(iOS 16.0, *) {
             let cell = tableView.dequeueReusableCell(withIdentifier: "ExampleCell", for: indexPath) as! ExampleTableViewCell
+            
+            // 🚨 DEBUG: 4번째 셀 특별 추적
+            if indexPath.row == 3 {
+                print("🚨 [VIEWCONTROLLER] Creating 4th cell (index 3)")
+                print("🚨   Data: \(String(sampleData[indexPath.row].text.prefix(100)))...")
+                print("🚨   Style: \(sampleData[indexPath.row].style)")
+                print("🚨   Position: \(sampleData[indexPath.row].position)")
+                print("🚨   isExpanded: \(expandedStates[indexPath.row])")
+            }
+            
             cell.configure(
                 with: sampleData[indexPath.row],
                 isExpanded: expandedStates[indexPath.row]
             )
             cell.delegate = self
             cell.indexPath = indexPath
+            
+            // 🚨 DEBUG: 4번째 셀 구성 완료 후 확인  
+            if indexPath.row == 3 {
+                print("🚨 [VIEWCONTROLLER] 4th cell created")
+            }
+            
             return cell
         } else {
             // Fallback for iOS < 16.0
@@ -227,8 +228,12 @@ extension ViewController: UITableViewDelegate {
 
 @available(iOS 16.0, *)
 extension ViewController: ExampleTableViewCellDelegate {
-    func cell(_ cell: ExampleTableViewCell, didChangeExpandedState isExpanded: Bool, at indexPath: IndexPath) {
-        expandedStates[indexPath.row] = isExpanded
+    func didChangeExpandedState(_ cell: ExampleTableViewCell) {
+        guard let indexPath = tableView.indexPath(for: cell) else {
+            return
+        }
+        
+        expandedStates[indexPath.row] = true
         
         UIView.animate(withDuration: 0.3) {
             self.tableView.beginUpdates()
@@ -240,7 +245,7 @@ extension ViewController: ExampleTableViewCellDelegate {
 // MARK: - Custom Table View Cell
 
 protocol ExampleTableViewCellDelegate: AnyObject {
-    func cell(_ cell: ExampleTableViewCell, didChangeExpandedState isExpanded: Bool, at indexPath: IndexPath)
+    func didChangeExpandedState(_ cell: ExampleTableViewCell)
 }
 
 @available(iOS 16.0, *)
@@ -380,11 +385,11 @@ class ExampleTableViewCell: UITableViewCell {
         case ("en", .colorful):
             return ("🎨 Read More", "***")
         case ("en", .emoji):
-            return ("✨ More Magic", "✨")
+            return ("✨ More Magic", "...")
         case ("en", .gradient):
             return ("Continue Reading →", "~")
         case ("en", .bold):
-            return ("🔥 SEE MORE", "🔥")
+            return ("🔥 SEE MORE", "!!!")
         case ("en", .mobile):
             return ("📱 Tap to Expand", "...")
             
@@ -394,11 +399,11 @@ class ExampleTableViewCell: UITableViewCell {
         case ("ko", .colorful):
             return ("🎨 더 읽기", "***")
         case ("ko", .emoji):
-            return ("✨ 더보기 매직", "✨")
+            return ("✨ 더보기 매직", "...")
         case ("ko", .gradient):
             return ("계속 읽기 →", "~")
         case ("ko", .bold):
-            return ("🔥 더보기", "🔥")
+            return ("🔥 더보기", "!!!")
         case ("ko", .mobile):
             return ("📱 탭하여 확장", "...")
             
@@ -408,11 +413,11 @@ class ExampleTableViewCell: UITableViewCell {
         case ("ja", .colorful):
             return ("🎨 もっと読む", "***")
         case ("ja", .emoji):
-            return ("✨ もっと見る", "✨")
+            return ("✨ もっと見る", "...")
         case ("ja", .gradient):
             return ("続きを読む →", "~")
         case ("ja", .bold):
-            return ("🔥 もっと見る", "🔥")
+            return ("🔥 もっと見る", "!!!")
         case ("ja", .mobile):
             return ("📱 タップして展開", "...")
             
@@ -428,7 +433,6 @@ class ExampleTableViewCell: UITableViewCell {
 @available(iOS 16.0, *)
 extension ExampleTableViewCell: ReadMoreLabelDelegate {
     func readMoreLabel(_ label: ReadMoreLabel, didChangeExpandedState isExpanded: Bool) {
-        guard let indexPath = indexPath else { return }
-        delegate?.cell(self, didChangeExpandedState: isExpanded, at: indexPath)
+        delegate?.didChangeExpandedState(self)
     }
 }
