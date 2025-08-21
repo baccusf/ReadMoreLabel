@@ -349,3 +349,72 @@ if totalLineCount > numberOfLines {
 ReadMoreLabel은 사용자 경험과 개발자 편의성을 모두 고려한 견고한 컴포넌트로 개발되었습니다. TextKit 2 기반의 정확한 텍스트 처리, 안전한 API 설계, 그리고 유연한 사용성을 제공하여 iOS 16+ 앱 개발에서 텍스트 자르기 요구사항을 효과적으로 해결할 수 있습니다.
 
 **2025년 8월 최신 개선사항**으로 TextKit 2 line counting 경계 조건 버그가 수정되어, 모든 텍스트 길이에서 일관되고 예측 가능한 "더보기" 버튼 표시를 보장합니다.
+
+### 10. Hit Testing TextKit 2 → TextKit 1 전환 (2025년 8월)
+
+**문제 발견**: TextKit 2의 `location(interactingAt:inContainerAt:)` API가 존재하지 않음
+- **증상**: 빌드 오류 및 position = .end에서 "더보기" 터치 감지 실패
+- **원인**: TextKit 2에는 TextKit 1의 `characterIndex(for:in:fractionOfDistanceBetweenInsertionPoints:)` 메서드에 직접 대응하는 API가 없음
+
+**해결 방법**: `hasReadMoreTextAtLocation` 메서드를 TextKit 1 기반으로 전환
+
+#### TextKit 1 Hit Testing 구현
+
+```swift
+/// TextKit 1 기반 hit testing for .end position
+private func hasReadMoreTextAtLocationWithTextKit1(_ location: CGPoint, in attributedText: NSAttributedString, range: NSRange) -> Bool {
+    // TextKit 1 스택 생성
+    let textStorage = NSTextStorage(attributedString: attributedText)
+    let textContainer = NSTextContainer(size: bounds.size)
+    let layoutManager = NSLayoutManager()
+    
+    // TextKit 1 스택 연결
+    layoutManager.addTextContainer(textContainer)
+    textStorage.addLayoutManager(layoutManager)
+    
+    // hit testing 수행
+    let characterIndex = layoutManager.characterIndex(for: location, in: textContainer, fractionOfDistanceBetweenInsertionPoints: nil)
+    
+    // 인덱스 범위 및 경계 검사
+    guard characterIndex != NSNotFound,
+          characterIndex >= 0,
+          characterIndex < attributedText.length,
+          NSLocationInRange(characterIndex, range) else {
+        return false
+    }
+    
+    // AttributeKey.isReadMore 속성 확인
+    let attributes = attributedText.attributes(at: characterIndex, effectiveRange: nil)
+    return (attributes[AttributeKey.isReadMore] as? Bool) == true
+}
+```
+
+#### .newLine Position 특별 처리
+
+```swift
+/// TextKit 1 기반 hit testing for .newLine position  
+private func hasReadMoreTextAtLocationWithTextKit1ForNewLine(_ location: CGPoint, in attributedText: NSAttributedString, range: NSRange) -> Bool {
+    // ... TextKit 1 스택 설정
+    
+    // 줄바꿈 문자 고려
+    if checkIndex > 0 {
+        let previousChar = attributedText.string[attributedText.string.index(attributedText.string.startIndex, offsetBy: checkIndex - 1)]
+        if previousChar == "\n" {
+            // 더보기 텍스트 앞에 \n이 있는 경우, 그 줄의 영역 확장
+            let expandedLineRect = lineRange.insetBy(dx: -10, dy: -5)
+            return expandedLineRect.contains(location)
+        }
+    }
+    
+    // 일반적인 hit testing 수행
+    // ...
+}
+```
+
+**전환 이유**:
+1. **API 존재성**: TextKit 2에는 직접적인 hit testing API가 없음
+2. **정확성**: TextKit 1의 `characterIndex(for:in:fractionOfDistanceBetweenInsertionPoints:)` 메서드가 정확한 hit testing 제공
+3. **안정성**: 오랜 기간 검증된 TextKit 1 API의 높은 안정성
+4. **호환성**: iOS 16+ 환경에서 TextKit 1과 TextKit 2 혼용 가능
+
+**결과**: position = .end와 position = .newLine 모두에서 정확한 "더보기" 터치 감지 및 확장 기능 실현
