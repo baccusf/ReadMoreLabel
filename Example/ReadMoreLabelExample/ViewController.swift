@@ -171,6 +171,15 @@ class ViewController: UIViewController {
         tableView.estimatedRowHeight = 100
         tableView.separatorStyle = .singleLine
     }
+    
+    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+        super.viewWillTransition(to: size, with: coordinator)
+        
+        coordinator.animate(alongsideTransition: { context in
+            self.tableView.beginUpdates()
+            self.tableView.endUpdates()
+        })
+    }
 }
 
 // MARK: - UITableViewDataSource
@@ -181,38 +190,30 @@ extension ViewController: UITableViewDataSource {
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        if #available(iOS 16.0, *) {
-            let cell = tableView.dequeueReusableCell(withIdentifier: "ExampleCell", for: indexPath) as! ExampleTableViewCell
-            
-            // 🚨 DEBUG: 4번째 셀 특별 추적
-            if indexPath.row == 3 {
-                print("🚨 [VIEWCONTROLLER] Creating 4th cell (index 3)")
-                print("🚨   Data: \(String(sampleData[indexPath.row].text.prefix(100)))...")
-                print("🚨   Style: \(sampleData[indexPath.row].style)")
-                print("🚨   Position: \(sampleData[indexPath.row].position)")
-                print("🚨   isExpanded: \(expandedStates[indexPath.row])")
-            }
-            
-            cell.configure(
-                with: sampleData[indexPath.row],
-                isExpanded: expandedStates[indexPath.row]
-            )
-            cell.delegate = self
-            cell.indexPath = indexPath
-            
-            // 🚨 DEBUG: 4번째 셀 구성 완료 후 확인  
-            if indexPath.row == 3 {
-                print("🚨 [VIEWCONTROLLER] 4th cell created")
-            }
-            
-            return cell
-        } else {
-            // Fallback for iOS < 16.0
-            let cell = UITableViewCell(style: .default, reuseIdentifier: "FallbackCell")
-            cell.textLabel?.text = sampleData[indexPath.row].text
-            cell.textLabel?.numberOfLines = 3
-            return cell
+        let cell = tableView.dequeueReusableCell(withIdentifier: "ExampleCell", for: indexPath) as! ExampleTableViewCell
+        
+        // 🚨 DEBUG: 4번째 셀 특별 추적
+        if indexPath.row == 3 {
+            print("🚨 [VIEWCONTROLLER] Creating 4th cell (index 3)")
+            print("🚨   Data: \(String(sampleData[indexPath.row].text.prefix(100)))...")
+            print("🚨   Style: \(sampleData[indexPath.row].style)")
+            print("🚨   Position: \(sampleData[indexPath.row].position)")
+            print("🚨   isExpanded: \(expandedStates[indexPath.row])")
         }
+        
+        cell.configure(
+            with: sampleData[indexPath.row],
+            isExpanded: expandedStates[indexPath.row]
+        )
+        cell.delegate = self
+        cell.indexPath = indexPath
+        
+        // 🚨 DEBUG: 4번째 셀 구성 완료 후 확인  
+        if indexPath.row == 3 {
+            print("🚨 [VIEWCONTROLLER] 4th cell created")
+        }
+        
+        return cell
     }
 }
 
@@ -283,12 +284,20 @@ class ExampleTableViewCell: UITableViewCell {
         contentView.addSubview(readMoreLabel)
         readMoreLabel.delegate = self
         
+        // Content Priority 설정 - intrinsicContentSize를 존중하도록
+        readMoreLabel.setContentHuggingPriority(UILayoutPriority(1000), for: .vertical)
+        readMoreLabel.setContentCompressionResistancePriority(UILayoutPriority(1000), for: .vertical)
+        
         NSLayoutConstraint.activate([
             readMoreLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 16),
             readMoreLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
             readMoreLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
-            readMoreLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -16)
         ])
+
+        // bottom constraint를 더 낮은 우선순위로 설정
+        let bottomConstraint = readMoreLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -16)
+        bottomConstraint.priority = UILayoutPriority(250) // 250으로 낮춤
+        bottomConstraint.isActive = true
     }
     
     func configure(with sampleData: SampleData, isExpanded: Bool) {
@@ -306,6 +315,7 @@ class ExampleTableViewCell: UITableViewCell {
         setNeedsLayout()
         layoutIfNeeded()
     }
+    
     
     private func applyStyle(_ style: ReadMoreLabel.Style, language: String) {
         // Get language-specific read more text
