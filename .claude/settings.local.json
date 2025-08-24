@@ -21,7 +21,12 @@
       "Bash(swiftc:*)",
       "Bash(swift package:*)",
       "Bash(killall:*)",
-      "Bash(swift:*)"
+      "Bash(swift:*)",
+      "WebFetch(domain:www.hackingwithswift.com)",
+      "WebFetch(domain:stackoverflow.com)",
+      "WebFetch(domain:gist.github.com)",
+      "WebFetch(domain:theswiftdev.com)",
+      "Bash(sed:*)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"
