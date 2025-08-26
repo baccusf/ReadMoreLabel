@@ -38,18 +38,21 @@ public class ReadMoreLabel: UILabel {
     @objc public var readMoreText: NSAttributedString = NSAttributedString(string: "더보기..") {
         didSet {
             invalidateDisplayAndLayout()
+            self.layoutIfNeeded()
         }
     }
     
-    @IBInspectable public var ellipsisText: String = ".." {
+    @objc public var ellipsisText: NSAttributedString = NSAttributedString(string: "..") {
         didSet {
             invalidateDisplayAndLayout()
+            self.layoutIfNeeded()
         }
     }
     
     @objc public var readMorePosition: Position = .end {
         didSet {
             invalidateDisplayAndLayout()
+            self.layoutIfNeeded()
         }
     }
     @objc public private(set) var isExpanded: Bool = false
@@ -182,22 +185,6 @@ public class ReadMoreLabel: UILabel {
             }
         }
     }
-    private func createTextKitStack(for attributedText: NSAttributedString, containerWidth: CGFloat) -> (NSTextStorage, NSLayoutManager, NSTextContainer) {
-        let textStorage = NSTextStorage(attributedString: attributedText)
-        let layoutManager = NSLayoutManager()
-        let textContainer = NSTextContainer(size: CGSize(width: containerWidth, height: .greatestFiniteMagnitude))
-        
-        layoutManager.addTextContainer(textContainer)
-        textStorage.addLayoutManager(layoutManager)
-        
-        textContainer.lineFragmentPadding = lineFragmentPadding
-        textContainer.lineBreakMode = .byWordWrapping
-        textContainer.maximumNumberOfLines = 0
-        
-        layoutManager.ensureLayout(for: textContainer)
-        
-        return (textStorage, layoutManager, textContainer)
-    }
     
     private func applyReadMore(
         originalText: NSAttributedString,
@@ -207,15 +194,46 @@ public class ReadMoreLabel: UILabel {
     ) -> TextTruncationResult {
         
         let alignedText = applyTextAlignment(to: originalText)
-        let (_, layoutManager, _) = createTextKitStack(for: alignedText, containerWidth: containerWidth)
         
-        let actualLinesNeeded = calculateActualLinesNeeded(for: alignedText, width: containerWidth)
+        let textStorage = NSTextStorage(attributedString: alignedText)
+        let layoutManager = NSLayoutManager()
+        let textContainer = NSTextContainer(size: CGSize(width: containerWidth, height: .greatestFiniteMagnitude))
+        
+        textStorage.addLayoutManager(layoutManager)
+        layoutManager.addTextContainer(textContainer)
+        
+        textContainer.lineFragmentPadding = lineFragmentPadding
+        textContainer.lineBreakMode = .byWordWrapping
+        textContainer.maximumNumberOfLines = 0
+        
+        layoutManager.ensureLayout(for: textContainer)
+        
+        let totalGlyphCount = layoutManager.numberOfGlyphs
+        
+        guard totalGlyphCount > 0 else {
+            return .noTruncationNeeded
+        }
+        
+        // 기존 layoutManager를 재사용하여 줄 수 계산
+        var actualLinesNeeded = 0
+        layoutManager.enumerateLineFragments(forGlyphRange: NSRange(location: 0, length: totalGlyphCount)) { 
+            (rect, usedRect, textContainer, glyphRange, stop) in
+            actualLinesNeeded += 1
+        }
+        
+        // 마지막 줄이 높이 0인 경우 제외
+        if actualLinesNeeded > 0 {
+            let lastLineGlyphIndex = totalGlyphCount - 1
+            let lastLineRect = layoutManager.lineFragmentRect(forGlyphAt: lastLineGlyphIndex, effectiveRange: nil)
+            
+            if lastLineRect.height == 0 {
+                actualLinesNeeded -= 1
+            }
+        }
         
         if actualLinesNeeded <= numberOfLines {
             return .noTruncationNeeded
         }
-        
-        let totalGlyphCount = layoutManager.numberOfGlyphs
         var lastLineRange = NSRange()
         var currentLineCount = 0
         layoutManager.enumerateLineFragments(forGlyphRange: NSRange(location: 0, length: totalGlyphCount)) { 
@@ -267,24 +285,19 @@ public class ReadMoreLabel: UILabel {
         
         return clampedIndex
     }
+    
     private func createReadMoreSuffix(from originalText: NSAttributedString) -> NSAttributedString {
-        let lastAttributes = getLastTextAttributes(from: originalText)
+        let lastAttributes = originalText.lastTextAttributes(defaultAttributes: defaultTextAttributes)
         
         let suffix = NSMutableAttributedString()
         
-        suffix.append(NSAttributedString(string: ellipsisText, attributes: lastAttributes))
+        let ellipsisWithLastAttributes = ellipsisText.createMutableWithAttributes(lastAttributes)
+        
+        suffix.append(ellipsisWithLastAttributes)
         suffix.append(NSAttributedString(string: " ", attributes: lastAttributes))
         let readMoreStartLocation = suffix.length
         
-        let readMoreWithOriginalAttributes = NSMutableAttributedString(string: readMoreText.string, attributes: lastAttributes)
-        
-        readMoreText.enumerateAttributes(in: NSRange(location: 0, length: readMoreText.length), options: []) { attributes, range, _ in
-            for (key, value) in attributes {
-                if key != .paragraphStyle {
-                    readMoreWithOriginalAttributes.addAttribute(key, value: value, range: NSRange(location: 0, length: readMoreWithOriginalAttributes.length))
-                }
-            }
-        }
+        let readMoreWithOriginalAttributes = readMoreText.createMutableWithAttributes(lastAttributes)
         
         suffix.append(readMoreWithOriginalAttributes)
         let readMoreRange = NSRange(location: readMoreStartLocation, length: readMoreWithOriginalAttributes.length)
@@ -301,11 +314,6 @@ public class ReadMoreLabel: UILabel {
         return mutableString
     }
     
-    private func getLastTextAttributes(from originalText: NSAttributedString) -> [NSAttributedString.Key: Any] {
-        return originalText.length > 0 ?
-            originalText.attributes(at: originalText.length - 1, effectiveRange: nil) :
-            defaultTextAttributes
-    }
 
     
         
@@ -322,22 +330,14 @@ public class ReadMoreLabel: UILabel {
             return
         }
         
-        if numberOfLinesWhenCollapsed == 0 {
+        if numberOfLinesWhenCollapsed == 0 || isExpanded {
             super.attributedText = attributedTextToDisplay
             setInternalNumberOfLines(0)
             readMoreTextRange = nil
             invalidateIntrinsicContentSize()
             return
         }
-        
-        if isExpanded {
-            super.attributedText = attributedTextToDisplay
-            setInternalNumberOfLines(0)
-            readMoreTextRange = nil
-            invalidateIntrinsicContentSize()
-            return
-        }
-        
+                
         switch readMorePosition {
         case .end:
             displayTruncatedTextAtEnd(attributedTextToDisplay, availableWidth: availableWidth)
@@ -415,7 +415,41 @@ public class ReadMoreLabel: UILabel {
         
         let alignedText = applyTextAlignment(to: originalText)
         
-        let actualLinesNeeded = calculateActualLinesNeeded(for: alignedText, width: containerWidth)
+        let textStorage = NSTextStorage(attributedString: alignedText)
+        let layoutManager = NSLayoutManager()
+        let textContainer = NSTextContainer(size: CGSize(width: containerWidth, height: .greatestFiniteMagnitude))
+        
+        textStorage.addLayoutManager(layoutManager)
+        layoutManager.addTextContainer(textContainer)
+        
+        textContainer.lineFragmentPadding = lineFragmentPadding
+        textContainer.lineBreakMode = .byWordWrapping
+        textContainer.maximumNumberOfLines = 0
+        
+        layoutManager.ensureLayout(for: textContainer)
+        
+        let totalGlyphCount = layoutManager.numberOfGlyphs
+        
+        guard totalGlyphCount > 0 else {
+            return .noTruncationNeeded
+        }
+        
+        // 기존 layoutManager를 재사용하여 줄 수 계산
+        var actualLinesNeeded = 0
+        layoutManager.enumerateLineFragments(forGlyphRange: NSRange(location: 0, length: totalGlyphCount)) { 
+            (rect, usedRect, textContainer, glyphRange, stop) in
+            actualLinesNeeded += 1
+        }
+        
+        // 마지막 줄이 높이 0인 경우 제외
+        if actualLinesNeeded > 0 {
+            let lastLineGlyphIndex = totalGlyphCount - 1
+            let lastLineRect = layoutManager.lineFragmentRect(forGlyphAt: lastLineGlyphIndex, effectiveRange: nil)
+            
+            if lastLineRect.height == 0 {
+                actualLinesNeeded -= 1
+            }
+        }
         
         if actualLinesNeeded <= numberOfLines {
             return .noTruncationNeeded
@@ -425,8 +459,6 @@ public class ReadMoreLabel: UILabel {
             return .noTruncationNeeded
         }
         
-        let (_, layoutManager, _) = createTextKitStack(for: alignedText, containerWidth: containerWidth)
-        let totalGlyphCount = layoutManager.numberOfGlyphs
         var currentLineCount = 0
         var lastLineRange = NSRange()
         
@@ -446,19 +478,11 @@ public class ReadMoreLabel: UILabel {
         let cleanedTruncatedText = removeTrailingNewlineIfNeeded(from: truncatedSubstring)
         let finalText = NSMutableAttributedString(attributedString: cleanedTruncatedText)
         
-        let lastAttributes = getLastTextAttributes(from: originalText)
+        let lastAttributes = originalText.lastTextAttributes(defaultAttributes: defaultTextAttributes)
         finalText.append(NSAttributedString(string: "\n", attributes: lastAttributes))
         let readMoreStartLocation = finalText.length
         
-        let readMoreWithOriginalAttributes = NSMutableAttributedString(string: readMoreText.string, attributes: lastAttributes)
-        
-        readMoreText.enumerateAttributes(in: NSRange(location: 0, length: readMoreText.length), options: []) { attributes, range, _ in
-            for (key, value) in attributes {
-                if key != .paragraphStyle {
-                    readMoreWithOriginalAttributes.addAttribute(key, value: value, range: NSRange(location: 0, length: readMoreWithOriginalAttributes.length))
-                }
-            }
-        }
+        let readMoreWithOriginalAttributes = readMoreText.createMutableWithAttributes(lastAttributes)
         
         finalText.append(readMoreWithOriginalAttributes)
         let finalReadMoreRange = NSRange(location: readMoreStartLocation, length: readMoreWithOriginalAttributes.length)
@@ -468,7 +492,18 @@ public class ReadMoreLabel: UILabel {
     }
     
     private func canFitNewLineAndSuffixWithinBounds(alignedText: NSAttributedString, numberOfLines: Int, containerWidth: CGFloat) -> Bool {
-        let (_, layoutManager, _) = createTextKitStack(for: alignedText, containerWidth: containerWidth)
+        let textStorage = NSTextStorage(attributedString: alignedText)
+        let layoutManager = NSLayoutManager()
+        let textContainer = NSTextContainer(size: CGSize(width: containerWidth, height: .greatestFiniteMagnitude))
+        
+        textStorage.addLayoutManager(layoutManager)
+        layoutManager.addTextContainer(textContainer)
+        
+        textContainer.lineFragmentPadding = lineFragmentPadding
+        textContainer.lineBreakMode = .byWordWrapping
+        textContainer.maximumNumberOfLines = 0
+        
+        layoutManager.ensureLayout(for: textContainer)
         
         let totalGlyphCount = layoutManager.numberOfGlyphs
         guard totalGlyphCount > 0 else { return true }
@@ -491,7 +526,7 @@ public class ReadMoreLabel: UILabel {
         let lineEndOffset = characterRange.location + characterRange.length
         
         let actualReadMoreText = createReadMoreSuffix(from: alignedText)
-        let lastAttributes = getLastTextAttributes(from: alignedText)
+        let lastAttributes = alignedText.lastTextAttributes(defaultAttributes: defaultTextAttributes)
         let suffixText = NSMutableAttributedString(string: "\n", attributes: lastAttributes)
         suffixText.append(actualReadMoreText)
         
@@ -618,7 +653,19 @@ public class ReadMoreLabel: UILabel {
     
     private func calculateActualLinesNeeded(for text: NSAttributedString, width: CGFloat) -> Int {
         let alignedText = applyTextAlignment(to: text)
-        let (_, layoutManager, _) = createTextKitStack(for: alignedText, containerWidth: width)
+        
+        let textStorage = NSTextStorage(attributedString: alignedText)
+        let layoutManager = NSLayoutManager()
+        let textContainer = NSTextContainer(size: CGSize(width: width, height: .greatestFiniteMagnitude))
+        
+        textStorage.addLayoutManager(layoutManager)
+        layoutManager.addTextContainer(textContainer)
+        
+        textContainer.lineFragmentPadding = lineFragmentPadding
+        textContainer.lineBreakMode = .byWordWrapping
+        textContainer.maximumNumberOfLines = 0
+        
+        layoutManager.ensureLayout(for: textContainer)
         
         let totalGlyphCount = layoutManager.numberOfGlyphs
         
@@ -647,7 +694,19 @@ public class ReadMoreLabel: UILabel {
     
     private func calculateTextSize(for text: NSAttributedString, width: CGFloat) -> CGSize {
         let alignedText = applyTextAlignment(to: text)
-        let (_, layoutManager, textContainer) = createTextKitStack(for: alignedText, containerWidth: width)
+        
+        let textStorage = NSTextStorage(attributedString: alignedText)
+        let layoutManager = NSLayoutManager()
+        let textContainer = NSTextContainer(size: CGSize(width: width, height: .greatestFiniteMagnitude))
+        
+        textStorage.addLayoutManager(layoutManager)
+        layoutManager.addTextContainer(textContainer)
+        
+        textContainer.lineFragmentPadding = lineFragmentPadding
+        textContainer.lineBreakMode = .byWordWrapping
+        textContainer.maximumNumberOfLines = 0
+        
+        layoutManager.ensureLayout(for: textContainer)
         
         let usedRect = layoutManager.usedRect(for: textContainer)
         return usedRect.size
@@ -659,24 +718,12 @@ public class ReadMoreLabel: UILabel {
               bounds.width > 0 else {
             return
         }
-        
-        let alignedText = applyTextAlignment(to: originalText)
-        let actualLinesNeeded = calculateActualLinesNeeded(for: alignedText, width: bounds.width)
-        
-        if actualLinesNeeded <= numberOfLinesWhenCollapsed {
-            readMoreTextRange = nil
-            super.attributedText = originalText
-            setInternalNumberOfLines(numberOfLinesWhenCollapsed == 0 ? 0 : numberOfLinesWhenCollapsed)
-            invalidateIntrinsicContentSize()
-        } else {
-            readMoreTextRange = nil
-            super.attributedText = originalText
-            switch readMorePosition {
-            case .end:
-                displayTruncatedTextAtEnd(originalText, availableWidth: bounds.width)
-            case .newLine:
-                displayTruncatedTextAtNewLineBeginning(originalText, availableWidth: bounds.width)
-            }
+
+        switch readMorePosition {
+        case .end:
+            displayTruncatedTextAtEnd(originalText, availableWidth: bounds.width)
+        case .newLine:
+            displayTruncatedTextAtNewLineBeginning(originalText, availableWidth: bounds.width)
         }
     }
     
@@ -706,7 +753,18 @@ public class ReadMoreLabel: UILabel {
     private func calculateTextSizeWithNumberOfLines(for attributedText: NSAttributedString, width: CGFloat, numberOfLines: Int) -> CGSize {
         guard width > 0 else { return .zero }
         
-        let (_, layoutManager, textContainer) = createTextKitStack(for: attributedText, containerWidth: width)
+        let textStorage = NSTextStorage(attributedString: attributedText)
+        let layoutManager = NSLayoutManager()
+        let textContainer = NSTextContainer(size: CGSize(width: width, height: .greatestFiniteMagnitude))
+        
+        textStorage.addLayoutManager(layoutManager)
+        layoutManager.addTextContainer(textContainer)
+        
+        textContainer.lineFragmentPadding = lineFragmentPadding
+        textContainer.lineBreakMode = .byWordWrapping
+        textContainer.maximumNumberOfLines = 0
+        
+        layoutManager.ensureLayout(for: textContainer)
         let usedRect = layoutManager.usedRect(for: textContainer)
         
         return CGSize(width: ceil(usedRect.width), height: ceil(usedRect.height))
@@ -740,7 +798,18 @@ public class ReadMoreLabel: UILabel {
             return false
         }
         
-        let (_, layoutManager, textContainer) = createTextKitStack(for: attributedText, containerWidth: bounds.width)
+        let textStorage = NSTextStorage(attributedString: attributedText)
+        let layoutManager = NSLayoutManager()
+        let textContainer = NSTextContainer(size: CGSize(width: bounds.width, height: .greatestFiniteMagnitude))
+        
+        textStorage.addLayoutManager(layoutManager)
+        layoutManager.addTextContainer(textContainer)
+        
+        textContainer.lineFragmentPadding = lineFragmentPadding
+        textContainer.lineBreakMode = .byWordWrapping
+        textContainer.maximumNumberOfLines = 0
+        
+        layoutManager.ensureLayout(for: textContainer)
         
         let readMoreStartIndex = readMoreRange.location
         
@@ -795,5 +864,52 @@ public class ReadMoreLabel: UILabel {
         mutableAttributedText.addAttribute(.paragraphStyle, value: paragraphStyle, range: range)
         
         return mutableAttributedText
+    }
+}
+
+// MARK: - NSAttributedString Extensions
+
+private extension NSAttributedString {
+    func copyingAttributesToMutableString(_ mutableString: NSMutableAttributedString, excludingParagraphStyle: Bool = true) {
+        enumerateAttributes(in: NSRange(location: 0, length: length), options: []) { attributes, range, _ in
+            for (key, value) in attributes {
+                if excludingParagraphStyle && key == .paragraphStyle {
+                    continue
+                }
+                mutableString.addAttribute(key, value: value, range: NSRange(location: 0, length: mutableString.length))
+            }
+        }
+    }
+    
+    /// Creates a mutable attributed string with base attributes, then merges source attributes
+    /// The source attributes will override base attributes where they conflict
+    func createMutableWithAttributes(_ baseAttributes: [NSAttributedString.Key: Any]) -> NSMutableAttributedString {
+        let mutableString = NSMutableAttributedString(attributedString: self)
+        
+        // Add base attributes only where they don't already exist
+        enumerateAttributes(in: NSRange(location: 0, length: length), options: []) { existingAttributes, range, _ in
+            var attributesToAdd: [NSAttributedString.Key: Any] = [:]
+            
+            for (key, value) in baseAttributes {
+                if existingAttributes[key] == nil {
+                    attributesToAdd[key] = value
+                }
+            }
+            
+            for (key, value) in attributesToAdd {
+                mutableString.addAttribute(key, value: value, range: range)
+            }
+        }
+        
+        return mutableString
+    }
+    
+    /// Gets the attributes from the last character, or returns default attributes if string is empty
+    func lastTextAttributes(defaultAttributes: [NSAttributedString.Key: Any] = [:]) -> [NSAttributedString.Key: Any] {
+        if length > 0 {
+            return attributes(at: length - 1, effectiveRange: nil)
+        } else {
+            return defaultAttributes
+        }
     }
 }

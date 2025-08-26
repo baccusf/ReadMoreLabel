@@ -191,28 +191,12 @@ extension ViewController: UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "ExampleCell", for: indexPath) as! ExampleTableViewCell
-        
-        // 🚨 DEBUG: 4번째 셀 특별 추적
-        if indexPath.row == 3 {
-            print("🚨 [VIEWCONTROLLER] Creating 4th cell (index 3)")
-            print("🚨   Data: \(String(sampleData[indexPath.row].text.prefix(100)))...")
-            print("🚨   Style: \(sampleData[indexPath.row].style)")
-            print("🚨   Position: \(sampleData[indexPath.row].position)")
-            print("🚨   isExpanded: \(expandedStates[indexPath.row])")
-        }
-        
         cell.configure(
             with: sampleData[indexPath.row],
             isExpanded: expandedStates[indexPath.row]
         )
         cell.delegate = self
-        cell.indexPath = indexPath
-        
-        // 🚨 DEBUG: 4번째 셀 구성 완료 후 확인  
-        if indexPath.row == 3 {
-            print("🚨 [VIEWCONTROLLER] 4th cell created")
-        }
-        
+
         return cell
     }
 }
@@ -253,7 +237,6 @@ protocol ExampleTableViewCellDelegate: AnyObject {
 class ExampleTableViewCell: UITableViewCell {
     
     weak var delegate: ExampleTableViewCellDelegate?
-    var indexPath: IndexPath?
     
     private let readMoreLabel: ReadMoreLabel = {
         let label = ReadMoreLabel()
@@ -296,7 +279,7 @@ class ExampleTableViewCell: UITableViewCell {
 
         // bottom constraint를 더 낮은 우선순위로 설정
         let bottomConstraint = readMoreLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -16)
-        bottomConstraint.priority = UILayoutPriority(250) // 250으로 낮춤
+        bottomConstraint.priority = UILayoutPriority(750) // 250으로 낮춤
         bottomConstraint.isActive = true
     }
     
@@ -310,10 +293,6 @@ class ExampleTableViewCell: UITableViewCell {
         
         // Apply different styles and language-specific settings
         applyStyle(sampleData.style, language: sampleData.language)
-        
-        // 레이아웃 강제 업데이트로 정확한 계산 보장
-        setNeedsLayout()
-        layoutIfNeeded()
     }
     
     
@@ -322,7 +301,7 @@ class ExampleTableViewCell: UITableViewCell {
         let readMoreTexts = getReadMoreTexts(for: language, style: style)
         
         // Apply ellipsis
-        readMoreLabel.ellipsisText = readMoreTexts.ellipsis
+        readMoreLabel.ellipsisText = NSAttributedString(string: readMoreTexts.ellipsis)
         
         // Apply style-specific attributes
         switch style {
