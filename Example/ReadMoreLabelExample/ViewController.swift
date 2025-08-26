@@ -295,7 +295,6 @@ class ExampleTableViewCell: UITableViewCell {
         applyStyle(sampleData.style, language: sampleData.language)
     }
     
-    
     private func applyStyle(_ style: ReadMoreLabel.Style, language: String) {
         // Get language-specific read more text
         let readMoreTexts = getReadMoreTexts(for: language, style: style)
