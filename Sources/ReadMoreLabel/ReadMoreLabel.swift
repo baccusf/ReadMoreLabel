@@ -326,7 +326,7 @@ public class ReadMoreLabel: UILabel {
         layoutManager.addTextContainer(textContainer)
         
         textContainer.lineFragmentPadding = lineFragmentPadding
-        textContainer.lineBreakMode = .byWordWrapping
+        textContainer.lineBreakMode = lineBreakMode
         textContainer.maximumNumberOfLines = 0
         
         layoutManager.ensureLayout(for: textContainer)
