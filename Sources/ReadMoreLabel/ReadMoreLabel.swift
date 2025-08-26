@@ -194,19 +194,7 @@ public class ReadMoreLabel: UILabel {
     ) -> TextTruncationResult {
         
         let alignedText = applyTextAlignment(to: originalText)
-        
-        let textStorage = NSTextStorage(attributedString: alignedText)
-        let layoutManager = NSLayoutManager()
-        let textContainer = NSTextContainer(size: CGSize(width: containerWidth, height: .greatestFiniteMagnitude))
-        
-        textStorage.addLayoutManager(layoutManager)
-        layoutManager.addTextContainer(textContainer)
-        
-        textContainer.lineFragmentPadding = lineFragmentPadding
-        textContainer.lineBreakMode = .byWordWrapping
-        textContainer.maximumNumberOfLines = 0
-        
-        layoutManager.ensureLayout(for: textContainer)
+        let (textStorage, layoutManager, textContainer) = createTextKitStack(for: alignedText, containerWidth: containerWidth)
         
         let totalGlyphCount = layoutManager.numberOfGlyphs
         
@@ -324,6 +312,28 @@ public class ReadMoreLabel: UILabel {
     
     // MARK: - TextKit Helper Methods
     
+    /// Creates a new TextKit stack for text measurement and layout
+    /// Each call returns fresh objects to avoid lifecycle issues
+    private func createTextKitStack(
+        for attributedText: NSAttributedString,
+        containerWidth: CGFloat
+    ) -> (textStorage: NSTextStorage, layoutManager: NSLayoutManager, textContainer: NSTextContainer) {
+        let textStorage = NSTextStorage(attributedString: attributedText)
+        let layoutManager = NSLayoutManager()
+        let textContainer = NSTextContainer(size: CGSize(width: containerWidth, height: .greatestFiniteMagnitude))
+        
+        textStorage.addLayoutManager(layoutManager)
+        layoutManager.addTextContainer(textContainer)
+        
+        textContainer.lineFragmentPadding = lineFragmentPadding
+        textContainer.lineBreakMode = .byWordWrapping
+        textContainer.maximumNumberOfLines = 0
+        
+        layoutManager.ensureLayout(for: textContainer)
+        
+        return (textStorage, layoutManager, textContainer)
+    }
+    
     
     private func updateDisplay() {
         guard let attributedTextToDisplay = originalAttributedText, case let availableWidth = bounds.width, availableWidth > 0 else {
@@ -414,19 +424,7 @@ public class ReadMoreLabel: UILabel {
     ) -> TextTruncationResult {
         
         let alignedText = applyTextAlignment(to: originalText)
-        
-        let textStorage = NSTextStorage(attributedString: alignedText)
-        let layoutManager = NSLayoutManager()
-        let textContainer = NSTextContainer(size: CGSize(width: containerWidth, height: .greatestFiniteMagnitude))
-        
-        textStorage.addLayoutManager(layoutManager)
-        layoutManager.addTextContainer(textContainer)
-        
-        textContainer.lineFragmentPadding = lineFragmentPadding
-        textContainer.lineBreakMode = .byWordWrapping
-        textContainer.maximumNumberOfLines = 0
-        
-        layoutManager.ensureLayout(for: textContainer)
+        let (textStorage, layoutManager, textContainer) = createTextKitStack(for: alignedText, containerWidth: containerWidth)
         
         let totalGlyphCount = layoutManager.numberOfGlyphs
         
@@ -492,18 +490,7 @@ public class ReadMoreLabel: UILabel {
     }
     
     private func canFitNewLineAndSuffixWithinBounds(alignedText: NSAttributedString, numberOfLines: Int, containerWidth: CGFloat) -> Bool {
-        let textStorage = NSTextStorage(attributedString: alignedText)
-        let layoutManager = NSLayoutManager()
-        let textContainer = NSTextContainer(size: CGSize(width: containerWidth, height: .greatestFiniteMagnitude))
-        
-        textStorage.addLayoutManager(layoutManager)
-        layoutManager.addTextContainer(textContainer)
-        
-        textContainer.lineFragmentPadding = lineFragmentPadding
-        textContainer.lineBreakMode = .byWordWrapping
-        textContainer.maximumNumberOfLines = 0
-        
-        layoutManager.ensureLayout(for: textContainer)
+        let (textStorage, layoutManager, textContainer) = createTextKitStack(for: alignedText, containerWidth: containerWidth)
         
         let totalGlyphCount = layoutManager.numberOfGlyphs
         guard totalGlyphCount > 0 else { return true }
@@ -653,19 +640,7 @@ public class ReadMoreLabel: UILabel {
     
     private func calculateActualLinesNeeded(for text: NSAttributedString, width: CGFloat) -> Int {
         let alignedText = applyTextAlignment(to: text)
-        
-        let textStorage = NSTextStorage(attributedString: alignedText)
-        let layoutManager = NSLayoutManager()
-        let textContainer = NSTextContainer(size: CGSize(width: width, height: .greatestFiniteMagnitude))
-        
-        textStorage.addLayoutManager(layoutManager)
-        layoutManager.addTextContainer(textContainer)
-        
-        textContainer.lineFragmentPadding = lineFragmentPadding
-        textContainer.lineBreakMode = .byWordWrapping
-        textContainer.maximumNumberOfLines = 0
-        
-        layoutManager.ensureLayout(for: textContainer)
+        let (textStorage, layoutManager, textContainer) = createTextKitStack(for: alignedText, containerWidth: width)
         
         let totalGlyphCount = layoutManager.numberOfGlyphs
         
@@ -694,19 +669,7 @@ public class ReadMoreLabel: UILabel {
     
     private func calculateTextSize(for text: NSAttributedString, width: CGFloat) -> CGSize {
         let alignedText = applyTextAlignment(to: text)
-        
-        let textStorage = NSTextStorage(attributedString: alignedText)
-        let layoutManager = NSLayoutManager()
-        let textContainer = NSTextContainer(size: CGSize(width: width, height: .greatestFiniteMagnitude))
-        
-        textStorage.addLayoutManager(layoutManager)
-        layoutManager.addTextContainer(textContainer)
-        
-        textContainer.lineFragmentPadding = lineFragmentPadding
-        textContainer.lineBreakMode = .byWordWrapping
-        textContainer.maximumNumberOfLines = 0
-        
-        layoutManager.ensureLayout(for: textContainer)
+        let (textStorage, layoutManager, textContainer) = createTextKitStack(for: alignedText, containerWidth: width)
         
         let usedRect = layoutManager.usedRect(for: textContainer)
         return usedRect.size
@@ -753,18 +716,7 @@ public class ReadMoreLabel: UILabel {
     private func calculateTextSizeWithNumberOfLines(for attributedText: NSAttributedString, width: CGFloat, numberOfLines: Int) -> CGSize {
         guard width > 0 else { return .zero }
         
-        let textStorage = NSTextStorage(attributedString: attributedText)
-        let layoutManager = NSLayoutManager()
-        let textContainer = NSTextContainer(size: CGSize(width: width, height: .greatestFiniteMagnitude))
-        
-        textStorage.addLayoutManager(layoutManager)
-        layoutManager.addTextContainer(textContainer)
-        
-        textContainer.lineFragmentPadding = lineFragmentPadding
-        textContainer.lineBreakMode = .byWordWrapping
-        textContainer.maximumNumberOfLines = 0
-        
-        layoutManager.ensureLayout(for: textContainer)
+        let (textStorage, layoutManager, textContainer) = createTextKitStack(for: attributedText, containerWidth: width)
         let usedRect = layoutManager.usedRect(for: textContainer)
         
         return CGSize(width: ceil(usedRect.width), height: ceil(usedRect.height))
@@ -798,18 +750,7 @@ public class ReadMoreLabel: UILabel {
             return false
         }
         
-        let textStorage = NSTextStorage(attributedString: attributedText)
-        let layoutManager = NSLayoutManager()
-        let textContainer = NSTextContainer(size: CGSize(width: bounds.width, height: .greatestFiniteMagnitude))
-        
-        textStorage.addLayoutManager(layoutManager)
-        layoutManager.addTextContainer(textContainer)
-        
-        textContainer.lineFragmentPadding = lineFragmentPadding
-        textContainer.lineBreakMode = .byWordWrapping
-        textContainer.maximumNumberOfLines = 0
-        
-        layoutManager.ensureLayout(for: textContainer)
+        let (textStorage, layoutManager, textContainer) = createTextKitStack(for: attributedText, containerWidth: bounds.width)
         
         let readMoreStartIndex = readMoreRange.location
         
