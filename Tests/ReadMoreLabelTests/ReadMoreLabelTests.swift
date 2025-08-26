@@ -16,7 +16,7 @@ final class ReadMoreLabelTests: XCTestCase {
     }
     
     func testInitialState() {
-        XCTAssertEqual(label.numberOfLinesWhenCollapsed, 3)
+        XCTAssertEqual(label.numberOfLines, 3)
         XCTAssertFalse(label.isExpanded)
         XCTAssertEqual(label.readMoreText.string, "더보기..")
     }
@@ -58,8 +58,8 @@ final class ReadMoreLabelTests: XCTestCase {
     
     
     func testNumberOfLinesWhenCollapsedChange() {
-        label.numberOfLinesWhenCollapsed = 5
-        XCTAssertEqual(label.numberOfLinesWhenCollapsed, 5)
+        label.numberOfLines = 5
+        XCTAssertEqual(label.numberOfLines, 5)
     }
     
     func testDelegateCallback() {

@@ -37,5 +37,9 @@
     "additionalDirectories": [
       "/Users/seungho/.claude"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "ios-simulator",
+    "context7"
+  ]
 }
