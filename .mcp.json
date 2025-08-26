@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "ios-simulator": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "ios-simulator-mcp"
+      ]
+    },
+    "context7": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@upstash/context7-mcp"
+      ]
+    }
+  }
+}
