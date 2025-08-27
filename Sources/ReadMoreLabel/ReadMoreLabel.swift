@@ -428,124 +428,157 @@ public class ReadMoreLabel: UILabel {
             return .noTruncationNeeded
         }
         
-        // 기존 layoutManager를 재사용하여 줄 수 계산
-        var actualLinesNeeded = 0
+        // 단일 패스로 라인 정보 수집 및 분석
+        var lineFragments: [(rect: CGRect, glyphRange: NSRange)] = []
+        
         layoutManager.enumerateLineFragments(forGlyphRange: NSRange(location: 0, length: totalGlyphCount)) { 
             (rect, usedRect, textContainer, glyphRange, stop) in
-            actualLinesNeeded += 1
-        }
-        
-        // 마지막 줄이 높이 0인 경우 제외
-        if actualLinesNeeded > 0 {
-            let lastLineGlyphIndex = totalGlyphCount - 1
-            let lastLineRect = layoutManager.lineFragmentRect(forGlyphAt: lastLineGlyphIndex, effectiveRange: nil)
             
-            if lastLineRect.height == 0 {
-                actualLinesNeeded -= 1
+            // 높이 0인 마지막 줄 제외 처리
+            if rect.height > 0 {
+                lineFragments.append((rect: rect, glyphRange: glyphRange))
             }
         }
         
+        let actualLinesNeeded = lineFragments.count
+        
+        // Early exit: 잘림 불필요
         if actualLinesNeeded <= numberOfLines {
             return .noTruncationNeeded
         }
         
-        if canFitNewLineAndSuffixWithinBounds(alignedText: alignedText, numberOfLines: numberOfLines, containerWidth: containerWidth) {
+        // 타겟 라인 정보 추출
+        guard numberOfLines <= lineFragments.count else {
             return .noTruncationNeeded
         }
         
-        var currentLineCount = 0
-        var lastLineRange = NSRange()
-        
-        layoutManager.enumerateLineFragments(forGlyphRange: NSRange(location: 0, length: totalGlyphCount)) { 
-            (rect, usedRect, textContainer, glyphRange, stop) in
-            currentLineCount += 1
-            if currentLineCount == numberOfLines {
-                lastLineRange = glyphRange
-                stop.pointee = true
-            }
-        }
-        
+        let targetLineFragment = lineFragments[numberOfLines - 1]
+        let lastLineRange = targetLineFragment.glyphRange
+        let lastLineRect = targetLineFragment.rect
         let characterRange = layoutManager.characterRange(forGlyphRange: lastLineRange, actualGlyphRange: nil)
-        let truncateOffset = characterRange.location + characterRange.length
-        let truncatedSubstring = originalText.attributedSubstring(from: NSRange(location: 0, length: truncateOffset))
         
+        // 더보기 텍스트 생성 및 크기 계산
+        let lastAttributes = originalText.lastTextAttributes(defaultAttributes: defaultTextAttributes)
+        let readMoreWithNewLine = NSMutableAttributedString(string: "\n", attributes: lastAttributes)
+        let readMoreWithOriginalAttributes = readMoreText.createMutableWithAttributes(lastAttributes)
+        readMoreWithNewLine.append(readMoreWithOriginalAttributes)
+        
+        // TextKit을 사용한 더보기 텍스트 크기 계산
+        let readMoreSize = calculateTextSizeWithTextKit(for: readMoreWithNewLine, layoutManager: layoutManager, textContainer: textContainer)
+        
+        // 공간 검증 및 최적 잘림 위치 계산
+        let availableWidthInLastLine = containerWidth - readMoreSize.width
+        
+        let truncateOffset = findOptimalTruncatePointWithTextKit(
+            layoutManager: layoutManager,
+            characterRange: characterRange,
+            availableWidth: availableWidthInLastLine,
+            containerWidth: containerWidth,
+            textContainer: textContainer
+        )
+        
+        // 최종 텍스트 구성
+        let truncatedSubstring = originalText.attributedSubstring(from: NSRange(location: 0, length: truncateOffset))
         let cleanedTruncatedText = removeTrailingNewlineIfNeeded(from: truncatedSubstring)
         let finalText = NSMutableAttributedString(attributedString: cleanedTruncatedText)
         
-        let lastAttributes = originalText.lastTextAttributes(defaultAttributes: defaultTextAttributes)
         finalText.append(NSAttributedString(string: "\n", attributes: lastAttributes))
         let readMoreStartLocation = finalText.length
-        
-        let readMoreWithOriginalAttributes = readMoreText.createMutableWithAttributes(lastAttributes)
-        
         finalText.append(readMoreWithOriginalAttributes)
+        
+        // 최종 검증: 기존 TextKit 스택 재사용
+        let finalLinesNeeded = calculateLinesWithExistingStack(finalText, layoutManager: layoutManager, textContainer: textContainer)
+        
+        if finalLinesNeeded > numberOfLines {
+            // 공간 부족 시: 기본 잘림 처리
+            let basicTruncateOffset = characterRange.location + characterRange.length
+            let basicTruncatedText = originalText.attributedSubstring(from: NSRange(location: 0, length: basicTruncateOffset))
+            let basicCleanedText = removeTrailingNewlineIfNeeded(from: basicTruncatedText)
+            
+            let basicFinalText = NSMutableAttributedString(attributedString: basicCleanedText)
+            basicFinalText.append(NSAttributedString(string: "\n", attributes: lastAttributes))
+            let basicReadMoreStartLocation = basicFinalText.length
+            basicFinalText.append(readMoreWithOriginalAttributes)
+            
+            let basicFinalReadMoreRange = NSRange(location: basicReadMoreStartLocation, length: readMoreWithOriginalAttributes.length)
+            basicFinalText.addAttribute(AttributeKey.isReadMore, value: true, range: basicFinalReadMoreRange)
+            
+            return .truncated(basicFinalText, basicFinalReadMoreRange)
+        }
+        
         let finalReadMoreRange = NSRange(location: readMoreStartLocation, length: readMoreWithOriginalAttributes.length)
         finalText.addAttribute(AttributeKey.isReadMore, value: true, range: finalReadMoreRange)
         
         return .truncated(finalText, finalReadMoreRange)
     }
     
-    private func canFitNewLineAndSuffixWithinBounds(alignedText: NSAttributedString, numberOfLines: Int, containerWidth: CGFloat) -> Bool {
-        let (textStorage, layoutManager, textContainer) = createTextKitStack(for: alignedText, containerWidth: containerWidth)
+    // MARK: - TextKit 최적화 헬퍼 메서드
+    
+    /// TextKit 스택을 재사용하여 텍스트 크기 계산 (boundingRect 대체)
+    private func calculateTextSizeWithTextKit(
+        for text: NSAttributedString,
+        layoutManager: NSLayoutManager,
+        textContainer: NSTextContainer
+    ) -> CGSize {
+        // 기존 스택 업데이트
+        layoutManager.textStorage?.setAttributedString(text)
+        layoutManager.ensureLayout(for: textContainer)
         
+        let usedRect = layoutManager.usedRect(for: textContainer)
+        return usedRect.size
+    }
+    
+    /// TextKit을 사용한 최적 잘림 위치 계산 (boundingRect 루프 대체)
+    private func findOptimalTruncatePointWithTextKit(
+        layoutManager: NSLayoutManager,
+        characterRange: NSRange,
+        availableWidth: CGFloat,
+        containerWidth: CGFloat,
+        textContainer: NSTextContainer
+    ) -> Int {
+        // 마지막 줄의 시작 위치에서 사용 가능한 너비만큼의 지점 찾기
+        let lineRect = layoutManager.lineFragmentRect(forGlyphAt: layoutManager.glyphRange(forCharacterRange: characterRange, actualCharacterRange: nil).location, effectiveRange: nil)
+        let targetX = lineRect.origin.x + availableWidth
+        let targetPoint = CGPoint(x: targetX, y: lineRect.midY)
+        
+        let characterIndex = layoutManager.characterIndex(
+            for: targetPoint,
+            in: textContainer,
+            fractionOfDistanceBetweenInsertionPoints: nil
+        )
+        
+        // 범위 내로 제한
+        let clampedIndex = max(characterRange.location, 
+                              min(characterIndex, characterRange.location + characterRange.length))
+        
+        return clampedIndex
+    }
+    
+    /// 기존 TextKit 스택을 재사용한 라인 수 계산
+    private func calculateLinesWithExistingStack(
+        _ text: NSAttributedString, 
+        layoutManager: NSLayoutManager,
+        textContainer: NSTextContainer
+    ) -> Int {
+        // 기존 스택 업데이트
+        layoutManager.textStorage?.setAttributedString(text)
+        layoutManager.ensureLayout(for: textContainer)
+        
+        var lineCount = 0
         let totalGlyphCount = layoutManager.numberOfGlyphs
-        guard totalGlyphCount > 0 else { return true }
         
-        var currentLineCount = 0
-        var lastLineRange = NSRange()
+        guard totalGlyphCount > 0 else { return 0 }
         
         layoutManager.enumerateLineFragments(forGlyphRange: NSRange(location: 0, length: totalGlyphCount)) { 
-            (rect, usedRect, textContainer, glyphRange, stop) in
-            currentLineCount += 1
-            if currentLineCount == numberOfLines {
-                lastLineRange = glyphRange
-                stop.pointee = true
+            (rect, _, _, _, _) in
+            if rect.height > 0 { 
+                lineCount += 1 
             }
         }
         
-        let characterRange = layoutManager.characterRange(forGlyphRange: lastLineRange, actualGlyphRange: nil)
-        
-        let lineStartOffset = characterRange.location
-        let lineEndOffset = characterRange.location + characterRange.length
-        
-        let actualReadMoreText = createReadMoreSuffix(from: alignedText)
-        let lastAttributes = alignedText.lastTextAttributes(defaultAttributes: defaultTextAttributes)
-        let suffixText = NSMutableAttributedString(string: "\n", attributes: lastAttributes)
-        suffixText.append(actualReadMoreText)
-        
-        let suffixSize = suffixText.boundingRect(
-            with: CGSize(width: containerWidth, height: .greatestFiniteMagnitude),
-            options: [.usesLineFragmentOrigin, .usesFontLeading],
-            context: nil
-        ).size
-        let availableWidthForText = containerWidth - suffixSize.width
-        
-        var truncateOffset = lineEndOffset
-        var currentWidth: CGFloat = 0
-        
-        for i in (lineStartOffset..<lineEndOffset).reversed() {
-            let testText = alignedText.attributedSubstring(from: NSRange(location: lineStartOffset, length: i - lineStartOffset))
-            let testSize = testText.boundingRect(
-                with: CGSize(width: containerWidth, height: .greatestFiniteMagnitude),
-                options: [.usesLineFragmentOrigin, .usesFontLeading],
-                context: nil
-            ).size
-            
-            if testSize.width <= availableWidthForText {
-                truncateOffset = i
-                currentWidth = testSize.width
-                break
-            }
-        }
-        
-        let truncatedText = alignedText.attributedSubstring(from: NSRange(location: 0, length: min(truncateOffset, alignedText.length)))
-        
-        let testText = NSMutableAttributedString(attributedString: truncatedText)
-        testText.append(suffixText)
-        let testLinesNeeded = calculateActualLinesNeeded(for: testText, width: containerWidth)
-        
-        return testLinesNeeded <= numberOfLines
+        return lineCount
     }
+    
     
     private func invalidateDisplayAndLayout() {
         invalidateIntrinsicContentSize()
