@@ -30,7 +30,16 @@
       "Bash(timeout 60 xcodebuild:*)",
       "Bash(claude doctor)",
       "Read(//Users/seungho/.claude/**)",
-      "Bash(npx:*)"
+      "Bash(npx:*)",
+      "mcp__XcodeBuildMCP__build_run_sim",
+      "mcp__XcodeBuildMCP__list_sims",
+      "mcp__XcodeBuildMCP__launch_app_sim",
+      "mcp__XcodeBuildMCP__open_sim",
+      "mcp__XcodeBuildMCP__screenshot",
+      "mcp__XcodeBuildMCP__swipe",
+      "mcp__XcodeBuildMCP__key_press",
+      "mcp__XcodeBuildMCP__launch_app_logs_sim",
+      "mcp__XcodeBuildMCP__stop_sim_log_cap"
     ],
     "deny": [],
     "defaultMode": "acceptEdits",
