@@ -134,7 +134,6 @@ public class ReadMoreLabel: UILabel {
     }
     
     @objc public func prepareForCellReuse() {
-        invalidateExpandableCache()
         if isExpanded {
             setExpanded(false, animated: false)
         }
@@ -301,9 +300,6 @@ public class ReadMoreLabel: UILabel {
         }
         return mutableString
     }
-    
-
-    
         
     private func setInternalNumberOfLines(_ lines: Int) {
         internalNumberOfLines = lines
@@ -551,12 +547,7 @@ public class ReadMoreLabel: UILabel {
         return testLinesNeeded <= numberOfLines
     }
     
-    
-    private func invalidateExpandableCache() {
-    }
-    
     private func invalidateDisplayAndLayout() {
-        invalidateExpandableCache()
         invalidateIntrinsicContentSize()
         setNeedsLayout()
     }
@@ -698,8 +689,6 @@ public class ReadMoreLabel: UILabel {
         } else {
             checkAndResetTruncationStateIfNeeded()
         }
-        
-        invalidateExpandableCache()
     }
     
     public override var intrinsicContentSize: CGSize {
@@ -794,6 +783,7 @@ public class ReadMoreLabel: UILabel {
            existingStyle.alignment == self.textAlignment {
             return mutableAttributedText
         }
+        
         let paragraphStyle: NSMutableParagraphStyle
         if let existingStyle = attributedText.attribute(.paragraphStyle, at: 0, effectiveRange: nil) as? NSParagraphStyle {
             paragraphStyle = existingStyle.mutableCopy() as! NSMutableParagraphStyle
@@ -811,17 +801,6 @@ public class ReadMoreLabel: UILabel {
 // MARK: - NSAttributedString Extensions
 
 private extension NSAttributedString {
-    func copyingAttributesToMutableString(_ mutableString: NSMutableAttributedString, excludingParagraphStyle: Bool = true) {
-        enumerateAttributes(in: NSRange(location: 0, length: length), options: []) { attributes, range, _ in
-            for (key, value) in attributes {
-                if excludingParagraphStyle && key == .paragraphStyle {
-                    continue
-                }
-                mutableString.addAttribute(key, value: value, range: NSRange(location: 0, length: mutableString.length))
-            }
-        }
-    }
-    
     /// Creates a mutable attributed string with base attributes, then merges source attributes
     /// The source attributes will override base attributes where they conflict
     func createMutableWithAttributes(_ baseAttributes: [NSAttributedString.Key: Any]) -> NSMutableAttributedString {
