@@ -90,7 +90,7 @@ public class ReadMoreLabel: UILabel {
     
     private func setupLabel() {
         setInternalNumberOfLines(numberOfLinesWhenCollapsed == 0 ? 0 : numberOfLinesWhenCollapsed)
-        lineBreakMode = .byClipping
+        lineBreakMode = .byWordWrapping
         isUserInteractionEnabled = true
         setupTapGesture()
     }
@@ -400,10 +400,9 @@ public class ReadMoreLabel: UILabel {
         
         if result.needsTruncation,
            let (finalText, readMoreRange) = result.textAndRange {
-            let actualLinesInFinalText = calculateActualLinesNeeded(for: finalText, width: availableWidth)
-            
+            // newLine position에서는 항상 numberOfLines + 1줄 표시
             super.attributedText = finalText
-            setInternalNumberOfLines(actualLinesInFinalText)
+            setInternalNumberOfLines(numberOfLinesWhenCollapsed + 1)
             readMoreTextRange = readMoreRange
             
         } else {
@@ -463,19 +462,9 @@ public class ReadMoreLabel: UILabel {
         let readMoreWithOriginalAttributes = readMoreText.createMutableWithAttributes(lastAttributes)
         readMoreWithNewLine.append(readMoreWithOriginalAttributes)
         
-        // TextKit을 사용한 더보기 텍스트 크기 계산
-        let readMoreSize = calculateTextSizeWithTextKit(for: readMoreWithNewLine, layoutManager: layoutManager, textContainer: textContainer)
-        
-        // 공간 검증 및 최적 잘림 위치 계산
-        let availableWidthInLastLine = containerWidth - readMoreSize.width
-        
-        let truncateOffset = findOptimalTruncatePointWithTextKit(
-            layoutManager: layoutManager,
-            characterRange: characterRange,
-            availableWidth: availableWidthInLastLine,
-            containerWidth: containerWidth,
-            textContainer: textContainer
-        )
+        // newLine position에서는 현재 줄에서 "더보기" 공간을 확보할 필요 없음
+        // numberOfLines번째 줄의 끝에서 텍스트를 자름
+        let truncateOffset = characterRange.location + characterRange.length
         
         // 최종 텍스트 구성
         let truncatedSubstring = originalText.attributedSubstring(from: NSRange(location: 0, length: truncateOffset))
@@ -485,26 +474,6 @@ public class ReadMoreLabel: UILabel {
         finalText.append(NSAttributedString(string: "\n", attributes: lastAttributes))
         let readMoreStartLocation = finalText.length
         finalText.append(readMoreWithOriginalAttributes)
-        
-        // 최종 검증: 기존 TextKit 스택 재사용
-        let finalLinesNeeded = calculateLinesWithExistingStack(finalText, layoutManager: layoutManager, textContainer: textContainer)
-        
-        if finalLinesNeeded > numberOfLines {
-            // 공간 부족 시: 기본 잘림 처리
-            let basicTruncateOffset = characterRange.location + characterRange.length
-            let basicTruncatedText = originalText.attributedSubstring(from: NSRange(location: 0, length: basicTruncateOffset))
-            let basicCleanedText = removeTrailingNewlineIfNeeded(from: basicTruncatedText)
-            
-            let basicFinalText = NSMutableAttributedString(attributedString: basicCleanedText)
-            basicFinalText.append(NSAttributedString(string: "\n", attributes: lastAttributes))
-            let basicReadMoreStartLocation = basicFinalText.length
-            basicFinalText.append(readMoreWithOriginalAttributes)
-            
-            let basicFinalReadMoreRange = NSRange(location: basicReadMoreStartLocation, length: readMoreWithOriginalAttributes.length)
-            basicFinalText.addAttribute(AttributeKey.isReadMore, value: true, range: basicFinalReadMoreRange)
-            
-            return .truncated(basicFinalText, basicFinalReadMoreRange)
-        }
         
         let finalReadMoreRange = NSRange(location: readMoreStartLocation, length: readMoreWithOriginalAttributes.length)
         finalText.addAttribute(AttributeKey.isReadMore, value: true, range: finalReadMoreRange)
@@ -724,16 +693,16 @@ public class ReadMoreLabel: UILabel {
         }
     }
     
-    public override var intrinsicContentSize: CGSize {
-        guard let attributedText = attributedText, attributedText.length > 0 else {
-            return super.intrinsicContentSize
-        }
-        
-        let width = bounds.width
-        let size = calculateTextSizeWithNumberOfLines(for: attributedText, width: width, numberOfLines: super.numberOfLines)
-        
-        return CGSize(width: size.width, height: size.height)
-    }
+//    public override var intrinsicContentSize: CGSize {
+//        guard let attributedText = attributedText, attributedText.length > 0 else {
+//            return super.intrinsicContentSize
+//        }
+//        
+//        let width = bounds.width
+//        let size = calculateTextSizeWithNumberOfLines(for: attributedText, width: width, numberOfLines: super.numberOfLines)
+//        
+//        return CGSize(width: size.width, height: size.height)
+//    }
     
     private func calculateTextSizeWithNumberOfLines(for attributedText: NSAttributedString, width: CGFloat, numberOfLines: Int) -> CGSize {
         guard width > 0 else { return .zero }
