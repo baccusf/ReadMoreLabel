@@ -264,8 +264,13 @@ class ExampleTableViewCell: UITableViewCell {
     }
     
     private func setupUI() {
+        selectionStyle = .none  // Disable cell selection to prevent tap interference
         contentView.addSubview(readMoreLabel)
         readMoreLabel.delegate = self
+        
+        // Add tap gesture to entire cell as fallback
+        let cellTapGesture = UITapGestureRecognizer(target: self, action: #selector(cellTapped))
+        contentView.addGestureRecognizer(cellTapGesture)
         
         // Content Priority 설정 - intrinsicContentSize를 존중하도록
         readMoreLabel.setContentHuggingPriority(UILayoutPriority(1000), for: .vertical)
@@ -284,15 +289,21 @@ class ExampleTableViewCell: UITableViewCell {
     }
     
     func configure(with sampleData: SampleData, isExpanded: Bool) {
+        // Temporarily disable delegate to prevent recursion during configuration
+        let originalDelegate = readMoreLabel.delegate
+        readMoreLabel.delegate = nil
+        
         readMoreLabel.text = sampleData.text
         readMoreLabel.setExpanded(isExpanded, animated: false)
-        
         
         // Set position first
         readMoreLabel.readMorePosition = sampleData.position
         
         // Apply different styles and language-specific settings
         applyStyle(sampleData.style, language: sampleData.language)
+        
+        // Restore delegate after configuration is complete
+        readMoreLabel.delegate = originalDelegate
     }
     
     private func applyStyle(_ style: ReadMoreLabel.Style, language: String) {
@@ -422,5 +433,11 @@ class ExampleTableViewCell: UITableViewCell {
 extension ExampleTableViewCell: ReadMoreLabelDelegate {
     func readMoreLabel(_ label: ReadMoreLabel, didChangeExpandedState isExpanded: Bool) {
         delegate?.didChangeExpandedState(self)
+    }
+    
+    @objc private func cellTapped() {
+        if readMoreLabel.isExpandable && !readMoreLabel.isExpanded {
+            readMoreLabel.setExpanded(true, animated: true)
+        }
     }
 }
