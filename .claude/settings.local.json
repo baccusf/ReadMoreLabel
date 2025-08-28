@@ -39,7 +39,10 @@
       "mcp__XcodeBuildMCP__swipe",
       "mcp__XcodeBuildMCP__key_press",
       "mcp__XcodeBuildMCP__launch_app_logs_sim",
-      "mcp__XcodeBuildMCP__stop_sim_log_cap"
+      "mcp__XcodeBuildMCP__stop_sim_log_cap",
+      "mcp__XcodeBuildMCP__start_sim_log_cap",
+      "mcp__XcodeBuildMCP__describe_ui",
+      "mcp__XcodeBuildMCP__tap"
     ],
     "deny": [],
     "defaultMode": "acceptEdits",
