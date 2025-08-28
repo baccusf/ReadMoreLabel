@@ -368,8 +368,8 @@ public class ReadMoreLabel: UILabel {
         let suffix = createReadMoreSuffix(from: attributedText)
         print("   - suffix created: '\(suffix.string)'")
         
-        print("   - Calling NEW applyReadMore (not legacy)")
-        let result = applyReadMore(
+        print("   - Calling LEGACY applyReadMore")
+        let result = legacyApplyReadMore(
             originalText: attributedText,
             numberOfLines: numberOfLinesWhenCollapsed,
             containerWidth: availableWidth,
@@ -398,7 +398,7 @@ public class ReadMoreLabel: UILabel {
         
         
         // numberOfLinesWhenCollapsed줄로 자른 후 다음 줄 맨 앞에 "더보기" 추가
-        let result = applyReadMoreForNewLine(
+        let result = legacyApplyReadMoreForNewLine(
             originalText: attributedText,
             numberOfLines: numberOfLinesWhenCollapsed,
             containerWidth: availableWidth
