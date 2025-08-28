@@ -353,7 +353,12 @@ public class ReadMoreLabel: UILabel {
     }
     
     private func displayTruncatedTextAtEnd(_ attributedText: NSAttributedString, availableWidth: CGFloat) {
+        print("🔍 DEBUG: displayTruncatedTextAtEnd called")
+        print("   - availableWidth: \(availableWidth)")
+        print("   - numberOfLinesWhenCollapsed: \(numberOfLinesWhenCollapsed)")
+        
         guard attributedText.length > 0 && availableWidth > 0 && numberOfLinesWhenCollapsed > 0 else {
+            print("   - Early exit: guard condition failed")
             super.attributedText = attributedText
             setInternalNumberOfLines(numberOfLinesWhenCollapsed == 0 ? 0 : numberOfLinesWhenCollapsed)
             readMoreTextRange = nil
@@ -361,7 +366,9 @@ public class ReadMoreLabel: UILabel {
         }
         
         let suffix = createReadMoreSuffix(from: attributedText)
+        print("   - suffix created: '\(suffix.string)'")
         
+        print("   - Calling NEW applyReadMore (not legacy)")
         let result = applyReadMore(
             originalText: attributedText,
             numberOfLines: numberOfLinesWhenCollapsed,
@@ -491,23 +498,34 @@ public class ReadMoreLabel: UILabel {
         suffix: NSAttributedString
     ) -> TextTruncationResult {
         
+        print("🚨 DEBUG: NEW applyReadMore called")
+        print("   - numberOfLines: \(numberOfLines)")
+        print("   - containerWidth: \(containerWidth)")
+        
         let alignedText = applyTextAlignment(to: originalText)
         
         // Extension의 라인 분석 메서드 사용
+        print("   - Calling Extension analyzeLineFragments...")
         let (totalLines, targetFragment) = analyzeLineFragments(
             for: alignedText,
             containerWidth: containerWidth,
             targetLineIndex: numberOfLines - 1
         )
         
+        print("   - totalLines: \(totalLines), targetFragment exists: \(targetFragment != nil)")
+        
         // 잘림 불필요한 경우
         if totalLines <= numberOfLines {
+            print("   - Result: .noTruncationNeeded (totalLines \(totalLines) <= numberOfLines \(numberOfLines))")
             return .noTruncationNeeded
         }
         
         guard let targetLineFragment = targetFragment else {
+            print("   - Result: .noTruncationNeeded (no targetFragment)")
             return .noTruncationNeeded
         }
+        
+        print("   - Needs truncation, proceeding with calculation...")
         
         // Extension의 최적화된 TextKit 스택 사용
         let (_, layoutManager, _) = createOptimizedTextKitStack(for: alignedText, containerWidth: containerWidth)
@@ -519,13 +537,21 @@ public class ReadMoreLabel: UILabel {
         let suffixWidth = calculateTextSizeWithOptimizedTextKit(for: suffix, containerWidth: CGFloat.greatestFiniteMagnitude).width
         let truncateCharacterIndex: Int
         
+        print("   - lastLineWidth: \(lastLineWidth)")
+        print("   - suffixWidth: \(suffixWidth)")
+        print("   - containerWidth: \(containerWidth)")
+        
         if lastLineWidth + suffixWidth > containerWidth {
+            print("   - Need to truncate: \(lastLineWidth) + \(suffixWidth) > \(containerWidth)")
             let availableWidth = containerWidth - suffixWidth
             truncateCharacterIndex = findTruncateLocationWithWidth(availableWidth, in: lastLineRange, layoutManager: layoutManager)
         } else {
+            print("   - Enough space: \(lastLineWidth) + \(suffixWidth) <= \(containerWidth)")
             let characterRange = layoutManager.characterRange(forGlyphRange: lastLineRange, actualGlyphRange: nil)
             truncateCharacterIndex = characterRange.location + characterRange.length
         }
+        
+        print("   - truncateCharacterIndex: \(truncateCharacterIndex)")
         
         let truncatedText = originalText.attributedSubstring(from: NSRange(location: 0, length: truncateCharacterIndex))
         let cleanedTruncatedText = removeTrailingNewlineIfNeeded(from: truncatedText)
@@ -533,6 +559,9 @@ public class ReadMoreLabel: UILabel {
         finalText.append(suffix)
         
         let readMoreRange = NSRange(location: cleanedTruncatedText.length, length: suffix.length)
+        
+        print("   - Final result: .truncated, readMoreRange: \(readMoreRange)")
+        print("   - Final text: '\(finalText.string)'")
         
         return .truncated(finalText, readMoreRange)
     }
@@ -988,6 +1017,10 @@ private extension ReadMoreLabel {
         containerWidth: CGFloat,
         targetLineIndex: Int
     ) -> (totalLines: Int, targetLineFragment: (rect: CGRect, glyphRange: NSRange)?) {
+        print("     🔧 Extension: analyzeLineFragments called")
+        print("       - containerWidth: \(containerWidth)")
+        print("       - targetLineIndex: \(targetLineIndex)")
+        
         let alignedText = applyTextAlignment(to: attributedText)
         let (_, layoutManager, _) = createOptimizedTextKitStack(for: alignedText, containerWidth: containerWidth)
         
@@ -1004,6 +1037,11 @@ private extension ReadMoreLabel {
         }
         
         let targetFragment = targetLineIndex < lineFragments.count ? lineFragments[targetLineIndex] : nil
+        
+        print("       - totalGlyphCount: \(totalGlyphCount)")
+        print("       - lineFragments.count: \(lineFragments.count)")  
+        print("       - targetFragment found: \(targetFragment != nil)")
+        
         return (lineFragments.count, targetFragment)
     }
 }
