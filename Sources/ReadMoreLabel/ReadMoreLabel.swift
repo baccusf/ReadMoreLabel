@@ -75,7 +75,10 @@ public class ReadMoreLabel: UILabel {
     private var originalAttributedText: NSAttributedString?
     private var internalNumberOfLines: Int = 0
     
+    // MARK: - 상수 정의
     private static let animationDuration: TimeInterval = 0.3
+    private static let defaultSpaceBetweenEllipsisAndReadMore: String = " "
+    private static let newLineCharacter: String = "\n"
     
     public override init(frame: CGRect) {
         super.init(frame: frame)
@@ -96,7 +99,15 @@ public class ReadMoreLabel: UILabel {
     }
     
     private func setupTapGesture() {
+        // Remove existing tap gesture if any
+        if let existingGesture = tapGestureRecognizer {
+            removeGestureRecognizer(existingGesture)
+        }
+        
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleTapGesture(_:)))
+        tapGesture.cancelsTouchesInView = false
+        tapGesture.delaysTouchesBegan = false
+        tapGesture.delaysTouchesEnded = false
         tapGestureRecognizer = tapGesture
         addGestureRecognizer(tapGesture)
     }
@@ -201,14 +212,14 @@ public class ReadMoreLabel: UILabel {
             return .noTruncationNeeded
         }
         
-        // 기존 layoutManager를 재사용하여 줄 수 계산
+        // 기존 layoutManager를 재사용하여 줄 수 계산 (원래 로직 완전 복원)
         var actualLinesNeeded = 0
         layoutManager.enumerateLineFragments(forGlyphRange: NSRange(location: 0, length: totalGlyphCount)) { 
             (rect, usedRect, textContainer, glyphRange, stop) in
             actualLinesNeeded += 1
         }
         
-        // 마지막 줄이 높이 0인 경우 제외
+        // 마지막 줄이 높이 0인 경우 제외 (원래 로직 완전 복원)
         if actualLinesNeeded > 0 {
             let lastLineGlyphIndex = totalGlyphCount - 1
             let lastLineRect = layoutManager.lineFragmentRect(forGlyphAt: lastLineGlyphIndex, effectiveRange: nil)
@@ -221,6 +232,8 @@ public class ReadMoreLabel: UILabel {
         if actualLinesNeeded <= numberOfLines {
             return .noTruncationNeeded
         }
+        
+        // 두 번째 enumeration으로 마지막 줄 찾기 (원래 로직 완전 복원)
         var lastLineRange = NSRange()
         var currentLineCount = 0
         layoutManager.enumerateLineFragments(forGlyphRange: NSRange(location: 0, length: totalGlyphCount)) { 
@@ -232,12 +245,22 @@ public class ReadMoreLabel: UILabel {
             }
         }
         
-        let lastLineRect = layoutManager.lineFragmentRect(forGlyphAt: lastLineRange.location, effectiveRange: nil)
-        let lastLineWidth = lastLineRect.width
+        // 실제 사용된 텍스트 너비 계산 (usedRect 기반)
+        var lastLineUsedWidth: CGFloat = 0
+        layoutManager.enumerateLineFragments(forGlyphRange: lastLineRange) { 
+            (rect, usedRect, textContainer, glyphRange, stop) in
+            lastLineUsedWidth = usedRect.width
+        }
         
-        let suffixWidth = calculateTextSize(for: suffix, width: CGFloat.greatestFiniteMagnitude).width
+        // Use boundingRect for simple suffix width calculation
+        let suffixWidth = suffix.boundingRect(
+            with: CGSize(width: containerWidth, height: .greatestFiniteMagnitude),
+            options: [.usesLineFragmentOrigin, .usesFontLeading],
+            context: nil
+        ).width
+        
         let truncateCharacterIndex: Int
-        if lastLineWidth + suffixWidth > containerWidth {
+        if lastLineUsedWidth + suffixWidth > containerWidth {
             let availableWidth = containerWidth - suffixWidth
             truncateCharacterIndex = findTruncateLocationWithWidth(availableWidth, in: lastLineRange, layoutManager: layoutManager)
         } else {
@@ -281,7 +304,7 @@ public class ReadMoreLabel: UILabel {
         let ellipsisWithLastAttributes = ellipsisText.createMutableWithAttributes(lastAttributes)
         
         suffix.append(ellipsisWithLastAttributes)
-        suffix.append(NSAttributedString(string: " ", attributes: lastAttributes))
+        suffix.append(NSAttributedString(string: Self.defaultSpaceBetweenEllipsisAndReadMore, attributes: lastAttributes))
         let readMoreStartLocation = suffix.length
         
         let readMoreWithOriginalAttributes = readMoreText.createMutableWithAttributes(lastAttributes)
@@ -294,7 +317,7 @@ public class ReadMoreLabel: UILabel {
     }
     private func removeTrailingNewlineIfNeeded(from attributedString: NSAttributedString) -> NSAttributedString {
         let mutableString = NSMutableAttributedString(attributedString: attributedString)
-        if mutableString.string.hasSuffix("\n") {
+        if mutableString.string.hasSuffix(Self.newLineCharacter) {
             let newLength = mutableString.length - 1
             mutableString.deleteCharacters(in: NSRange(location: newLength, length: 1))
         }
@@ -332,7 +355,9 @@ public class ReadMoreLabel: UILabel {
     
     
     private func updateDisplay() {
-        guard let attributedTextToDisplay = originalAttributedText, case let availableWidth = bounds.width, availableWidth > 0 else {
+        guard let attributedTextToDisplay = originalAttributedText, 
+              case let availableWidth = bounds.width, 
+              availableWidth > 0 else {
             return
         }
         
@@ -458,7 +483,7 @@ public class ReadMoreLabel: UILabel {
         
         // 더보기 텍스트 생성 및 크기 계산
         let lastAttributes = originalText.lastTextAttributes(defaultAttributes: defaultTextAttributes)
-        let readMoreWithNewLine = NSMutableAttributedString(string: "\n", attributes: lastAttributes)
+        let readMoreWithNewLine = NSMutableAttributedString(string: Self.newLineCharacter, attributes: lastAttributes)
         let readMoreWithOriginalAttributes = readMoreText.createMutableWithAttributes(lastAttributes)
         readMoreWithNewLine.append(readMoreWithOriginalAttributes)
         
@@ -471,7 +496,7 @@ public class ReadMoreLabel: UILabel {
         let cleanedTruncatedText = removeTrailingNewlineIfNeeded(from: truncatedSubstring)
         let finalText = NSMutableAttributedString(attributedString: cleanedTruncatedText)
         
-        finalText.append(NSAttributedString(string: "\n", attributes: lastAttributes))
+        finalText.append(NSAttributedString(string: Self.newLineCharacter, attributes: lastAttributes))
         let readMoreStartLocation = finalText.length
         finalText.append(readMoreWithOriginalAttributes)
         
@@ -483,65 +508,45 @@ public class ReadMoreLabel: UILabel {
     
     // MARK: - TextKit 최적화 헬퍼 메서드
     
-    /// TextKit 스택을 재사용하여 텍스트 크기 계산 (boundingRect 대체)
-    private func calculateTextSizeWithTextKit(
-        for text: NSAttributedString,
-        layoutManager: NSLayoutManager,
-        textContainer: NSTextContainer
-    ) -> CGSize {
-        // 기존 스택 업데이트
-        layoutManager.textStorage?.setAttributedString(text)
-        layoutManager.ensureLayout(for: textContainer)
-        
-        let usedRect = layoutManager.usedRect(for: textContainer)
-        return usedRect.size
-    }
+    /// 최적화된 텍스트 크기 계산 (사용되지 않는 메서드 제거)
     
-    /// TextKit을 사용한 최적 잘림 위치 계산 (boundingRect 루프 대체)
-    private func findOptimalTruncatePointWithTextKit(
+    /// 통합된 줄 계산 로직 (안전한 공통 메서드)
+    private func countLinesInText(
+        _ text: NSAttributedString,
         layoutManager: NSLayoutManager,
-        characterRange: NSRange,
-        availableWidth: CGFloat,
-        containerWidth: CGFloat,
-        textContainer: NSTextContainer
+        containerWidth: CGFloat
     ) -> Int {
-        // 마지막 줄의 시작 위치에서 사용 가능한 너비만큼의 지점 찾기
-        let lineRect = layoutManager.lineFragmentRect(forGlyphAt: layoutManager.glyphRange(forCharacterRange: characterRange, actualCharacterRange: nil).location, effectiveRange: nil)
-        let targetX = lineRect.origin.x + availableWidth
-        let targetPoint = CGPoint(x: targetX, y: lineRect.midY)
+        // applyReadMore에서 호출되는 경우: 이미 설정된 layoutManager 재사용
+        // 다른 곳에서 호출되는 경우: 새로운 TextKit 스택 생성
+        let usedLayoutManager: NSLayoutManager
+        if layoutManager.textStorage != nil && layoutManager.textStorage?.string == text.string {
+            // 기존 layoutManager가 같은 텍스트로 설정된 경우에만 재사용
+            usedLayoutManager = layoutManager
+        } else {
+            // 새로운 TextKit 스택 생성 (전달받은 text 사용)
+            let alignedText = applyTextAlignment(to: text)
+            let (_, newLayoutManager, _) = createTextKitStack(for: alignedText, containerWidth: containerWidth)
+            usedLayoutManager = newLayoutManager
+        }
         
-        let characterIndex = layoutManager.characterIndex(
-            for: targetPoint,
-            in: textContainer,
-            fractionOfDistanceBetweenInsertionPoints: nil
-        )
-        
-        // 범위 내로 제한
-        let clampedIndex = max(characterRange.location, 
-                              min(characterIndex, characterRange.location + characterRange.length))
-        
-        return clampedIndex
-    }
-    
-    /// 기존 TextKit 스택을 재사용한 라인 수 계산
-    private func calculateLinesWithExistingStack(
-        _ text: NSAttributedString, 
-        layoutManager: NSLayoutManager,
-        textContainer: NSTextContainer
-    ) -> Int {
-        // 기존 스택 업데이트
-        layoutManager.textStorage?.setAttributedString(text)
-        layoutManager.ensureLayout(for: textContainer)
-        
-        var lineCount = 0
-        let totalGlyphCount = layoutManager.numberOfGlyphs
-        
+        let totalGlyphCount = usedLayoutManager.numberOfGlyphs
         guard totalGlyphCount > 0 else { return 0 }
         
-        layoutManager.enumerateLineFragments(forGlyphRange: NSRange(location: 0, length: totalGlyphCount)) { 
+        var lineCount = 0
+        usedLayoutManager.enumerateLineFragments(forGlyphRange: NSRange(location: 0, length: totalGlyphCount)) { 
             (rect, _, _, _, _) in
             if rect.height > 0 { 
-                lineCount += 1 
+                lineCount += 1
+            }
+        }
+        
+        // 마지막 줄이 높이 0인 경우 제외
+        if lineCount > 0 {
+            let lastLineGlyphIndex = totalGlyphCount - 1
+            let lastLineRect = usedLayoutManager.lineFragmentRect(forGlyphAt: lastLineGlyphIndex, effectiveRange: nil)
+            
+            if lastLineRect.height == 0 {
+                lineCount -= 1
             }
         }
         
@@ -556,21 +561,11 @@ public class ReadMoreLabel: UILabel {
     
     
     @objc private func handleTapGesture(_ gesture: UITapGestureRecognizer) {
-        guard isExpandable, !isExpanded, let attributedText = attributedText else {
-            return
-        }
-                
-        let locationInLabel = gesture.location(in: self)
-        
-        // 최적화된 탭 검증: 커스텀 속성 기반 직접 검증
-        guard attributedText.length > 0 && bounds.width > 0 else {
+        guard isExpandable, !isExpanded else {
             return
         }
         
-        // 텍스트 내 "더보기" 영역 체크 - 커스텀 속성 활용
-        if hasReadMoreTextAtLocation(locationInLabel, in: attributedText) {
-            setExpanded(true, animated: true)
-        }
+        setExpanded(true, animated: true)
     }
 
         
@@ -631,38 +626,15 @@ public class ReadMoreLabel: UILabel {
         }
     }
     
+    /// 통합된 텍스트 줄 수 계산 (공통 로직 사용)
     private func calculateActualLinesNeeded(for text: NSAttributedString, width: CGFloat) -> Int {
-        let alignedText = applyTextAlignment(to: text)
-        let (textStorage, layoutManager, textContainer) = createTextKitStack(for: alignedText, containerWidth: width)
-        
-        let totalGlyphCount = layoutManager.numberOfGlyphs
-        
-        guard totalGlyphCount > 0 else {
-            return 0
-        }
-        
-        var lineCount = 0
-        
-        layoutManager.enumerateLineFragments(forGlyphRange: NSRange(location: 0, length: totalGlyphCount)) { 
-            (rect, usedRect, textContainer, glyphRange, stop) in
-            lineCount += 1
-        }
-        
-        if lineCount > 0 {
-            let lastLineGlyphIndex = totalGlyphCount - 1
-            let lastLineRect = layoutManager.lineFragmentRect(forGlyphAt: lastLineGlyphIndex, effectiveRange: nil)
-            
-            if lastLineRect.height == 0 {
-                lineCount -= 1
-            }
-        }
-        
-        return lineCount
+        return countLinesInText(text, layoutManager: NSLayoutManager(), containerWidth: width)
     }
     
+    /// 통합된 텍스트 크기 계산 메서드
     private func calculateTextSize(for text: NSAttributedString, width: CGFloat) -> CGSize {
         let alignedText = applyTextAlignment(to: text)
-        let (textStorage, layoutManager, textContainer) = createTextKitStack(for: alignedText, containerWidth: width)
+        let (_, layoutManager, textContainer) = createTextKitStack(for: alignedText, containerWidth: width)
         
         let usedRect = layoutManager.usedRect(for: textContainer)
         return usedRect.size
@@ -704,10 +676,11 @@ public class ReadMoreLabel: UILabel {
 //        return CGSize(width: size.width, height: size.height)
 //    }
     
+    /// numberOfLines 제한을 고려한 텍스트 크기 계산
     private func calculateTextSizeWithNumberOfLines(for attributedText: NSAttributedString, width: CGFloat, numberOfLines: Int) -> CGSize {
         guard width > 0 else { return .zero }
         
-        let (textStorage, layoutManager, textContainer) = createTextKitStack(for: attributedText, containerWidth: width)
+        let (_, layoutManager, textContainer) = createTextKitStack(for: attributedText, containerWidth: width)
         let usedRect = layoutManager.usedRect(for: textContainer)
         
         return CGSize(width: ceil(usedRect.width), height: ceil(usedRect.height))
@@ -748,7 +721,7 @@ public class ReadMoreLabel: UILabel {
         if readMorePosition == .newLine && readMoreStartIndex > 0 {
             let stringIndex = attributedText.string.index(attributedText.string.startIndex, offsetBy: readMoreStartIndex - 1)
             let previousChar = attributedText.string[stringIndex]
-            if previousChar == "\n" {
+            if String(previousChar) == Self.newLineCharacter {
                 let lineRect = layoutManager.lineFragmentRect(forGlyphAt: readMoreStartIndex, effectiveRange: nil)
                 return lineRect.contains(location)
             }
