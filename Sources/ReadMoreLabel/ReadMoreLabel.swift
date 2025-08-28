@@ -185,7 +185,7 @@ public class ReadMoreLabel: UILabel {
         }
     }
     
-    private func applyReadMore(
+    private func legacyApplyReadMore(
         originalText: NSAttributedString,
         numberOfLines: Int,
         containerWidth: CGFloat,
@@ -412,7 +412,7 @@ public class ReadMoreLabel: UILabel {
         }
     }
     
-    private func applyReadMoreForNewLine(
+    private func legacyApplyReadMoreForNewLine(
         originalText: NSAttributedString,
         numberOfLines: Int,
         containerWidth: CGFloat
@@ -479,6 +479,125 @@ public class ReadMoreLabel: UILabel {
         finalText.addAttribute(AttributeKey.isReadMore, value: true, range: finalReadMoreRange)
         
         return .truncated(finalText, finalReadMoreRange)
+    }
+    
+    // MARK: - Optimized New Implementations (Phase 1)
+    
+    /// 새로운 최적화된 applyReadMore 구현 - Extension의 공통 메서드 사용
+    private func applyReadMore(
+        originalText: NSAttributedString,
+        numberOfLines: Int,
+        containerWidth: CGFloat,
+        suffix: NSAttributedString
+    ) -> TextTruncationResult {
+        
+        let alignedText = applyTextAlignment(to: originalText)
+        
+        // Extension의 라인 분석 메서드 사용
+        let (totalLines, targetFragment) = analyzeLineFragments(
+            for: alignedText,
+            containerWidth: containerWidth,
+            targetLineIndex: numberOfLines - 1
+        )
+        
+        // 잘림 불필요한 경우
+        if totalLines <= numberOfLines {
+            return .noTruncationNeeded
+        }
+        
+        guard let targetLineFragment = targetFragment else {
+            return .noTruncationNeeded
+        }
+        
+        // Extension의 최적화된 TextKit 스택 사용
+        let (_, layoutManager, _) = createOptimizedTextKitStack(for: alignedText, containerWidth: containerWidth)
+        
+        let lastLineRange = targetLineFragment.glyphRange
+        let lastLineRect = targetLineFragment.rect
+        let lastLineWidth = lastLineRect.width
+        
+        let suffixWidth = calculateTextSizeWithOptimizedTextKit(for: suffix, containerWidth: CGFloat.greatestFiniteMagnitude).width
+        let truncateCharacterIndex: Int
+        
+        if lastLineWidth + suffixWidth > containerWidth {
+            let availableWidth = containerWidth - suffixWidth
+            truncateCharacterIndex = findTruncateLocationWithWidth(availableWidth, in: lastLineRange, layoutManager: layoutManager)
+        } else {
+            let characterRange = layoutManager.characterRange(forGlyphRange: lastLineRange, actualGlyphRange: nil)
+            truncateCharacterIndex = characterRange.location + characterRange.length
+        }
+        
+        let truncatedText = originalText.attributedSubstring(from: NSRange(location: 0, length: truncateCharacterIndex))
+        let cleanedTruncatedText = removeTrailingNewlineIfNeeded(from: truncatedText)
+        let finalText = NSMutableAttributedString(attributedString: cleanedTruncatedText)
+        finalText.append(suffix)
+        
+        let readMoreRange = NSRange(location: cleanedTruncatedText.length, length: suffix.length)
+        
+        return .truncated(finalText, readMoreRange)
+    }
+    
+    /// 새로운 최적화된 applyReadMoreForNewLine 구현 - Extension의 공통 메서드 사용
+    private func applyReadMoreForNewLine(
+        originalText: NSAttributedString,
+        numberOfLines: Int,
+        containerWidth: CGFloat
+    ) -> TextTruncationResult {
+        
+        let alignedText = applyTextAlignment(to: originalText)
+        
+        // Extension의 라인 분석 메서드 사용
+        let (totalLines, targetFragment) = analyzeLineFragments(
+            for: alignedText,
+            containerWidth: containerWidth,
+            targetLineIndex: numberOfLines - 1
+        )
+        
+        // 잘림 불필요한 경우
+        if totalLines <= numberOfLines {
+            return .noTruncationNeeded
+        }
+        
+        guard let targetLineFragment = targetFragment else {
+            return .noTruncationNeeded
+        }
+        
+        // Extension의 최적화된 TextKit 스택 사용
+        let (_, layoutManager, _) = createOptimizedTextKitStack(for: alignedText, containerWidth: containerWidth)
+        
+        let lastLineRange = targetLineFragment.glyphRange
+        let characterRange = layoutManager.characterRange(forGlyphRange: lastLineRange, actualGlyphRange: nil)
+        
+        // 더보기 텍스트 생성 및 크기 계산
+        let lastAttributes = originalText.lastTextAttributes(defaultAttributes: defaultTextAttributes)
+        let readMoreWithOriginalAttributes = readMoreText.createMutableWithAttributes(lastAttributes)
+        
+        // numberOfLines번째 줄의 끝에서 텍스트를 자름
+        let truncateOffset = characterRange.location + characterRange.length
+        
+        // 최종 텍스트 구성
+        let truncatedSubstring = originalText.attributedSubstring(from: NSRange(location: 0, length: truncateOffset))
+        let cleanedTruncatedText = removeTrailingNewlineIfNeeded(from: truncatedSubstring)
+        let finalText = NSMutableAttributedString(attributedString: cleanedTruncatedText)
+        
+        finalText.append(NSAttributedString(string: "\n", attributes: lastAttributes))
+        let readMoreStartLocation = finalText.length
+        finalText.append(readMoreWithOriginalAttributes)
+        
+        let finalReadMoreRange = NSRange(location: readMoreStartLocation, length: readMoreWithOriginalAttributes.length)
+        finalText.addAttribute(AttributeKey.isReadMore, value: true, range: finalReadMoreRange)
+        
+        return .truncated(finalText, finalReadMoreRange)
+    }
+    
+    /// 새로운 최적화된 실제 필요 라인 수 계산 - Extension 메서드 사용
+    private func calculateActualLinesNeeded(for text: NSAttributedString, width: CGFloat) -> Int {
+        return calculateLineCountWithTextKit(for: text, containerWidth: width)
+    }
+    
+    /// 새로운 최적화된 텍스트 크기 계산 - Extension 메서드 사용
+    private func calculateTextSize(for text: NSAttributedString, width: CGFloat) -> CGSize {
+        return calculateTextSizeWithOptimizedTextKit(for: text, containerWidth: width)
     }
     
     // MARK: - TextKit 최적화 헬퍼 메서드
@@ -631,7 +750,7 @@ public class ReadMoreLabel: UILabel {
         }
     }
     
-    private func calculateActualLinesNeeded(for text: NSAttributedString, width: CGFloat) -> Int {
+    private func legacyCalculateActualLinesNeeded(for text: NSAttributedString, width: CGFloat) -> Int {
         let alignedText = applyTextAlignment(to: text)
         let (textStorage, layoutManager, textContainer) = createTextKitStack(for: alignedText, containerWidth: width)
         
@@ -660,7 +779,7 @@ public class ReadMoreLabel: UILabel {
         return lineCount
     }
     
-    private func calculateTextSize(for text: NSAttributedString, width: CGFloat) -> CGSize {
+    private func legacyCalculateTextSize(for text: NSAttributedString, width: CGFloat) -> CGSize {
         let alignedText = applyTextAlignment(to: text)
         let (textStorage, layoutManager, textContainer) = createTextKitStack(for: alignedText, containerWidth: width)
         
@@ -797,6 +916,95 @@ public class ReadMoreLabel: UILabel {
         mutableAttributedText.addAttribute(.paragraphStyle, value: paragraphStyle, range: range)
         
         return mutableAttributedText
+    }
+}
+
+// MARK: - ReadMoreLabel TextKit Extensions
+
+private extension ReadMoreLabel {
+    
+    /// TextKit 스택을 재사용 가능한 형태로 생성하는 통합 메서드
+    /// 메모리 효율성을 위해 각 호출마다 새로운 스택을 생성하되, 설정은 일관성 있게 적용
+    func createOptimizedTextKitStack(
+        for attributedText: NSAttributedString,
+        containerWidth: CGFloat
+    ) -> (textStorage: NSTextStorage, layoutManager: NSLayoutManager, textContainer: NSTextContainer) {
+        let textStorage = NSTextStorage(attributedString: attributedText)
+        let layoutManager = NSLayoutManager()
+        let textContainer = NSTextContainer(size: CGSize(width: containerWidth, height: .greatestFiniteMagnitude))
+        
+        // 표준화된 TextKit 스택 연결
+        textStorage.addLayoutManager(layoutManager)
+        layoutManager.addTextContainer(textContainer)
+        
+        // 통일된 컨테이너 설정
+        textContainer.lineFragmentPadding = lineFragmentPadding
+        textContainer.lineBreakMode = lineBreakMode
+        textContainer.maximumNumberOfLines = 0
+        
+        // 레이아웃 보장
+        layoutManager.ensureLayout(for: textContainer)
+        
+        return (textStorage, layoutManager, textContainer)
+    }
+    
+    /// 공통 라인 수 계산 로직 - 높이 0인 라인 제외 처리 포함
+    func calculateLineCountWithTextKit(
+        for attributedText: NSAttributedString,
+        containerWidth: CGFloat
+    ) -> Int {
+        let alignedText = applyTextAlignment(to: attributedText)
+        let (_, layoutManager, _) = createOptimizedTextKitStack(for: alignedText, containerWidth: containerWidth)
+        
+        let totalGlyphCount = layoutManager.numberOfGlyphs
+        guard totalGlyphCount > 0 else { return 0 }
+        
+        var lineCount = 0
+        layoutManager.enumerateLineFragments(forGlyphRange: NSRange(location: 0, length: totalGlyphCount)) { 
+            (rect, _, _, _, _) in
+            if rect.height > 0 {
+                lineCount += 1
+            }
+        }
+        
+        return lineCount
+    }
+    
+    /// 공통 텍스트 크기 계산 로직 - TextKit 기반
+    func calculateTextSizeWithOptimizedTextKit(
+        for attributedText: NSAttributedString,
+        containerWidth: CGFloat
+    ) -> CGSize {
+        let alignedText = applyTextAlignment(to: attributedText)
+        let (_, layoutManager, textContainer) = createOptimizedTextKitStack(for: alignedText, containerWidth: containerWidth)
+        
+        let usedRect = layoutManager.usedRect(for: textContainer)
+        return CGSize(width: ceil(usedRect.width), height: ceil(usedRect.height))
+    }
+    
+    /// 라인 단위 분석을 위한 공통 메서드
+    func analyzeLineFragments(
+        for attributedText: NSAttributedString,
+        containerWidth: CGFloat,
+        targetLineIndex: Int
+    ) -> (totalLines: Int, targetLineFragment: (rect: CGRect, glyphRange: NSRange)?) {
+        let alignedText = applyTextAlignment(to: attributedText)
+        let (_, layoutManager, _) = createOptimizedTextKitStack(for: alignedText, containerWidth: containerWidth)
+        
+        let totalGlyphCount = layoutManager.numberOfGlyphs
+        guard totalGlyphCount > 0 else { return (0, nil) }
+        
+        var lineFragments: [(rect: CGRect, glyphRange: NSRange)] = []
+        
+        layoutManager.enumerateLineFragments(forGlyphRange: NSRange(location: 0, length: totalGlyphCount)) { 
+            (rect, _, _, glyphRange, _) in
+            if rect.height > 0 {
+                lineFragments.append((rect: rect, glyphRange: glyphRange))
+            }
+        }
+        
+        let targetFragment = targetLineIndex < lineFragments.count ? lineFragments[targetLineIndex] : nil
+        return (lineFragments.count, targetFragment)
     }
 }
 
