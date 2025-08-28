@@ -1021,16 +1021,25 @@ private extension ReadMoreLabel {
         print("       - containerWidth: \(containerWidth)")
         print("       - targetLineIndex: \(targetLineIndex)")
         
+        // Legacy와 동일한 방식으로 TextKit 스택 생성
         let alignedText = applyTextAlignment(to: attributedText)
-        let (_, layoutManager, _) = createOptimizedTextKitStack(for: alignedText, containerWidth: containerWidth)
+        let (textStorage, layoutManager, textContainer) = createTextKitStack(for: alignedText, containerWidth: containerWidth)
         
         let totalGlyphCount = layoutManager.numberOfGlyphs
-        guard totalGlyphCount > 0 else { return (0, nil) }
+        print("       - totalGlyphCount: \(totalGlyphCount)")
+        print("       - textStorage.length: \(textStorage.length)")
+        print("       - attributedText.length: \(attributedText.length)")
+        
+        guard totalGlyphCount > 0 else { 
+            print("       - ERROR: totalGlyphCount is 0")
+            return (0, nil) 
+        }
         
         var lineFragments: [(rect: CGRect, glyphRange: NSRange)] = []
         
         layoutManager.enumerateLineFragments(forGlyphRange: NSRange(location: 0, length: totalGlyphCount)) { 
             (rect, _, _, glyphRange, _) in
+            print("       - Found line fragment: height=\(rect.height)")
             if rect.height > 0 {
                 lineFragments.append((rect: rect, glyphRange: glyphRange))
             }
@@ -1038,7 +1047,6 @@ private extension ReadMoreLabel {
         
         let targetFragment = targetLineIndex < lineFragments.count ? lineFragments[targetLineIndex] : nil
         
-        print("       - totalGlyphCount: \(totalGlyphCount)")
         print("       - lineFragments.count: \(lineFragments.count)")  
         print("       - targetFragment found: \(targetFragment != nil)")
         

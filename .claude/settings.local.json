@@ -39,7 +39,9 @@
       "mcp__XcodeBuildMCP__swipe",
       "mcp__XcodeBuildMCP__key_press",
       "mcp__XcodeBuildMCP__launch_app_logs_sim",
-      "mcp__XcodeBuildMCP__stop_sim_log_cap"
+      "mcp__XcodeBuildMCP__stop_sim_log_cap",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits",
