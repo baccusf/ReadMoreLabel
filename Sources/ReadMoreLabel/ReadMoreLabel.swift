@@ -191,6 +191,11 @@ public class ReadMoreLabel: UILabel {
         containerWidth: CGFloat,
         suffix: NSAttributedString
     ) -> TextTruncationResult {
+        print("🔍 DEBUG: legacyApplyReadMore called")
+        print("   - originalText.length: \(originalText.length)")
+        print("   - numberOfLines: \(numberOfLines)")
+        print("   - containerWidth: \(containerWidth)")
+        print("   - suffix: '\(suffix.string)'")
         
         let alignedText = applyTextAlignment(to: originalText)
         let (textStorage, layoutManager, textContainer) = createTextKitStack(for: alignedText, containerWidth: containerWidth)
@@ -208,17 +213,26 @@ public class ReadMoreLabel: UILabel {
             actualLinesNeeded += 1
         }
         
+        print("   - totalGlyphCount: \(totalGlyphCount)")
+        print("   - actualLinesNeeded (before height check): \(actualLinesNeeded)")
+        
         // 마지막 줄이 높이 0인 경우 제외
         if actualLinesNeeded > 0 {
             let lastLineGlyphIndex = totalGlyphCount - 1
             let lastLineRect = layoutManager.lineFragmentRect(forGlyphAt: lastLineGlyphIndex, effectiveRange: nil)
             
+            print("   - lastLineRect.height: \(lastLineRect.height)")
+            
             if lastLineRect.height == 0 {
                 actualLinesNeeded -= 1
+                print("   - Excluded last line with height 0")
             }
         }
         
+        print("   - actualLinesNeeded (final): \(actualLinesNeeded)")
+        
         if actualLinesNeeded <= numberOfLines {
+            print("   - Result: .noTruncationNeeded (actualLines: \(actualLinesNeeded) <= numberOfLines: \(numberOfLines))")
             return .noTruncationNeeded
         }
         var lastLineRange = NSRange()
@@ -232,10 +246,18 @@ public class ReadMoreLabel: UILabel {
             }
         }
         
-        let lastLineRect = layoutManager.lineFragmentRect(forGlyphAt: lastLineRange.location, effectiveRange: nil)
-        let lastLineWidth = lastLineRect.width
+        let lastLineUsedRect = layoutManager.lineFragmentUsedRect(forGlyphAt: lastLineRange.location, effectiveRange: nil)
+        let lastLineWidth = lastLineUsedRect.width
         
         let suffixWidth = legacyCalculateTextSize(for: suffix, width: CGFloat.greatestFiniteMagnitude).width
+        
+        print("   - lastLineRange: \(lastLineRange)")
+        print("   - lastLineUsedRect: \(lastLineUsedRect)")
+        print("   - lastLineWidth: \(lastLineWidth)")
+        print("   - suffixWidth: \(suffixWidth)")
+        print("   - containerWidth: \(containerWidth)")
+        print("   - Need truncation? \(lastLineWidth + suffixWidth > containerWidth)")
+        
         let truncateCharacterIndex: Int
         if lastLineWidth + suffixWidth > containerWidth {
             let availableWidth = containerWidth - suffixWidth
@@ -245,12 +267,19 @@ public class ReadMoreLabel: UILabel {
             truncateCharacterIndex = characterRange.location + characterRange.length
         }
         
+        print("   - truncateCharacterIndex: \(truncateCharacterIndex)")
+        
         let truncatedText = originalText.attributedSubstring(from: NSRange(location: 0, length: truncateCharacterIndex))
         let cleanedTruncatedText = removeTrailingNewlineIfNeeded(from: truncatedText)
         let finalText = NSMutableAttributedString(attributedString: cleanedTruncatedText)
         finalText.append(suffix)
         
         let readMoreRange = NSRange(location: cleanedTruncatedText.length, length: suffix.length)
+        
+        print("   - cleanedTruncatedText: '\(cleanedTruncatedText.string)'")
+        print("   - finalText: '\(finalText.string)'")
+        print("   - readMoreRange: \(readMoreRange)")
+        print("   - Result: .truncated")
         
         return .truncated(finalText, readMoreRange)
     }
