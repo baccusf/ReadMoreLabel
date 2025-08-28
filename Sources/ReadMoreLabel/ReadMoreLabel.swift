@@ -235,7 +235,7 @@ public class ReadMoreLabel: UILabel {
         let lastLineRect = layoutManager.lineFragmentRect(forGlyphAt: lastLineRange.location, effectiveRange: nil)
         let lastLineWidth = lastLineRect.width
         
-        let suffixWidth = calculateTextSize(for: suffix, width: CGFloat.greatestFiniteMagnitude).width
+        let suffixWidth = legacyCalculateTextSize(for: suffix, width: CGFloat.greatestFiniteMagnitude).width
         let truncateCharacterIndex: Int
         if lastLineWidth + suffixWidth > containerWidth {
             let availableWidth = containerWidth - suffixWidth
