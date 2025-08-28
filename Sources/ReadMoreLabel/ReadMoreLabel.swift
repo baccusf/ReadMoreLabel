@@ -621,12 +621,12 @@ public class ReadMoreLabel: UILabel {
     
     /// 새로운 최적화된 실제 필요 라인 수 계산 - Extension 메서드 사용
     private func calculateActualLinesNeeded(for text: NSAttributedString, width: CGFloat) -> Int {
-        return calculateLineCountWithTextKit(for: text, containerWidth: width)
+        return legacyCalculateActualLinesNeeded(for: text, width: width)
     }
     
-    /// 새로운 최적화된 텍스트 크기 계산 - Extension 메서드 사용
+    /// 텍스트 크기 계산 - Legacy 메서드 사용으로 안정성 확보
     private func calculateTextSize(for text: NSAttributedString, width: CGFloat) -> CGSize {
-        return calculateTextSizeWithOptimizedTextKit(for: text, containerWidth: width)
+        return legacyCalculateTextSize(for: text, width: width)
     }
     
     // MARK: - TextKit 최적화 헬퍼 메서드
