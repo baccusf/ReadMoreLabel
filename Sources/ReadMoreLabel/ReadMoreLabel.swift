@@ -61,14 +61,29 @@ public class ReadMoreLabel: UILabel {
     /// Delegate to receive expansion state change notifications
     @objc public weak var delegate: ReadMoreLabelDelegate?
     
-    
-    private var numberOfLinesWhenCollapsed: Int = 3 {
+    /**
+     Number of lines to show when the label is in collapsed state.
+     
+     - **Default**: 3 lines
+     - **Range**: 0+ (values < 0 are automatically clamped to 0)
+     - **Special Value**: Setting to 0 disables truncation entirely
+     
+     This property is IBInspectable, allowing configuration directly in Interface Builder.
+     
+     ## Example
+     ```swift
+     label.numberOfLinesWhenCollapsed = 2  // Show 2 lines when collapsed
+     label.numberOfLinesWhenCollapsed = 0  // Disable truncation (show all text)
+     ```
+     */
+    @IBInspectable @objc public var numberOfLinesWhenCollapsed: Int = 3 {
         didSet {
             let finalValue = max(0, numberOfLinesWhenCollapsed)
             if finalValue != numberOfLinesWhenCollapsed {
                 numberOfLinesWhenCollapsed = finalValue
                 return
             }
+            invalidateLayoutCache()
             invalidateDisplayAndLayout()
         }
     }
@@ -87,6 +102,7 @@ public class ReadMoreLabel: UILabel {
      */
     @objc public var readMoreText: NSAttributedString = NSAttributedString(string: "더보기..") {
         didSet {
+            invalidateLayoutCache()
             invalidateDisplayAndLayout()
             self.layoutIfNeeded()
         }
@@ -100,6 +116,7 @@ public class ReadMoreLabel: UILabel {
      */
     @objc public var ellipsisText: NSAttributedString = NSAttributedString(string: "..") {
         didSet {
+            invalidateLayoutCache()
             invalidateDisplayAndLayout()
             self.layoutIfNeeded()
         }
@@ -112,9 +129,11 @@ public class ReadMoreLabel: UILabel {
      - `.newLine`: Always position on a new line below the truncated text
      
      Default is `.end` for compact display.
+     This property is IBInspectable for Interface Builder configuration.
      */
-    @objc public var readMorePosition: Position = .end {
+    @IBInspectable @objc public var readMorePosition: Position = .end {
         didSet {
+            invalidateLayoutCache()
             invalidateDisplayAndLayout()
             self.layoutIfNeeded()
         }
@@ -136,12 +155,72 @@ public class ReadMoreLabel: UILabel {
     }
     
     
+    /**
+     Duration of expand/collapse animations in seconds.
+     
+     - **Default**: 0.3 seconds
+     - **Range**: 0.0 - 2.0 seconds (values outside this range are clamped)
+     
+     Set to 0 for instant transitions without animation.
+     This property is IBInspectable for Interface Builder configuration.
+     
+     ## Example
+     ```swift
+     label.animationDuration = 0.5  // Slower animation
+     label.animationDuration = 0.0  // Instant transition
+     ```
+     */
+    @IBInspectable @objc public var animationDuration: TimeInterval = 0.3 {
+        didSet {
+            animationDuration = max(0.0, min(2.0, animationDuration))
+        }
+    }
+    
+    /**
+     Custom accessibility label for the "Read More" action.
+     
+     - **Default**: nil (uses system default)
+     - **Usage**: Provide localized accessibility labels for better VoiceOver support
+     
+     When nil, the system will use the visible "Read More" text for accessibility.
+     Set this property to provide more descriptive accessibility labels.
+     
+     ## Example
+     ```swift
+     label.readMoreAccessibilityLabel = "Read full article"
+     label.collapseAccessibilityLabel = "Show less content"
+     ```
+     */
+    @objc public var readMoreAccessibilityLabel: String?
+    
+    /**
+     Custom accessibility label for the "Collapse" action.
+     
+     - **Default**: nil (uses "Show less" or similar system default)
+     */
+    @objc public var collapseAccessibilityLabel: String?
+    
+    // MARK: - Private Properties
     private var readMoreTextRange: NSRange?
     private var tapGestureRecognizer: UITapGestureRecognizer?
     private var originalAttributedText: NSAttributedString?
     private var internalNumberOfLines: Int = 0
     
-    private static let animationDuration: TimeInterval = 0.3
+    // MARK: - Performance Caching
+    private struct LayoutCache {
+        let text: NSAttributedString
+        let bounds: CGRect
+        let numberOfLines: Int
+        let truncationResult: TextTruncationResult
+        
+        func isValidFor(text: NSAttributedString, bounds: CGRect, numberOfLines: Int) -> Bool {
+            return self.text.isEqual(to: text) &&
+                   self.bounds == bounds &&
+                   self.numberOfLines == numberOfLines
+        }
+    }
+    
+    private var layoutCache: LayoutCache?
     
     public override init(frame: CGRect) {
         super.init(frame: frame)
@@ -159,6 +238,13 @@ public class ReadMoreLabel: UILabel {
         lineBreakMode = .byWordWrapping
         isUserInteractionEnabled = true
         setupTapGesture()
+        setupAccessibility()
+    }
+    
+    private func setupAccessibility() {
+        // Enable accessibility for the label
+        isAccessibilityElement = true
+        accessibilityTraits = [.staticText, .button]
     }
     
     private func setupTapGesture() {
@@ -200,7 +286,7 @@ public class ReadMoreLabel: UILabel {
         updateDisplay()
         
         if animated {
-            UIView.animate(withDuration: Self.animationDuration) {
+            UIView.animate(withDuration: animationDuration) {
                 self.invalidateIntrinsicContentSize()
             }
         } else {
@@ -208,6 +294,18 @@ public class ReadMoreLabel: UILabel {
         }
         
         delegate?.readMoreLabel?(self, didChangeExpandedState: isExpanded)
+        updateAccessibilityLabel()
+    }
+    
+    /// Updates accessibility label based on current expansion state
+    private func updateAccessibilityLabel() {
+        if isExpanded {
+            accessibilityLabel = collapseAccessibilityLabel ?? "Tap to show less"
+            accessibilityHint = "Double-tap to collapse text"
+        } else {
+            accessibilityLabel = readMoreAccessibilityLabel ?? "Tap to read more" 
+            accessibilityHint = "Double-tap to expand full text"
+        }
     }
     
     /**
@@ -247,6 +345,28 @@ public class ReadMoreLabel: UILabel {
         return ranges
     }
     
+    // MARK: - Performance Optimization Methods
+    
+    /// Invalidates the layout cache, forcing recalculation on next layout
+    private func invalidateLayoutCache() {
+        layoutCache = nil
+    }
+    
+    /// Checks if the current layout cache is valid for the given parameters
+    private func isLayoutCacheValid(for text: NSAttributedString, bounds: CGRect, numberOfLines: Int) -> Bool {
+        return layoutCache?.isValidFor(text: text, bounds: bounds, numberOfLines: numberOfLines) ?? false
+    }
+    
+    /// Stores the calculated layout result in cache for future reuse
+    private func cacheLayoutResult(_ result: TextTruncationResult, for text: NSAttributedString, bounds: CGRect, numberOfLines: Int) {
+        layoutCache = LayoutCache(
+            text: NSAttributedString(attributedString: text),
+            bounds: bounds,
+            numberOfLines: numberOfLines,
+            truncationResult: result
+        )
+    }
+    
     
     private enum TextTruncationResult {
         case noTruncationNeeded
@@ -273,9 +393,26 @@ public class ReadMoreLabel: UILabel {
     
     
     private func findTruncateLocationWithWidth(_ targetWidth: CGFloat, in glyphRange: NSRange, layoutManager: NSLayoutManager) -> Int {
+        // Safety checks
+        guard targetWidth > 0, 
+              glyphRange.length > 0,
+              !layoutManager.textContainers.isEmpty else {
+            return glyphRange.location
+        }
+        
         let characterRange = layoutManager.characterRange(forGlyphRange: glyphRange, actualGlyphRange: nil)
         
+        // Ensure character range is valid
+        guard characterRange.length > 0 else {
+            return glyphRange.location
+        }
+        
         let lineRect = layoutManager.lineFragmentRect(forGlyphAt: glyphRange.location, effectiveRange: nil)
+        
+        // Safety check for line rect validity
+        guard lineRect.width > 0, lineRect.height > 0 else {
+            return characterRange.location
+        }
         
         let targetPoint = CGPoint(x: lineRect.origin.x + targetWidth, y: lineRect.midY)
         
@@ -284,6 +421,8 @@ public class ReadMoreLabel: UILabel {
             in: layoutManager.textContainers[0],
             fractionOfDistanceBetweenInsertionPoints: nil
         )
+        
+        // Enhanced safety clamping
         let clampedIndex = max(characterRange.location, 
                               min(characterIndex, characterRange.location + characterRange.length))
         
@@ -331,17 +470,30 @@ public class ReadMoreLabel: UILabel {
         for attributedText: NSAttributedString,
         containerWidth: CGFloat
     ) -> (textStorage: NSTextStorage, layoutManager: NSLayoutManager, textContainer: NSTextContainer) {
+        // Safety checks
+        guard containerWidth > 0 else {
+            assertionFailure("ReadMoreLabel: Invalid container width (\(containerWidth))")
+            let fallbackWidth: CGFloat = 100
+            return createTextKitStack(for: attributedText, containerWidth: fallbackWidth)
+        }
+        
         let textStorage = NSTextStorage(attributedString: attributedText)
         let layoutManager = NSLayoutManager()
         let textContainer = NSTextContainer(size: CGSize(width: containerWidth, height: .greatestFiniteMagnitude))
         
+        // Defensive setup - ensure proper connections
         textStorage.addLayoutManager(layoutManager)
         layoutManager.addTextContainer(textContainer)
+        
+        // Verify connections were established
+        assert(layoutManager.textStorage === textStorage, "TextStorage connection failed")
+        assert(textContainer.layoutManager === layoutManager, "LayoutManager connection failed")
         
         textContainer.lineFragmentPadding = lineFragmentPadding
         textContainer.lineBreakMode = lineBreakMode
         textContainer.maximumNumberOfLines = 0
         
+        // Ensure layout is computed
         layoutManager.ensureLayout(for: textContainer)
         
         return (textStorage, layoutManager, textContainer)
@@ -671,6 +823,7 @@ public class ReadMoreLabel: UILabel {
     
     private func setOriginalText(_ text: NSAttributedString) {
         originalAttributedText = applyTextAlignment(to: text)
+        invalidateLayoutCache()
         invalidateDisplayAndLayout()
         updateDisplay()
     }
@@ -711,7 +864,13 @@ public class ReadMoreLabel: UILabel {
     }
     
     public override func layoutSubviews() {
+        let previousBounds = bounds
         super.layoutSubviews()
+        
+        // Invalidate cache if bounds changed significantly (width affects text layout)
+        if abs(previousBounds.width - bounds.width) > 1.0 {
+            invalidateLayoutCache()
+        }
         
         if isExpanded {
             checkAndResetExpandedStateIfNeeded()
