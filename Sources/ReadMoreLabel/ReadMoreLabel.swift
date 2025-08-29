@@ -381,13 +381,8 @@ public class ReadMoreLabel: UILabel {
         }
     }
     
-    private func displayTruncatedTextAtEnd(_ attributedText: NSAttributedString, availableWidth: CGFloat) {
-        print("🔍 DEBUG: displayTruncatedTextAtEnd called")
-        print("   - availableWidth: \(availableWidth)")
-        print("   - numberOfLinesWhenCollapsed: \(numberOfLinesWhenCollapsed)")
-        
+    private func displayTruncatedTextAtEnd(_ attributedText: NSAttributedString, availableWidth: CGFloat) {        
         guard attributedText.length > 0 && availableWidth > 0 && numberOfLinesWhenCollapsed > 0 else {
-            print("   - Early exit: guard condition failed")
             super.attributedText = attributedText
             setInternalNumberOfLines(numberOfLinesWhenCollapsed == 0 ? 0 : numberOfLinesWhenCollapsed)
             readMoreTextRange = nil
@@ -395,10 +390,7 @@ public class ReadMoreLabel: UILabel {
         }
         
         let suffix = createReadMoreSuffix(from: attributedText)
-        print("   - suffix created: '\(suffix.string)'")
-        
-        print("   - Calling LEGACY applyReadMore")
-        let result = legacyApplyReadMore(
+        let result = applyReadMore(
             originalText: attributedText,
             numberOfLines: numberOfLinesWhenCollapsed,
             containerWidth: availableWidth,
@@ -427,7 +419,7 @@ public class ReadMoreLabel: UILabel {
         
         
         // numberOfLinesWhenCollapsed줄로 자른 후 다음 줄 맨 앞에 "더보기" 추가
-        let result = legacyApplyReadMoreForNewLine(
+        let result = applyReadMoreForNewLine(
             originalText: attributedText,
             numberOfLines: numberOfLinesWhenCollapsed,
             containerWidth: availableWidth
@@ -519,7 +511,7 @@ public class ReadMoreLabel: UILabel {
     
     // MARK: - Optimized New Implementations (Phase 1)
     
-    /// 새로운 최적화된 applyReadMore 구현 - Extension의 공통 메서드 사용
+    /// 새로운 최적화된 applyReadMore 구현 - Legacy 방식과 동일한 정확한 계산
     private func applyReadMore(
         originalText: NSAttributedString,
         numberOfLines: Int,
@@ -527,60 +519,62 @@ public class ReadMoreLabel: UILabel {
         suffix: NSAttributedString
     ) -> TextTruncationResult {
         
-        print("🚨 DEBUG: NEW applyReadMore called")
-        print("   - numberOfLines: \(numberOfLines)")
-        print("   - containerWidth: \(containerWidth)")
-        
         let alignedText = applyTextAlignment(to: originalText)
+        let (textStorage, layoutManager, textContainer) = createTextKitStack(for: alignedText, containerWidth: containerWidth)
         
-        // Extension의 라인 분석 메서드 사용
-        print("   - Calling Extension analyzeLineFragments...")
-        let (totalLines, targetFragment) = analyzeLineFragments(
-            for: alignedText,
-            containerWidth: containerWidth,
-            targetLineIndex: numberOfLines - 1
-        )
+        let totalGlyphCount = layoutManager.numberOfGlyphs
         
-        print("   - totalLines: \(totalLines), targetFragment exists: \(targetFragment != nil)")
-        
-        // 잘림 불필요한 경우
-        if totalLines <= numberOfLines {
-            print("   - Result: .noTruncationNeeded (totalLines \(totalLines) <= numberOfLines \(numberOfLines))")
+        guard totalGlyphCount > 0 else {
             return .noTruncationNeeded
         }
         
-        guard let targetLineFragment = targetFragment else {
-            print("   - Result: .noTruncationNeeded (no targetFragment)")
-            return .noTruncationNeeded
+        // Legacy와 동일한 방식으로 줄 수 계산
+        var actualLinesNeeded = 0
+        layoutManager.enumerateLineFragments(forGlyphRange: NSRange(location: 0, length: totalGlyphCount)) { 
+            (rect, usedRect, textContainer, glyphRange, stop) in
+            actualLinesNeeded += 1
         }
         
-        print("   - Needs truncation, proceeding with calculation...")
+        // 마지막 줄이 높이 0인 경우 제외
+        if actualLinesNeeded > 0 {
+            let lastLineGlyphIndex = totalGlyphCount - 1
+            let lastLineRect = layoutManager.lineFragmentRect(forGlyphAt: lastLineGlyphIndex, effectiveRange: nil)
+            
+            if lastLineRect.height == 0 {
+                actualLinesNeeded -= 1
+            }
+        }
         
-        // Extension의 최적화된 TextKit 스택 사용
-        let (_, layoutManager, _) = createOptimizedTextKitStack(for: alignedText, containerWidth: containerWidth)
+        if actualLinesNeeded <= numberOfLines {
+            return .noTruncationNeeded
+        }
+
+        // Legacy와 동일한 방식으로 타겟 라인 찾기
+        var lastLineRange = NSRange()
+        var currentLineCount = 0
+        layoutManager.enumerateLineFragments(forGlyphRange: NSRange(location: 0, length: totalGlyphCount)) { 
+            (rect, usedRect, textContainer, glyphRange, stop) in
+            currentLineCount += 1
+            if currentLineCount == numberOfLines {
+                lastLineRange = glyphRange
+                stop.pointee = true
+            }
+        }
         
-        let lastLineRange = targetLineFragment.glyphRange
-        let lastLineRect = targetLineFragment.rect
-        let lastLineWidth = lastLineRect.width
+        // 🔥 핵심 수정: Legacy와 동일하게 lineFragmentUsedRect 사용하여 정확한 너비 계산
+        let lastLineUsedRect = layoutManager.lineFragmentUsedRect(forGlyphAt: lastLineRange.location, effectiveRange: nil)
+        let lastLineWidth = lastLineUsedRect.width
         
-        let suffixWidth = calculateTextSizeWithOptimizedTextKit(for: suffix, containerWidth: CGFloat.greatestFiniteMagnitude).width
+        let suffixWidth = legacyCalculateTextSize(for: suffix, width: CGFloat.greatestFiniteMagnitude).width
+        
         let truncateCharacterIndex: Int
-        
-        print("   - lastLineWidth: \(lastLineWidth)")
-        print("   - suffixWidth: \(suffixWidth)")
-        print("   - containerWidth: \(containerWidth)")
-        
         if lastLineWidth + suffixWidth > containerWidth {
-            print("   - Need to truncate: \(lastLineWidth) + \(suffixWidth) > \(containerWidth)")
             let availableWidth = containerWidth - suffixWidth
             truncateCharacterIndex = findTruncateLocationWithWidth(availableWidth, in: lastLineRange, layoutManager: layoutManager)
         } else {
-            print("   - Enough space: \(lastLineWidth) + \(suffixWidth) <= \(containerWidth)")
             let characterRange = layoutManager.characterRange(forGlyphRange: lastLineRange, actualGlyphRange: nil)
             truncateCharacterIndex = characterRange.location + characterRange.length
         }
-        
-        print("   - truncateCharacterIndex: \(truncateCharacterIndex)")
         
         let truncatedText = originalText.attributedSubstring(from: NSRange(location: 0, length: truncateCharacterIndex))
         let cleanedTruncatedText = removeTrailingNewlineIfNeeded(from: truncatedText)
@@ -589,13 +583,10 @@ public class ReadMoreLabel: UILabel {
         
         let readMoreRange = NSRange(location: cleanedTruncatedText.length, length: suffix.length)
         
-        print("   - Final result: .truncated, readMoreRange: \(readMoreRange)")
-        print("   - Final text: '\(finalText.string)'")
-        
         return .truncated(finalText, readMoreRange)
     }
     
-    /// 새로운 최적화된 applyReadMoreForNewLine 구현 - Extension의 공통 메서드 사용
+    /// 새로운 최적화된 applyReadMoreForNewLine 구현 - Legacy 방식과 동일한 정확한 계산
     private func applyReadMoreForNewLine(
         originalText: NSAttributedString,
         numberOfLines: Int,
@@ -603,33 +594,48 @@ public class ReadMoreLabel: UILabel {
     ) -> TextTruncationResult {
         
         let alignedText = applyTextAlignment(to: originalText)
+        let (textStorage, layoutManager, textContainer) = createTextKitStack(for: alignedText, containerWidth: containerWidth)
         
-        // Extension의 라인 분석 메서드 사용
-        let (totalLines, targetFragment) = analyzeLineFragments(
-            for: alignedText,
-            containerWidth: containerWidth,
-            targetLineIndex: numberOfLines - 1
-        )
+        let totalGlyphCount = layoutManager.numberOfGlyphs
         
-        // 잘림 불필요한 경우
-        if totalLines <= numberOfLines {
+        guard totalGlyphCount > 0 else {
             return .noTruncationNeeded
         }
         
-        guard let targetLineFragment = targetFragment else {
+        // Legacy와 동일한 방식으로 라인 정보 수집 및 분석
+        var lineFragments: [(rect: CGRect, glyphRange: NSRange)] = []
+        
+        layoutManager.enumerateLineFragments(forGlyphRange: NSRange(location: 0, length: totalGlyphCount)) { 
+            (rect, usedRect, textContainer, glyphRange, stop) in
+            
+            // 높이 0인 마지막 줄 제외 처리
+            if rect.height > 0 {
+                lineFragments.append((rect: rect, glyphRange: glyphRange))
+            }
+        }
+        
+        let actualLinesNeeded = lineFragments.count
+        
+        // Early exit: 잘림 불필요
+        if actualLinesNeeded <= numberOfLines {
             return .noTruncationNeeded
         }
         
-        // Extension의 최적화된 TextKit 스택 사용
-        let (_, layoutManager, _) = createOptimizedTextKitStack(for: alignedText, containerWidth: containerWidth)
+        // 타겟 라인 정보 추출
+        guard numberOfLines <= lineFragments.count else {
+            return .noTruncationNeeded
+        }
         
+        let targetLineFragment = lineFragments[numberOfLines - 1]
         let lastLineRange = targetLineFragment.glyphRange
+        let lastLineRect = targetLineFragment.rect
         let characterRange = layoutManager.characterRange(forGlyphRange: lastLineRange, actualGlyphRange: nil)
         
         // 더보기 텍스트 생성 및 크기 계산
         let lastAttributes = originalText.lastTextAttributes(defaultAttributes: defaultTextAttributes)
         let readMoreWithOriginalAttributes = readMoreText.createMutableWithAttributes(lastAttributes)
         
+        // newLine position에서는 현재 줄에서 "더보기" 공간을 확보할 필요 없음
         // numberOfLines번째 줄의 끝에서 텍스트를 자름
         let truncateOffset = characterRange.location + characterRange.length
         
@@ -1046,21 +1052,13 @@ private extension ReadMoreLabel {
         containerWidth: CGFloat,
         targetLineIndex: Int
     ) -> (totalLines: Int, targetLineFragment: (rect: CGRect, glyphRange: NSRange)?) {
-        print("     🔧 Extension: analyzeLineFragments called")
-        print("       - containerWidth: \(containerWidth)")
-        print("       - targetLineIndex: \(targetLineIndex)")
-        
         // Legacy와 동일한 방식으로 TextKit 스택 생성
         let alignedText = applyTextAlignment(to: attributedText)
         let (textStorage, layoutManager, textContainer) = createTextKitStack(for: alignedText, containerWidth: containerWidth)
         
         let totalGlyphCount = layoutManager.numberOfGlyphs
-        print("       - totalGlyphCount: \(totalGlyphCount)")
-        print("       - textStorage.length: \(textStorage.length)")
-        print("       - attributedText.length: \(attributedText.length)")
         
         guard totalGlyphCount > 0 else { 
-            print("       - ERROR: totalGlyphCount is 0")
             return (0, nil) 
         }
         
@@ -1068,16 +1066,12 @@ private extension ReadMoreLabel {
         
         layoutManager.enumerateLineFragments(forGlyphRange: NSRange(location: 0, length: totalGlyphCount)) { 
             (rect, _, _, glyphRange, _) in
-            print("       - Found line fragment: height=\(rect.height)")
             if rect.height > 0 {
                 lineFragments.append((rect: rect, glyphRange: glyphRange))
             }
         }
         
         let targetFragment = targetLineIndex < lineFragments.count ? lineFragments[targetLineIndex] : nil
-        
-        print("       - lineFragments.count: \(lineFragments.count)")  
-        print("       - targetFragment found: \(targetFragment != nil)")
         
         return (lineFragments.count, targetFragment)
     }
