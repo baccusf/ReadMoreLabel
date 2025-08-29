@@ -468,3 +468,120 @@ private func hasReadMoreTextAtLocationWithTextKit1ForNewLine(_ location: CGPoint
 4. **호환성**: iOS 16+ 환경에서 TextKit 1과 TextKit 2 혼용 가능
 
 **결과**: position = .end와 position = .newLine 모두에서 정확한 "더보기" 터치 감지 및 확장 기능 실현
+
+## Phase 4 계획: TextKit 2 Migration (Future Enhancement)
+
+### 개요
+
+Phase 4에서는 ReadMoreLabel의 핵심 텍스트 처리 엔진을 TextKit 1에서 TextKit 2로 전환하여 최신 iOS 텍스트 처리 기술을 활용하고 성능과 정확도를 더욱 향상시킬 예정입니다.
+
+### Phase 4 목표
+
+#### 🔄 **TextKit 2 완전 전환**
+- **텍스트 측정**: `NSTextLayoutManager` 기반 정밀 계산
+- **레이아웃 관리**: `NSTextContentStorage` 활용
+- **Segment 기반 처리**: `enumerateTextSegments`를 통한 픽셀 정확도
+- **Layout Fragment**: `enumerateTextLayoutFragments`로 정확한 줄 계산
+
+#### ⚡ **성능 최적화**
+```swift
+// Phase 4 목표 API 구조
+// TextKit 2 네이티브 스택
+let textLayoutManager = NSTextLayoutManager()
+let textContainer = NSTextContainer(size: CGSize(width: containerWidth, height: .greatestFiniteMagnitude))
+let textContentStorage = NSTextContentStorage()
+textContentStorage.attributedString = alignedText
+textContentStorage.addTextLayoutManager(textLayoutManager)
+
+// Segment 기반 정밀 너비 계산
+textLayoutManager.enumerateTextSegments(in: range, type: .standard, options: []) { 
+    segmentRange, segmentFrame, baselineOffset, textContainer in
+    let segmentWidth = segmentFrame.width // 픽셀 정확도
+    return processSegment(segmentWidth, segmentRange)
+}
+
+// Layout Fragment 기반 줄 계산
+textLayoutManager.enumerateTextLayoutFragments(
+    from: textLayoutManager.documentRange.location,
+    options: [.ensuresLayout]
+) { layoutFragment in
+    let lineFragments = layoutFragment.textLineFragments
+    return processLineFragments(lineFragments)
+}
+```
+
+#### 🎯 **정확도 향상**
+- **픽셀 단위 정밀도**: `segmentFrame.width` 활용으로 정확한 텍스트 너비 계산
+- **복합 문자 지원**: 이모지, 결합 문자, RTL 언어 처리 개선
+- **레이아웃 안정성**: TextKit 2의 향상된 레이아웃 엔진 활용
+
+#### 🏗️ **하이브리드 아키텍처**
+Phase 4에서는 안정성을 위해 **하이브리드 접근법** 채택:
+
+```swift
+// 텍스트 측정 및 레이아웃: TextKit 2
+private func measureTextWithTextKit2(...) -> TextMeasurement {
+    // NSTextLayoutManager 기반 정밀 계산
+}
+
+// Hit Testing: TextKit 1 (검증된 안정성)  
+private func hasReadMoreTextAtLocation(...) -> Bool {
+    // NSLayoutManager 기반 hit testing 유지
+}
+```
+
+### Phase 4 구현 전략
+
+#### **1단계: 텍스트 측정 전환** 
+- `calculateLineCount`, `findTargetLineRange` → TextKit 2 전환
+- `enumerateLineFragments` → `enumerateTextLayoutFragments`
+- 호환성 유지를 위한 래퍼 메서드 구현
+
+#### **2단계: 너비 계산 최적화**
+- `findTruncateLocationWithWidth` → Segment 기반 정밀 계산
+- `lineFragmentUsedRect` → `segmentFrame.width` 활용
+- 픽셀 단위 정확도 달성
+
+#### **3단계: 성능 검증 및 최적화**
+- TextKit 1 vs TextKit 2 성능 벤치마크
+- 메모리 사용량 최적화
+- 복잡한 텍스트 케이스 검증
+
+#### **4단계: Hit Testing 통합 고려**
+- TextKit 2 기반 hit testing API 재평가
+- 필요시 하이브리드 아키텍처 유지
+- 완전 통합 vs 선택적 적용 결정
+
+### 예상 효과
+
+#### **성능 개선**
+- **계산 정확도**: 픽셀 단위 정밀 텍스트 처리
+- **메모리 효율성**: TextKit 2의 개선된 메모리 관리
+- **처리 속도**: 최적화된 레이아웃 알고리즘 활용
+
+#### **사용자 경험**
+- **텍스트 렌더링**: 더 정확한 텍스트 자르기 및 배치
+- **복합 문자**: 이모지, 다국어 텍스트 처리 개선
+- **레이아웃 안정성**: 다양한 폰트 크기와 스타일에서 일관된 동작
+
+### Phase 4 리스크 관리
+
+#### **호환성 리스크**
+- **API 변경**: TextKit 2 API의 미래 변경 가능성 대비
+- **iOS 버전**: 최소 지원 버전 (iOS 16.0+) 유지
+- **기능 패리티**: TextKit 1 대비 기능 동등성 보장
+
+#### **안정성 보장**
+- **단계적 전환**: 점진적 마이그레이션으로 리스크 최소화
+- **폴백 메커니즘**: 필요시 TextKit 1 복원 가능한 구조
+- **광범위한 테스트**: 다양한 텍스트 시나리오 검증
+
+### Phase 4 성공 기준
+
+- [ ] **성능**: TextKit 1 대비 동등하거나 향상된 성능
+- [ ] **정확도**: 픽셀 단위 텍스트 처리 정밀도 달성
+- [ ] **안정성**: 모든 기존 기능의 완전한 호환성 유지
+- [ ] **호환성**: iOS 16+ 모든 기기에서 안정적 동작
+- [ ] **유지보수성**: 깔끔한 아키텍처와 코드 품질 유지
+
+**Phase 4는 ReadMoreLabel을 차세대 iOS 텍스트 처리 기술의 최전선으로 이끌 혁신적인 업그레이드가 될 것입니다.** 🚀
