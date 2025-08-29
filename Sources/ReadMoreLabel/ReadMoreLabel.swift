@@ -464,6 +464,42 @@ public class ReadMoreLabel: UILabel {
     
     // MARK: - TextKit Helper Methods
     
+    /// Phase 4: TextKit 2 Feature Flag for safe incremental adoption
+    private var useTextKit2ForMeasurement: Bool {
+        #if DEBUG
+        // 개발 환경에서만 UserDefaults로 제어 가능
+        return UserDefaults.standard.bool(forKey: "ReadMoreLabel.useTextKit2")
+        #else
+        // 프로덕션에서는 기본적으로 비활성화 (안전성 우선)
+        return false
+        #endif
+    }
+    
+    /// Safe TextKit 2 operation wrapper with automatic fallback
+    @available(iOS 16.0, *)
+    private func safeTextKit2Operation<T>(
+        _ operation: () throws -> T,
+        fallback: () -> T,
+        operationName: String = #function
+    ) -> T {
+        guard useTextKit2ForMeasurement else {
+            return fallback()
+        }
+        
+        do {
+            let result = try operation()
+            #if DEBUG
+            print("✅ ReadMoreLabel TextKit2 [\(operationName)]: Success")
+            #endif
+            return result
+        } catch {
+            #if DEBUG
+            print("⚠️ ReadMoreLabel TextKit2 [\(operationName)]: Failed with \(error), falling back to TextKit1")
+            #endif
+            return fallback()
+        }
+    }
+    
     /// Creates a new TextKit stack for text measurement and layout
     /// Each call returns fresh objects to avoid lifecycle issues
     private func createTextKitStack(
@@ -497,6 +533,62 @@ public class ReadMoreLabel: UILabel {
         layoutManager.ensureLayout(for: textContainer)
         
         return (textStorage, layoutManager, textContainer)
+    }
+    
+    /// Phase 4: Safe TextKit 2 stack creation (iOS 16+)
+    @available(iOS 16.0, *)
+    private func createTextKit2Stack(
+        for attributedText: NSAttributedString,
+        containerWidth: CGFloat
+    ) throws -> (textContentStorage: NSTextContentStorage, textLayoutManager: NSTextLayoutManager, textContainer: NSTextContainer) {
+        // Input validation
+        guard containerWidth > 0, attributedText.length > 0 else {
+            throw NSError(domain: "ReadMoreLabel.TextKit2", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid input parameters"])
+        }
+        
+        // Create TextKit 2 components
+        let textContentStorage = NSTextContentStorage()
+        let textLayoutManager = NSTextLayoutManager()
+        let textContainer = NSTextContainer(size: CGSize(width: containerWidth, height: .greatestFiniteMagnitude))
+        
+        // Configure text content
+        textContentStorage.attributedString = attributedText
+        textContentStorage.addTextLayoutManager(textLayoutManager)
+        
+        // Configure container with same settings as TextKit 1
+        textContainer.lineFragmentPadding = lineFragmentPadding
+        textContainer.lineBreakMode = .byWordWrapping
+        textContainer.maximumNumberOfLines = 0
+        
+        // Verify setup
+        guard textLayoutManager.textContentManager === textContentStorage else {
+            throw NSError(domain: "ReadMoreLabel.TextKit2", code: 2, userInfo: [NSLocalizedDescriptionKey: "TextKit 2 stack connection failed"])
+        }
+        
+        return (textContentStorage, textLayoutManager, textContainer)
+    }
+    
+    /// Phase 4: Safe TextKit 2 line counting (iOS 16+) 
+    @available(iOS 16.0, *)
+    private func calculateLineCountWithTextKit2(
+        for attributedText: NSAttributedString,
+        containerWidth: CGFloat
+    ) throws -> Int {
+        let (_, textLayoutManager, _) = try createTextKit2Stack(for: attributedText, containerWidth: containerWidth)
+        
+        var totalLineCount = 0
+        
+        // Use TextKit 2 layout fragment enumeration
+        textLayoutManager.enumerateTextLayoutFragments(
+            from: textLayoutManager.documentRange.location,
+            options: [.ensuresLayout]
+        ) { layoutFragment in
+            let validLines = layoutFragment.textLineFragments.filter { $0.typographicBounds.height > 0 }
+            totalLineCount += validLines.count
+            return true
+        }
+        
+        return totalLineCount
     }
     
     
@@ -687,16 +779,32 @@ public class ReadMoreLabel: UILabel {
         return .truncated(finalText, finalReadMoreRange)
     }
     
-    /// 최적화된 실제 필요 라인 수 계산 - 통합된 헬퍼 메서드 활용
+    /// 최적화된 실제 필요 라인 수 계산 - Phase 4: Safe TextKit 2 integration
     private func calculateActualLinesNeeded(for text: NSAttributedString, width: CGFloat) -> Int {
         let alignedText = applyTextAlignment(to: text)
-        let (textStorage, layoutManager, textContainer) = createTextKitStack(for: alignedText, containerWidth: width)
         
-        let totalGlyphCount = layoutManager.numberOfGlyphs
-        guard totalGlyphCount > 0 else { return 0 }
-        
-        // 통합된 헬퍼 메서드 활용
-        return calculateLineCount(from: layoutManager, totalGlyphCount: totalGlyphCount)
+        // Phase 4: Safe TextKit 2 with automatic fallback
+        if #available(iOS 16.0, *) {
+            return safeTextKit2Operation(
+                {
+                    try calculateLineCountWithTextKit2(for: alignedText, containerWidth: width)
+                },
+                fallback: {
+                    // Safe TextKit 1 fallback
+                    let (textStorage, layoutManager, textContainer) = createTextKitStack(for: alignedText, containerWidth: width)
+                    let totalGlyphCount = layoutManager.numberOfGlyphs
+                    guard totalGlyphCount > 0 else { return 0 }
+                    return calculateLineCount(from: layoutManager, totalGlyphCount: totalGlyphCount)
+                },
+                operationName: "calculateActualLinesNeeded"
+            )
+        } else {
+            // iOS 15 이하에서는 TextKit 1만 사용
+            let (textStorage, layoutManager, textContainer) = createTextKitStack(for: alignedText, containerWidth: width)
+            let totalGlyphCount = layoutManager.numberOfGlyphs
+            guard totalGlyphCount > 0 else { return 0 }
+            return calculateLineCount(from: layoutManager, totalGlyphCount: totalGlyphCount)
+        }
     }
     
     /// 최적화된 텍스트 크기 계산
