@@ -559,11 +559,22 @@ public class ReadMoreLabel: UILabel {
     
     
     @objc private func handleTapGesture(_ gesture: UITapGestureRecognizer) {
-        guard isExpandable, !isExpanded else {
+        guard isExpandable, !isExpanded, let attributedText = attributedText else {
+            return
+        }
+                
+        let locationInLabel = gesture.location(in: self)
+        
+        guard attributedText.length > 0 && bounds.width > 0 else {
             return
         }
         
-        setExpanded(true, animated: true)
+        let hitTestResult = hasReadMoreTextAtLocation(locationInLabel, in: attributedText)
+        let fallbackCondition = readMoreTextRange != nil
+        
+        if hitTestResult || fallbackCondition {
+            setExpanded(true, animated: true)
+        }
     }
 
         
@@ -613,8 +624,9 @@ public class ReadMoreLabel: UILabel {
         }
         
         let actualLinesNeeded = calculateActualLinesNeeded(for: originalText, width: bounds.width)
+        let threshold = max(2, numberOfLinesWhenCollapsed - 1)
         
-        if actualLinesNeeded <= max(2, numberOfLinesWhenCollapsed - 1) {
+        if actualLinesNeeded <= threshold {
             isExpanded = false
         } else {
             super.attributedText = originalText
@@ -657,7 +669,9 @@ public class ReadMoreLabel: UILabel {
         super.layoutSubviews()
         
         if isExpanded {
-            checkAndResetExpandedStateIfNeeded()
+            // Do NOT auto-reset expanded state when user has explicitly expanded text
+            // The user's explicit action should take precedence over automatic calculations
+            // checkAndResetExpandedStateIfNeeded() - commented out to fix tap expansion bug
         } else {
             checkAndResetTruncationStateIfNeeded()
         }
