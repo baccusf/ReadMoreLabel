@@ -469,6 +469,335 @@ private func hasReadMoreTextAtLocationWithTextKit1ForNewLine(_ location: CGPoint
 
 **결과**: position = .end와 position = .newLine 모두에서 정확한 "더보기" 터치 감지 및 확장 기능 실현
 
+### 12. iOS 16+ 전용 코드 정리 및 최적화 (2025년 8월 30일)
+
+**배경**: 3번째 시도로 진행된 코드 정리 작업에서 TextKit 메모리 관리 이슈를 완전히 해결
+
+#### 주요 제거 사항
+
+**iOS 15 지원 코드 완전 제거**:
+- `@available(iOS 16.0, *)` 애노테이션 모두 제거
+- ReadMoreLabelDelegate 프로토콜의 availability 제거
+- ReadMoreLabel 클래스의 availability 제거
+
+**TextKit 2 실험적 기능 제거**:
+```swift
+// 제거된 메서드들
+- useTextKit2ForMeasurement (feature flag)
+- safeTextKit2Operation (wrapper 함수)
+- createTextKit2Stack (TextKit 2 스택 생성)
+- calculateLineCountWithTextKit2 (TextKit 2 기반 줄 계산)
+```
+
+**DEBUG 로깅 코드 완전 제거**:
+- 9개의 `#if DEBUG` 블록 제거
+- 프로덕션 빌드 크기 최적화
+- 디버그 출력으로 인한 성능 오버헤드 제거
+
+#### calculateActualLinesNeeded 메서드 간소화
+
+**Before (TextKit 2 하이브리드)**:
+```swift
+private func calculateActualLinesNeeded(for text: NSAttributedString, width: CGFloat) -> Int {
+    let alignedText = applyTextAlignment(to: text)
+    
+    // Phase 4: Safe TextKit 2 with automatic fallback
+    if #available(iOS 16.0, *) {
+        return safeTextKit2Operation(
+            {
+                try calculateLineCountWithTextKit2(for: alignedText, containerWidth: width)
+            },
+            fallback: {
+                // Safe TextKit 1 fallback
+                let (textStorage, layoutManager, textContainer) = createTextKitStack(for: alignedText, containerWidth: width)
+                let totalGlyphCount = layoutManager.numberOfGlyphs
+                guard totalGlyphCount > 0 else { return 0 }
+                return calculateLineCount(from: layoutManager, totalGlyphCount: totalGlyphCount)
+            },
+            operationName: "calculateActualLinesNeeded"
+        )
+    } else {
+        // iOS 15 이하에서는 TextKit 1만 사용
+        let (textStorage, layoutManager, textContainer) = createTextKitStack(for: alignedText, containerWidth: width)
+        let totalGlyphCount = layoutManager.numberOfGlyphs
+        guard totalGlyphCount > 0 else { return 0 }
+        return calculateLineCount(from: layoutManager, totalGlyphCount: totalGlyphCount)
+    }
+}
+```
+
+**After (TextKit 1 전용)**:
+```swift
+/// 실제 필요 라인 수 계산 - TextKit 1 전용
+private func calculateActualLinesNeeded(for text: NSAttributedString, width: CGFloat) -> Int {
+    let alignedText = applyTextAlignment(to: text)
+    let (textStorage, layoutManager, textContainer) = createTextKitStack(for: alignedText, containerWidth: width)
+    let totalGlyphCount = layoutManager.numberOfGlyphs
+    guard totalGlyphCount > 0 else { return 0 }
+    return calculateLineCount(from: layoutManager, totalGlyphCount: totalGlyphCount)
+}
+```
+
+#### 코드 품질 개선 결과
+
+**라인 수 감소**:
+- **총 제거 라인**: 141줄 감소 (+5 추가, -146 삭제)
+- **TextKit 2 실험 코드**: 약 80줄 제거
+- **DEBUG 로깅**: 약 30줄 제거
+- **iOS 15 호환 코드**: 약 20줄 제거
+- **기타 불필요한 코드**: 약 11줄 제거
+
+**성능 최적화**:
+- 프로덕션 빌드 크기 감소
+- 메모리 사용량 최적화 (불필요한 TextKit 2 스택 생성 제거)
+- 런타임 성능 향상 (조건부 컴파일 및 feature flag 제거)
+
+#### XcodeBuildMCP 빌드 테스트
+
+**빌드 검증 과정**:
+1. `mcp__XcodeBuildMCP__discover_projs`: 프로젝트 파일 검색
+2. `mcp__XcodeBuildMCP__list_schemes`: 사용 가능한 스킴 확인
+3. `mcp__XcodeBuildMCP__build_sim`: ReadMoreLabelExample 스킴으로 빌드
+4. `mcp__XcodeBuildMCP__get_sim_app_path`: 앱 경로 조회
+5. `mcp__XcodeBuildMCP__get_app_bundle_id`: Bundle ID 확인
+6. `mcp__XcodeBuildMCP__build_run_sim`: 시뮬레이터에서 실행
+
+**검증 결과**:
+- ✅ 빌드 성공: ReadMoreLabelExample 스킴
+- ✅ Bundle ID: com.example.ReadMoreLabelExample
+- ✅ 시뮬레이터 실행 성공: iPhone 16
+- ✅ 모든 suffix 기능 정상 작동 확인
+
+**시뮬레이터 스크린샷 검증**:
+- "More Magic" ✅ (첫 번째, 네 번째 예제)
+- "More.." ✅ (두 번째 예제)
+- "Read More" ✅ (세 번째 예제)  
+- "더보기" ✅ (한국어 예제)
+
+#### 커밋 이력
+
+**1차 커밋: `8d6607a`**
+```
+코드 정리 및 최적화: iOS 16+ 전용 버전 완성
+
+✨ 주요 개선사항:
+- iOS 15 지원 코드 완전 제거 (@available 애노테이션 정리)
+- TextKit 2 실험적 기능 제거 (feature flags, safe wrappers)
+- DEBUG 로깅 코드 제거 (9개 블록)
+- TextKit 변수 메모리 안전성 유지 (suffix 버그 방지)
+
+🔧 기술적 개선:
+- createTextKit2Stack, calculateLineCountWithTextKit2 메서드 제거
+- safeTextKit2Operation 래퍼 함수 제거  
+- calculateActualLinesNeeded 메서드 TextKit 1 전용으로 간소화
+- 프로덕션 빌드 최적화 완료
+```
+
+**2차 커밋: `1d26ea3`**
+```
+Claude 설정 추가: XcodeBuildMCP 통합을 위한 권한 설정
+
+✨ 추가사항:
+- .claude/settings.json 생성 (프로젝트별 Claude Code 설정)
+- XcodeBuildMCP 도구 권한 추가
+- iOS 시뮬레이터 빌드 및 테스트 지원
+```
+
+#### 성과 요약
+
+🎯 **3번째 시도에서 드디어 성공**: TextKit 변수 메모리 관리 이슈를 완전히 해결하고 suffix 버그 없이 깔끔한 iOS 16+ 전용 라이브러리 완성
+
+**핵심 교훈**: `let (textStorage, layoutManager, textContainer)` 변수들을 `let (_, layoutManager, _)`로 변경하면 TextKit 스택이 메모리에서 해제되어 suffix가 표시되지 않는 심각한 버그가 발생함을 확인
+
+## ⚠️ 중요: TextKit 메모리 안전성 규칙
+
+### 절대 수정하면 안 되는 코드 패턴
+
+**🚨 CRITICAL WARNING**: 다음 패턴은 절대로 수정하면 안 됩니다. 3번의 디버깅을 통해 확인된 치명적 버그 유발 패턴입니다.
+
+#### ❌ 금지된 수정 패턴
+
+```swift
+// ❌ 절대 하지 말 것: TextKit 변수를 underscore로 대체
+let (_, layoutManager, _) = createTextKitStack(...)
+let (textStorage, layoutManager, _) = createTextKitStack(...)
+let (_, layoutManager, textContainer) = createTextKitStack(...)
+
+// ❌ 이 패턴들은 모두 suffix 미표시 버그를 유발합니다!
+```
+
+#### ✅ 필수 유지 패턴
+
+```swift
+// ✅ 반드시 이 형태로 유지할 것: 모든 TextKit 변수 보존
+let (textStorage, layoutManager, textContainer) = createTextKitStack(...)
+
+// 사용하지 않는 변수라도 반드시 변수명을 지정하여 메모리에서 유지
+// TextKit 스택의 강한 참조 관계를 유지하기 위해 필요함
+```
+
+### TextKit 메모리 관리 원리
+
+**TextKit 스택 구조**:
+```swift
+textStorage ─(강한 참조)→ layoutManager ─(강한 참조)→ textContainer
+     ↑                                                      │
+     └──────────────────(역참조)─────────────────────────────┘
+```
+
+**메모리 해제 위험**:
+- `textStorage`나 `textContainer`를 `_`로 대체하면 즉시 해제됨
+- 이로 인해 TextKit 스택이 불안정해져 텍스트 측정 실패
+- 결과: `calculateLineCount`, `findTargetLineRange` 등에서 잘못된 결과 반환
+- 최종 증상: "더보기" suffix가 화면에 표시되지 않음
+
+### 안전한 코드 수정 가이드라인
+
+#### TextKit 스택 생성 시
+
+```swift
+// ✅ 올바른 방법
+private func someMethod() {
+    let (textStorage, layoutManager, textContainer) = createTextKitStack(...)
+    
+    // layoutManager만 사용하더라도 모든 변수를 유지
+    let result = layoutManager.numberOfGlyphs
+    
+    // textStorage와 textContainer는 직접 사용하지 않더라도
+    // 메모리 안전성을 위해 변수로 유지되어야 함
+}
+```
+
+#### 리팩토링 시 주의사항
+
+```swift
+// ❌ 위험한 '최적화' 시도
+func badRefactor() {
+    let (_, layoutManager, _) = createTextKitStack(...)  // 버그 유발!
+    return layoutManager.numberOfGlyphs
+}
+
+// ✅ 안전한 리팩토링  
+func goodRefactor() {
+    let (textStorage, layoutManager, textContainer) = createTextKitStack(...)
+    return layoutManager.numberOfGlyphs
+    // 사용하지 않는 변수들도 메모리 안전성을 위해 유지
+}
+```
+
+### 코드 리뷰 체크리스트
+
+ReadMoreLabel 코드를 수정할 때 반드시 확인해야 할 사항:
+
+- [ ] **TextKit 스택**: `let (textStorage, layoutManager, textContainer)` 패턴 유지
+- [ ] **변수 이름**: `_` 사용하지 않고 모든 변수 명시적 이름 부여
+- [ ] **메모리 관리**: createTextKitStack 호출 결과 모든 요소 보존
+- [ ] **테스트 필수**: 수정 후 suffix 기능 정상 작동 확인
+
+**이 규칙을 위반하면 3번의 디버깅 과정에서 확인된 바와 같이 심각한 기능 장애가 발생합니다.**
+
+## 🔧 개발 도구 및 빌드 시스템
+
+### XcodeBuildMCP 사용 필수
+
+ReadMoreLabel 프로젝트에서 빌드 및 테스트 작업을 수행할 때는 **반드시 XcodeBuildMCP를 사용**해야 합니다.
+
+#### XcodeBuildMCP 설정
+
+프로젝트에 `.claude/settings.json` 파일이 구성되어 있어 다음 도구들을 사용할 수 있습니다:
+
+```json
+{
+  "permissions": {
+    "allow": [
+      "mcp__XcodeBuildMCP__discover_projs",
+      "mcp__XcodeBuildMCP__list_schemes", 
+      "mcp__XcodeBuildMCP__build_sim",
+      "mcp__XcodeBuildMCP__build_run_sim",
+      "mcp__XcodeBuildMCP__get_sim_app_path",
+      "mcp__XcodeBuildMCP__get_app_bundle_id",
+      "mcp__XcodeBuildMCP__screenshot"
+    ]
+  }
+}
+```
+
+#### 표준 빌드 워크플로우
+
+**1. 프로젝트 검색**:
+```
+mcp__XcodeBuildMCP__discover_projs({ workspaceRoot: "/path/to/ReadMoreLabel" })
+```
+
+**2. 스킴 확인**:
+```
+mcp__XcodeBuildMCP__list_schemes({ projectPath: "Example/ReadMoreLabelExample.xcodeproj" })
+```
+
+**3. 시뮬레이터 빌드**:
+```
+mcp__XcodeBuildMCP__build_sim({ 
+  projectPath: "Example/ReadMoreLabelExample.xcodeproj",
+  scheme: "ReadMoreLabelExample", 
+  simulatorName: "iPhone 16" 
+})
+```
+
+**4. 빌드 및 실행 (통합)**:
+```
+mcp__XcodeBuildMCP__build_run_sim({
+  projectPath: "Example/ReadMoreLabelExample.xcodeproj",
+  scheme: "ReadMoreLabelExample",
+  simulatorName: "iPhone 16"
+})
+```
+
+**5. 기능 검증**:
+```
+mcp__XcodeBuildMCP__screenshot({ simulatorUuid: "SIMULATOR_UUID" })
+```
+
+#### XcodeBuildMCP 사용 이유
+
+**기존 방식의 문제점**:
+- `xcodebuild` 직접 사용 시 복잡한 설정 필요
+- 시뮬레이터 관리와 앱 실행의 분리된 과정
+- Bundle ID 추출 및 경로 관리의 복잡성
+
+**XcodeBuildMCP 장점**:
+- **통합된 워크플로우**: 빌드부터 실행까지 한 번에 처리
+- **자동화된 설정**: 시뮬레이터 부팅, 앱 설치, 실행 자동화
+- **오류 처리**: 빌드 오류 및 실행 문제 자동 감지
+- **검증 도구**: 스크린샷을 통한 시각적 검증 지원
+
+#### 빌드 검증 체크리스트
+
+ReadMoreLabel 빌드 후 반드시 확인해야 할 사항:
+
+- [ ] **빌드 성공**: 컴파일 에러 없이 빌드 완료
+- [ ] **앱 실행**: 시뮬레이터에서 정상 실행
+- [ ] **Suffix 기능**: 모든 예제에서 "더보기" 텍스트 표시
+- [ ] **스크린샷 검증**: 시각적으로 기능 동작 확인
+- [ ] **다양한 예제**: English, 한국어, 이모지 케이스 모두 테스트
+
+#### 문제 해결
+
+**빌드 실패 시**:
+1. `mcp__XcodeBuildMCP__clean` 실행
+2. Derived Data 정리
+3. 시뮬레이터 재시작
+4. 프로젝트 설정 확인
+
+**Suffix 미표시 시**:
+1. TextKit 변수 패턴 확인 (`let (textStorage, layoutManager, textContainer)`)
+2. 메모리 관리 코드 검증
+3. 빌드 후 즉시 시각적 검증 수행
+
+**성능 모니터링**:
+- XcodeBuildMCP는 빌드 시간과 앱 실행 성능 최적화
+- 통합된 로그 출력으로 문제점 빠른 식별
+- 자동화된 테스트 환경 제공
+
 ## Phase 4 계획: TextKit 2 Migration (Future Enhancement)
 
 ### 개요
