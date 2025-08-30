@@ -615,26 +615,48 @@ public class ReadMoreLabel: UILabel {
     
     private func displayTruncatedTextAtEnd(_ attributedText: NSAttributedString, availableWidth: CGFloat) {        
         guard attributedText.length > 0 && availableWidth > 0 && numberOfLinesWhenCollapsed > 0 else {
+            #if DEBUG
+            print("🚫 ReadMoreLabel DEBUG: Guard failed - text.length: \(attributedText.length), width: \(availableWidth), lines: \(numberOfLinesWhenCollapsed)")
+            #endif
             super.attributedText = attributedText
             setInternalNumberOfLines(numberOfLinesWhenCollapsed == 0 ? 0 : numberOfLinesWhenCollapsed)
             readMoreTextRange = nil
             return
         }
         
+        #if DEBUG
+        print("🔍 ReadMoreLabel DEBUG: Starting truncation - text.length: \(attributedText.length), width: \(availableWidth), targetLines: \(numberOfLinesWhenCollapsed)")
+        #endif
+        
         let suffix = createReadMoreSuffix(from: attributedText)
+        #if DEBUG
+        print("📝 ReadMoreLabel DEBUG: Created suffix: '\(suffix.string)' length: \(suffix.length)")
+        #endif
+        
         let result = applyReadMore(
             originalText: attributedText,
             numberOfLines: numberOfLinesWhenCollapsed,
             containerWidth: availableWidth,
             suffix: suffix
         )
+        
+        #if DEBUG
+        print("📊 ReadMoreLabel DEBUG: applyReadMore result - needsTruncation: \(result.needsTruncation)")
+        #endif
             
         if result.needsTruncation,
            let (finalText, readMoreRange) = result.textAndRange {
+            #if DEBUG
+            print("✅ ReadMoreLabel DEBUG: Applying truncated text - finalText.length: \(finalText.length), suffix range: \(readMoreRange)")
+            print("📄 ReadMoreLabel DEBUG: Final text: '\(finalText.string.prefix(100))...'")
+            #endif
             super.attributedText = finalText
             setInternalNumberOfLines(numberOfLinesWhenCollapsed)
             readMoreTextRange = readMoreRange
         } else {
+            #if DEBUG
+            print("❌ ReadMoreLabel DEBUG: No truncation applied - using original text")
+            #endif
             super.attributedText = attributedText
             setInternalNumberOfLines(numberOfLinesWhenCollapsed == 0 ? 0 : numberOfLinesWhenCollapsed)
             readMoreTextRange = nil
@@ -688,13 +710,23 @@ public class ReadMoreLabel: UILabel {
         
         let totalGlyphCount = layoutManager.numberOfGlyphs
         guard totalGlyphCount > 0 else {
+            #if DEBUG
+            print("⚪ ReadMoreLabel DEBUG: No glyphs - totalGlyphCount: \(totalGlyphCount)")
+            #endif
             return .noTruncationNeeded
         }
         
-        // 통합된 헬퍼 메서드로 줄 수 계산
-        let actualLinesNeeded = calculateLineCount(from: layoutManager, totalGlyphCount: totalGlyphCount)
+        // Phase 4: 일관된 줄 수 계산 - calculateActualLinesNeeded 사용
+        let actualLinesNeeded = calculateActualLinesNeeded(for: alignedText, width: containerWidth)
+        
+        #if DEBUG
+        print("📏 ReadMoreLabel DEBUG: Line count - actual: \(actualLinesNeeded), target: \(numberOfLines)")
+        #endif
         
         if actualLinesNeeded <= numberOfLines {
+            #if DEBUG
+            print("⚪ ReadMoreLabel DEBUG: No truncation needed - actualLines(\(actualLinesNeeded)) <= targetLines(\(numberOfLines))")
+            #endif
             return .noTruncationNeeded
         }
 
@@ -736,17 +768,19 @@ public class ReadMoreLabel: UILabel {
     ) -> TextTruncationResult {
         
         let alignedText = applyTextAlignment(to: originalText)
+        
+        // Phase 4: 일관된 줄 수 계산 - calculateActualLinesNeeded 사용
+        let actualLinesNeeded = calculateActualLinesNeeded(for: alignedText, width: containerWidth)
+        
+        if actualLinesNeeded <= numberOfLines {
+            return .noTruncationNeeded
+        }
+        
+        // TextKit 스택은 나머지 작업을 위해 필요
         let (textStorage, layoutManager, textContainer) = createTextKitStack(for: alignedText, containerWidth: containerWidth)
         
         let totalGlyphCount = layoutManager.numberOfGlyphs
         guard totalGlyphCount > 0 else {
-            return .noTruncationNeeded
-        }
-        
-        // 통합된 헬퍼 메서드로 줄 수 계산
-        let actualLinesNeeded = calculateLineCount(from: layoutManager, totalGlyphCount: totalGlyphCount)
-        
-        if actualLinesNeeded <= numberOfLines {
             return .noTruncationNeeded
         }
         
