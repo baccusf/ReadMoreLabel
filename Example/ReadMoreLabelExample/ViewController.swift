@@ -19,6 +19,10 @@ extension ReadMoreLabel {
         case gradient
         case bold
         case mobile
+        case fontSizeSmall   // 12pt font
+        case fontSizeMedium  // 18pt font
+        case fontSizeLarge   // 24pt font
+        case fontSizeXLarge  // 32pt font
     }
 }
 
@@ -88,6 +92,84 @@ class ViewController: UIViewController {
             text: "🚀 日本語カスタム省略記号の例！beginningNewLine位置を使用。デフォルトの「..」の代わりに「→」や「***」、絵文字などの任意のテキストを使用できます。これにより、切り取られたテキストインジケーターの視覚的な外観をより細かく制御できます。すべての行が表示された後、新しい行にボタンが表示されます。",
             style: .gradient,
             position: .end,
+            language: "ja"
+        ),
+        
+        // Font Size Testing Examples
+        SampleData(
+            text: "📝 Small Font Size Test (12pt): This example demonstrates how ReadMoreLabel handles different font sizes. The 'Read More' text uses a smaller 12pt font while maintaining proper text truncation and positioning. This is useful for compact UI designs, footnotes, or when you need to display more content in limited space. The smaller font should still be readable and accessible.",
+            style: .fontSizeSmall,
+            position: .end,
+            language: "en"
+        ),
+        SampleData(
+            text: "📚 Medium Font Size Test (18pt): This example shows ReadMoreLabel with medium-sized font. The larger text provides better readability while still demonstrating the truncation functionality. This font size is ideal for main content areas where readability is important but you still want to conserve screen space with the read more feature.",
+            style: .fontSizeMedium,
+            position: .newLine,
+            language: "en"
+        ),
+        SampleData(
+            text: "📖 Large Font Size Test (24pt): This demonstrates ReadMoreLabel with large font size for enhanced accessibility and readability. The 'Read More' button uses the same large font size to maintain visual consistency. This is perfect for accessibility-focused apps or when targeting users who prefer larger text for better readability.",
+            style: .fontSizeLarge,
+            position: .end,
+            language: "en"
+        ),
+        SampleData(
+            text: "🎯 Extra Large Font Test (32pt): Testing with extra large font size to see how ReadMoreLabel adapts to very large text. This extreme font size tests the robustness of the text measurement and truncation algorithms. The 'Read More' text maintains the same large size for consistency.",
+            style: .fontSizeXLarge,
+            position: .newLine,
+            language: "en"
+        ),
+        
+        // Korean Font Size Examples
+        SampleData(
+            text: "📝 한국어 소형 폰트 테스트 (12pt): 이 예제는 ReadMoreLabel이 작은 폰트 크기를 어떻게 처리하는지 보여줍니다. 12pt 폰트를 사용하여 제한된 공간에서도 '더보기' 텍스트가 올바르게 표시되는지 확인할 수 있습니다. 작은 폰트 크기에서도 가독성을 유지하면서 텍스트 자르기 기능이 정상적으로 작동합니다.",
+            style: .fontSizeSmall,
+            position: .end,
+            language: "ko"
+        ),
+        SampleData(
+            text: "📚 한국어 중형 폰트 테스트 (18pt): 중간 크기 폰트로 ReadMoreLabel의 동작을 확인하는 예제입니다. 18pt 폰트는 가독성과 공간 효율성의 좋은 균형을 제공합니다. 메인 콘텐츠 영역에서 사용하기에 적합하며, 더보기 기능을 통해 화면 공간을 효율적으로 활용할 수 있습니다.",
+            style: .fontSizeMedium,
+            position: .newLine,
+            language: "ko"
+        ),
+        SampleData(
+            text: "📖 한국어 대형 폰트 테스트 (24pt): 접근성 향상을 위한 큰 폰트 크기로 ReadMoreLabel을 테스트합니다. 24pt 폰트는 시각적으로 더 명확하게 보이며, 큰 텍스트를 선호하는 사용자들에게 적합합니다. '더보기' 버튼도 동일한 큰 폰트 크기를 유지하여 시각적 일관성을 보장합니다.",
+            style: .fontSizeLarge,
+            position: .end,
+            language: "ko"
+        ),
+        SampleData(
+            text: "🎯 한국어 초대형 폰트 테스트 (32pt): 매우 큰 폰트 크기에서의 ReadMoreLabel 동작을 테스트합니다. 이 극한 폰트 크기는 텍스트 측정 및 자르기 알고리즘의 견고성을 확인하는 데 도움이 됩니다. '더보기' 텍스트도 동일한 큰 크기를 유지합니다.",
+            style: .fontSizeXLarge,
+            position: .newLine,
+            language: "ko"
+        ),
+        
+        // Japanese Font Size Examples
+        SampleData(
+            text: "📝 日本語小フォントテスト（12pt）: この例では、ReadMoreLabelが小さなフォントサイズをどのように処理するかを示します。12ptフォントを使用して、限られたスペースでも「続きを読む」テキストが正しく表示されることを確認できます。小さなフォントサイズでも読みやすさを維持しながら、テキスト切り詰め機能が正常に動作します。",
+            style: .fontSizeSmall,
+            position: .end,
+            language: "ja"
+        ),
+        SampleData(
+            text: "📚 日本語中フォントテスト（18pt）: 中サイズフォントでReadMoreLabelの動作を確認する例です。18ptフォントは読みやすさとスペース効率性の良いバランスを提供します。メインコンテンツエリアでの使用に適しており、もっと見る機能を通じて画面スペースを効率的に活用できます。",
+            style: .fontSizeMedium,
+            position: .newLine,
+            language: "ja"
+        ),
+        SampleData(
+            text: "📖 日本語大フォントテスト（24pt）: アクセシビリティ向上のための大きなフォントサイズでReadMoreLabelをテストします。24ptフォントは視覚的により明確に見え、大きなテキストを好むユーザーに適しています。「もっと見る」ボタンも同じ大きなフォントサイズを維持して視覚的一貫性を保証します。",
+            style: .fontSizeLarge,
+            position: .end,
+            language: "ja"
+        ),
+        SampleData(
+            text: "🎯 日本語特大フォントテスト（32pt）: 非常に大きなフォントサイズでのReadMoreLabel動作をテストします。この極限フォントサイズはテキスト測定および切り詰めアルゴリズムの堅牢性を確認するのに役立ちます。「もっと見る」テキストも同じ大きなサイズを維持します。",
+            style: .fontSizeXLarge,
+            position: .newLine,
             language: "ja"
         )
     ]
@@ -373,6 +455,46 @@ class ExampleTableViewCell: UITableViewCell {
                     .backgroundColor: UIColor.systemIndigo.withAlphaComponent(0.1)
                 ]
             )
+            
+        case .fontSizeSmall:
+            readMoreLabel.font = UIFont.systemFont(ofSize: 12)
+            readMoreLabel.readMoreText = NSAttributedString(
+                string: readMoreTexts.text,
+                attributes: [
+                    .foregroundColor: UIColor.systemBlue,
+                    .font: UIFont.systemFont(ofSize: 12, weight: .medium)
+                ]
+            )
+            
+        case .fontSizeMedium:
+            readMoreLabel.font = UIFont.systemFont(ofSize: 18)
+            readMoreLabel.readMoreText = NSAttributedString(
+                string: readMoreTexts.text,
+                attributes: [
+                    .foregroundColor: UIColor.systemGreen,
+                    .font: UIFont.systemFont(ofSize: 18, weight: .semibold)
+                ]
+            )
+            
+        case .fontSizeLarge:
+            readMoreLabel.font = UIFont.systemFont(ofSize: 24)
+            readMoreLabel.readMoreText = NSAttributedString(
+                string: readMoreTexts.text,
+                attributes: [
+                    .foregroundColor: UIColor.systemOrange,
+                    .font: UIFont.systemFont(ofSize: 24, weight: .bold)
+                ]
+            )
+            
+        case .fontSizeXLarge:
+            readMoreLabel.font = UIFont.systemFont(ofSize: 32)
+            readMoreLabel.readMoreText = NSAttributedString(
+                string: readMoreTexts.text,
+                attributes: [
+                    .foregroundColor: UIColor.systemRed,
+                    .font: UIFont.systemFont(ofSize: 32, weight: .heavy)
+                ]
+            )
         }
     }
     
@@ -419,6 +541,40 @@ class ExampleTableViewCell: UITableViewCell {
             return ("🔥 もっと見る", "!!!")
         case ("ja", .mobile):
             return ("📱 タップして展開", "...")
+            
+        // Font Size Testing - English
+        case ("en", .fontSizeSmall):
+            return ("📝 Read More (12pt)", ".")
+        case ("en", .fontSizeMedium):
+            return ("📚 Read More (18pt)", "..")
+        case ("en", .fontSizeLarge):
+            return ("📖 Read More (24pt)", "...")
+        case ("en", .fontSizeXLarge):
+            return ("🎯 Read More (32pt)", "....")
+            
+        // Font Size Testing - Korean
+        case ("ko", .fontSizeSmall):
+            return ("📝 더보기 (12pt)", ".")
+        case ("ko", .fontSizeMedium):
+            return ("📚 더보기 (18pt)", "..")
+        case ("ko", .fontSizeLarge):
+            return ("📖 더보기 (24pt)", "...")
+        case ("ko", .fontSizeXLarge):
+            return ("🎯 더보기 (32pt)", "....")
+            
+        // Font Size Testing - Japanese
+        case ("ja", .fontSizeSmall):
+            return ("📝 もっと見る (12pt)", ".")
+        case ("ja", .fontSizeMedium):
+            return ("📚 もっと見る (18pt)", "..")
+        case ("ja", .fontSizeLarge):
+            return ("📖 もっと見る (24pt)", "...")
+        case ("ja", .fontSizeXLarge):
+            return ("🎯 もっと見る (32pt)", "....")
+            
+        // Font size styles fallback to English for other languages
+        case (_, .fontSizeSmall), (_, .fontSizeMedium), (_, .fontSizeLarge), (_, .fontSizeXLarge):
+            return getReadMoreTexts(for: "en", style: style)
             
         // Default fallback to English
         default:
