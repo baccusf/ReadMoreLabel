@@ -27,7 +27,7 @@ A powerful and flexible UILabel subclass that provides "Read More" functionality
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/yourusername/ReadMoreLabel.git", from: "0.1.0")
+    .package(url: "https://github.com/yourusername/ReadMoreLabel.git", from: "1.0.0")
 ]
 ```
 
@@ -140,7 +140,7 @@ readMoreLabel.numberOfLinesWhenCollapsed = 0
 | `numberOfLinesWhenCollapsed` | `Int` | Number of lines to show when collapsed (0 = unlimited) | `3` |
 | `readMoreText` | `NSAttributedString` | Customizable "Read More" text with styling | `"Read More.."` |
 | `ellipsisText` | `String` | Customizable ellipsis text before "Read More" | `".."` |
-| `readMorePosition` | `ReadMoreLabel.Position` | Position of "Read More" text (`.end`, `.beginningNewLine`) | `.end` |
+| `readMorePosition` | `ReadMoreLabel.Position` | Position of "Read More" text (`.end`, `.newLine`) | `.end` |
 | `isExpanded` | `Bool` | Current expansion state (read-only) | `false` |
 | `isExpandable` | `Bool` | Whether text can be expanded (read-only) | `computed` |
 | `delegate` | `ReadMoreLabelDelegate?` | Delegate for expansion events | `nil` |
@@ -175,8 +175,8 @@ readMoreLabel.ellipsisText = "***"            // Asterisks
 readMoreLabel.ellipsisText = "✨"             // Emoji
 
 // Position control  
-readMoreLabel.readMorePosition = .end                    // Last line: "text.. Read More.." (default)
-readMoreLabel.readMorePosition = .beginningNewLine       // After n full lines: "Read More.." only
+readMoreLabel.readMorePosition = .end         // Last line: "text.. Read More.." (default)
+readMoreLabel.readMorePosition = .newLine     // New line after truncated text: "Read More.." only
 ```
 
 ## ⚠️ Important Notes
@@ -261,7 +261,7 @@ func readMoreLabel(_ label: ReadMoreLabel, didChangeExpandedState isExpanded: Bo
 
 - iOS 16.0+
 - Swift 5.0+
-- Xcode 16.0+
+- Xcode 13.0+
 
 ## 📄 License
 
