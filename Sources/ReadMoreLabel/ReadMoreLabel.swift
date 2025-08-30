@@ -1,12 +1,10 @@
 import UIKit
 
-@available(iOS 16.0, *)
 @objc public protocol ReadMoreLabelDelegate: AnyObject {
     @objc optional func readMoreLabel(_ label: ReadMoreLabel, didChangeExpandedState isExpanded: Bool)
 }
 
 /// UILabel with "Read More" functionality for truncated text
-@available(iOS 16.0, *)
 @objc @IBDesignable
 public class ReadMoreLabel: UILabel {
     
