@@ -626,7 +626,7 @@ public class ReadMoreLabel: UILabel {
         let actualLinesNeeded = calculateActualLinesNeeded(for: originalText, width: bounds.width)
         let threshold = max(2, numberOfLinesWhenCollapsed - 1)
         
-        if actualLinesNeeded <= threshold {
+        if !isExpanded, actualLinesNeeded <= threshold {
             isExpanded = false
         } else {
             super.attributedText = originalText
@@ -671,7 +671,7 @@ public class ReadMoreLabel: UILabel {
         if isExpanded {
             // Do NOT auto-reset expanded state when user has explicitly expanded text
             // The user's explicit action should take precedence over automatic calculations
-            // checkAndResetExpandedStateIfNeeded() - commented out to fix tap expansion bug
+             checkAndResetExpandedStateIfNeeded()
         } else {
             checkAndResetTruncationStateIfNeeded()
         }
