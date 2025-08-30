@@ -1,0 +1,61 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(rm:*)",
+      "Bash(find:*)",
+      "Bash(xcodebuild:*)",
+      "Bash(xcrun -sdk iphonesimulator swiftc -typecheck:*)",
+      "Bash(xcrun simctl launch:*)",
+      "Bash(xcrun simctl boot:*)",
+      "Bash(xcrun simctl install:*)",
+      "Bash(xcrun simctl spawn:*)",
+      "Bash(swift build:*)",
+      "WebFetch(domain:developer.apple.com)",
+      "WebFetch(domain:github.com)",
+      "Bash(xcrun:*)",
+      "Bash(grep:*)",
+      "Bash(git restore:*)",
+      "WebSearch",
+      "WebFetch(domain:shadowfacts.net)",
+      "Bash(open:*)",
+      "Bash(swiftc:*)",
+      "Bash(swift package:*)",
+      "Bash(killall:*)",
+      "Bash(swift:*)",
+      "WebFetch(domain:www.hackingwithswift.com)",
+      "WebFetch(domain:stackoverflow.com)",
+      "WebFetch(domain:gist.github.com)",
+      "WebFetch(domain:theswiftdev.com)",
+      "Bash(sed:*)",
+      "Bash(timeout 60 xcodebuild:*)",
+      "Bash(claude doctor)",
+      "Read(//Users/seungho/.claude/**)",
+      "Bash(npx:*)",
+      "mcp__XcodeBuildMCP__build_run_sim",
+      "mcp__XcodeBuildMCP__list_sims",
+      "mcp__XcodeBuildMCP__launch_app_sim",
+      "mcp__XcodeBuildMCP__open_sim",
+      "mcp__XcodeBuildMCP__screenshot",
+      "mcp__XcodeBuildMCP__swipe",
+      "mcp__XcodeBuildMCP__key_press",
+      "mcp__XcodeBuildMCP__launch_app_logs_sim",
+      "mcp__XcodeBuildMCP__stop_sim_log_cap",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git checkout:*)",
+      "mcp__XcodeBuildMCP__swift_package_build",
+      "mcp__XcodeBuildMCP__build_sim",
+      "mcp__XcodeBuildMCP__get_sim_app_path",
+      "mcp__XcodeBuildMCP__get_app_bundle_id"
+    ],
+    "deny": [],
+    "defaultMode": "acceptEdits",
+    "additionalDirectories": [
+      "/Users/seungho/.claude"
+    ]
+  },
+  "enabledMcpjsonServers": [
+    "ios-simulator",
+    "context7"
+  ]
+}
