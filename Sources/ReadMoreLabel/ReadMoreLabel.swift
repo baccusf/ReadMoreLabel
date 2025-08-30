@@ -33,7 +33,7 @@ public class ReadMoreLabel: UILabel {
         }
     }
     
-    @objc public var readMoreText: NSAttributedString = NSAttributedString(string: "더보기..") {
+    @objc public var readMoreText: NSAttributedString = NSAttributedString(string: "Read More..") {
         didSet {
             invalidateDisplayAndLayout()
             self.layoutIfNeeded()
@@ -73,7 +73,7 @@ public class ReadMoreLabel: UILabel {
     private var originalAttributedText: NSAttributedString?
     private var internalNumberOfLines: Int = 0
     
-    // MARK: - 상수 정의
+    // MARK: - Constants
     private static let animationDuration: TimeInterval = 0.3
     private static let defaultSpaceBetweenEllipsisAndReadMore: String = " "
     private static let newLineCharacter: String = "\n"
@@ -210,14 +210,14 @@ public class ReadMoreLabel: UILabel {
             return .noTruncationNeeded
         }
         
-        // 기존 layoutManager를 재사용하여 줄 수 계산 (원래 로직 완전 복원)
+        // Calculate line count by reusing existing layoutManager (original logic fully restored)
         var actualLinesNeeded = 0
         layoutManager.enumerateLineFragments(forGlyphRange: NSRange(location: 0, length: totalGlyphCount)) { 
             (rect, usedRect, textContainer, glyphRange, stop) in
             actualLinesNeeded += 1
         }
         
-        // 마지막 줄이 높이 0인 경우 제외 (원래 로직 완전 복원)
+        // Exclude lines with zero height from count (original logic fully restored)
         if actualLinesNeeded > 0 {
             let lastLineGlyphIndex = totalGlyphCount - 1
             let lastLineRect = layoutManager.lineFragmentRect(forGlyphAt: lastLineGlyphIndex, effectiveRange: nil)
@@ -231,7 +231,7 @@ public class ReadMoreLabel: UILabel {
             return .noTruncationNeeded
         }
         
-        // 두 번째 enumeration으로 마지막 줄 찾기 (원래 로직 완전 복원)
+        // Find the last line with second enumeration (original logic fully restored)
         var lastLineRange = NSRange()
         var currentLineCount = 0
         layoutManager.enumerateLineFragments(forGlyphRange: NSRange(location: 0, length: totalGlyphCount)) { 
@@ -243,7 +243,7 @@ public class ReadMoreLabel: UILabel {
             }
         }
         
-        // 실제 사용된 텍스트 너비 계산 (usedRect 기반)
+        // Calculate actual used text width (based on usedRect)
         var lastLineUsedWidth: CGFloat = 0
         layoutManager.enumerateLineFragments(forGlyphRange: lastLineRange) { 
             (rect, usedRect, textContainer, glyphRange, stop) in
@@ -413,7 +413,7 @@ public class ReadMoreLabel: UILabel {
         }
         
         
-        // numberOfLinesWhenCollapsed줄로 자른 후 다음 줄 맨 앞에 "더보기" 추가
+        // Cut text to numberOfLinesWhenCollapsed lines and add "Read More" at the beginning of next line
         let result = applyReadMoreForNewLine(
             originalText: attributedText,
             numberOfLines: numberOfLinesWhenCollapsed,
@@ -423,7 +423,7 @@ public class ReadMoreLabel: UILabel {
         
         if result.needsTruncation,
            let (finalText, readMoreRange) = result.textAndRange {
-            // newLine position에서는 항상 numberOfLines + 1줄 표시
+            // Always show numberOfLines + 1 lines in newLine position
             super.attributedText = finalText
             setInternalNumberOfLines(numberOfLinesWhenCollapsed + 1)
             readMoreTextRange = readMoreRange
@@ -450,13 +450,13 @@ public class ReadMoreLabel: UILabel {
             return .noTruncationNeeded
         }
         
-        // 단일 패스로 라인 정보 수집 및 분석
+        // Collect and analyze line information in single pass
         var lineFragments: [(rect: CGRect, glyphRange: NSRange)] = []
         
         layoutManager.enumerateLineFragments(forGlyphRange: NSRange(location: 0, length: totalGlyphCount)) { 
             (rect, usedRect, textContainer, glyphRange, stop) in
             
-            // 높이 0인 마지막 줄 제외 처리
+            // Exclude lines with zero height
             if rect.height > 0 {
                 lineFragments.append((rect: rect, glyphRange: glyphRange))
             }
@@ -464,12 +464,12 @@ public class ReadMoreLabel: UILabel {
         
         let actualLinesNeeded = lineFragments.count
         
-        // Early exit: 잘림 불필요
+        // Early exit: no truncation needed
         if actualLinesNeeded <= numberOfLines {
             return .noTruncationNeeded
         }
         
-        // 타겟 라인 정보 추출
+        // Extract target line information
         guard numberOfLines <= lineFragments.count else {
             return .noTruncationNeeded
         }
@@ -479,17 +479,17 @@ public class ReadMoreLabel: UILabel {
         let lastLineRect = targetLineFragment.rect
         let characterRange = layoutManager.characterRange(forGlyphRange: lastLineRange, actualGlyphRange: nil)
         
-        // 더보기 텍스트 생성 및 크기 계산
+        // Generate read more text and calculate size
         let lastAttributes = originalText.lastTextAttributes(defaultAttributes: defaultTextAttributes)
         let readMoreWithNewLine = NSMutableAttributedString(string: Self.newLineCharacter, attributes: lastAttributes)
         let readMoreWithOriginalAttributes = readMoreText.createMutableWithAttributes(lastAttributes)
         readMoreWithNewLine.append(readMoreWithOriginalAttributes)
         
-        // newLine position에서는 현재 줄에서 "더보기" 공간을 확보할 필요 없음
-        // numberOfLines번째 줄의 끝에서 텍스트를 자름
+        // No need to secure space for "Read More" in current line for newLine position
+        // Cut text at the end of numberOfLines line
         let truncateOffset = characterRange.location + characterRange.length
         
-        // 최종 텍스트 구성
+        // Compose final text
         let truncatedSubstring = originalText.attributedSubstring(from: NSRange(location: 0, length: truncateOffset))
         let cleanedTruncatedText = removeTrailingNewlineIfNeeded(from: truncatedSubstring)
         let finalText = NSMutableAttributedString(attributedString: cleanedTruncatedText)
@@ -504,24 +504,24 @@ public class ReadMoreLabel: UILabel {
         return .truncated(finalText, finalReadMoreRange)
     }
     
-    // MARK: - TextKit 최적화 헬퍼 메서드
+    // MARK: - TextKit Optimization Helper Methods
     
-    /// 최적화된 텍스트 크기 계산 (사용되지 않는 메서드 제거)
+    /// Optimized text size calculation (unused methods removed)
     
-    /// 통합된 줄 계산 로직 (안전한 공통 메서드)
+    /// Unified line counting logic (safe common method)
     private func countLinesInText(
         _ text: NSAttributedString,
         layoutManager: NSLayoutManager,
         containerWidth: CGFloat
     ) -> Int {
-        // applyReadMore에서 호출되는 경우: 이미 설정된 layoutManager 재사용
-        // 다른 곳에서 호출되는 경우: 새로운 TextKit 스택 생성
+        // When called from applyReadMore: reuse already configured layoutManager
+        // When called from elsewhere: create new TextKit stack
         let usedLayoutManager: NSLayoutManager
         if layoutManager.textStorage != nil && layoutManager.textStorage?.string == text.string {
-            // 기존 layoutManager가 같은 텍스트로 설정된 경우에만 재사용
+            // Reuse only if existing layoutManager is configured with same text
             usedLayoutManager = layoutManager
         } else {
-            // 새로운 TextKit 스택 생성 (전달받은 text 사용)
+            // Create new TextKit stack (using provided text)
             let alignedText = applyTextAlignment(to: text)
             let (_, newLayoutManager, _) = createTextKitStack(for: alignedText, containerWidth: containerWidth)
             usedLayoutManager = newLayoutManager
@@ -538,7 +538,7 @@ public class ReadMoreLabel: UILabel {
             }
         }
         
-        // 마지막 줄이 높이 0인 경우 제외
+        // Exclude if last line has zero height
         if lineCount > 0 {
             let lastLineGlyphIndex = totalGlyphCount - 1
             let lastLineRect = usedLayoutManager.lineFragmentRect(forGlyphAt: lastLineGlyphIndex, effectiveRange: nil)
@@ -624,12 +624,12 @@ public class ReadMoreLabel: UILabel {
         }
     }
     
-    /// 통합된 텍스트 줄 수 계산 (공통 로직 사용)
+    /// Unified text line count calculation (using common logic)
     private func calculateActualLinesNeeded(for text: NSAttributedString, width: CGFloat) -> Int {
         return countLinesInText(text, layoutManager: NSLayoutManager(), containerWidth: width)
     }
     
-    /// 통합된 텍스트 크기 계산 메서드
+    /// Unified text size calculation method
     private func calculateTextSize(for text: NSAttributedString, width: CGFloat) -> CGSize {
         let alignedText = applyTextAlignment(to: text)
         let (_, layoutManager, textContainer) = createTextKitStack(for: alignedText, containerWidth: width)
@@ -674,7 +674,7 @@ public class ReadMoreLabel: UILabel {
 //        return CGSize(width: size.width, height: size.height)
 //    }
     
-    /// numberOfLines 제한을 고려한 텍스트 크기 계산
+    /// Text size calculation considering numberOfLines limit
     private func calculateTextSizeWithNumberOfLines(for attributedText: NSAttributedString, width: CGFloat, numberOfLines: Int) -> CGSize {
         guard width > 0 else { return .zero }
         
@@ -759,7 +759,7 @@ public class ReadMoreLabel: UILabel {
         
         let paragraphStyle: NSMutableParagraphStyle
         if let existingStyle = attributedText.attribute(.paragraphStyle, at: 0, effectiveRange: nil) as? NSParagraphStyle {
-            paragraphStyle = existingStyle.mutableCopy() as! NSMutableParagraphStyle
+            paragraphStyle = (existingStyle.mutableCopy() as? NSMutableParagraphStyle) ?? NSMutableParagraphStyle()
         } else {
             paragraphStyle = NSMutableParagraphStyle()
         }
