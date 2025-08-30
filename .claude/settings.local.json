@@ -49,7 +49,8 @@
       "mcp__XcodeBuildMCP__swift_package_build",
       "mcp__XcodeBuildMCP__build_sim",
       "mcp__XcodeBuildMCP__get_sim_app_path",
-      "mcp__XcodeBuildMCP__get_app_bundle_id"
+      "mcp__XcodeBuildMCP__get_app_bundle_id",
+      "mcp__XcodeBuildMCP__install_app_sim"
     ],
     "deny": [],
     "defaultMode": "acceptEdits",

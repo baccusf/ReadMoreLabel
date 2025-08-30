@@ -1,7 +1,7 @@
 # ReadMoreLabel
 
 [![Swift](https://img.shields.io/badge/Swift-5.0+-orange.svg)](https://swift.org)
-[![iOS](https://img.shields.io/badge/iOS-13.0+-blue.svg)](https://developer.apple.com/ios/)
+[![iOS](https://img.shields.io/badge/iOS-16.0+-blue.svg)](https://developer.apple.com/ios/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 エレガントなテキストの切り取りと展開機能を提供する、パワフルで柔軟なUILabelサブクラスです。
@@ -27,7 +27,7 @@
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/yourusername/ReadMoreLabel.git", from: "1.0.0")
+    .package(url: "https://github.com/yourusername/ReadMoreLabel.git", from: "0.1.0")
 ]
 ```
 
@@ -255,9 +255,9 @@ func readMoreLabel(_ label: ReadMoreLabel, didChangeExpandedState isExpanded: Bo
 
 ## 🛠 要件
 
-- iOS 13.0+
+- iOS 16.0+
 - Swift 5.0+
-- Xcode 13.0+
+- Xcode 16.0+
 
 ## 💡 Swift バージョン互換性
 
