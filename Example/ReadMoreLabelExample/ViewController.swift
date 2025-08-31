@@ -398,6 +398,7 @@ class ExampleTableViewCell: UITableViewCell {
         // Apply style-specific attributes
         switch style {
         case .basic:
+            readMoreLabel.font = UIFont.systemFont(ofSize: 16)
             readMoreLabel.readMoreText = NSAttributedString(
                 string: readMoreTexts.text,
                 attributes: [
@@ -407,6 +408,7 @@ class ExampleTableViewCell: UITableViewCell {
             )
             
         case .colorful:
+            readMoreLabel.font = UIFont.systemFont(ofSize: 16)
             readMoreLabel.readMoreText = NSAttributedString(
                 string: readMoreTexts.text,
                 attributes: [
@@ -417,6 +419,7 @@ class ExampleTableViewCell: UITableViewCell {
             )
             
         case .emoji:
+            readMoreLabel.font = UIFont.systemFont(ofSize: 16)
             readMoreLabel.readMoreText = NSAttributedString(
                 string: readMoreTexts.text,
                 attributes: [
@@ -426,6 +429,7 @@ class ExampleTableViewCell: UITableViewCell {
             )
             
         case .gradient:
+            readMoreLabel.font = UIFont.systemFont(ofSize: 16)
             readMoreLabel.readMoreText = NSAttributedString(
                 string: readMoreTexts.text,
                 attributes: [
@@ -437,6 +441,7 @@ class ExampleTableViewCell: UITableViewCell {
             )
             
         case .bold:
+            readMoreLabel.font = UIFont.systemFont(ofSize: 16)
             readMoreLabel.readMoreText = NSAttributedString(
                 string: readMoreTexts.text,
                 attributes: [
@@ -447,6 +452,7 @@ class ExampleTableViewCell: UITableViewCell {
             )
             
         case .mobile:
+            readMoreLabel.font = UIFont.systemFont(ofSize: 16)
             readMoreLabel.readMoreText = NSAttributedString(
                 string: readMoreTexts.text,
                 attributes: [
