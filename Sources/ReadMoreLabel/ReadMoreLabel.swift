@@ -50,8 +50,6 @@ private struct TextKitStackBuilder {
 /// UILabel with "Read More" functionality for truncated text
 @objc @IBDesignable
 public class ReadMoreLabel: UILabel {
-    
-    
     @objc public weak var delegate: ReadMoreLabelDelegate?
     
     private var numberOfLinesWhenCollapsed: Int = 3 {
@@ -189,8 +187,6 @@ public class ReadMoreLabel: UILabel {
         return attributedText.findReadMoreTextRanges()
     }
     
-    
-    
     private func applyReadMore(
         originalText: NSAttributedString,
         numberOfLines: Int,
@@ -209,12 +205,6 @@ public class ReadMoreLabel: UILabel {
             lineBreakMode: lineBreakMode
         )
     }
-    
-    
-    
-    
-    
-    
         
     private func setInternalNumberOfLines(_ lines: Int) {
         internalNumberOfLines = lines
@@ -293,7 +283,6 @@ public class ReadMoreLabel: UILabel {
             return
         }
         
-        
         // Cut text to numberOfLinesWhenCollapsed lines and add "Read More" at the beginning of next line
         let result = attributedText.applyingReadMoreForNewLine(
             numberOfLines: numberOfLinesWhenCollapsed,
@@ -309,7 +298,6 @@ public class ReadMoreLabel: UILabel {
             defaultAttributes: defaultTextAttributes
         )
         
-        
         if result.needsTruncation,
            let (finalText, readMoreRange) = result.textAndRange {
             // Always show numberOfLines + 1 lines in newLine position
@@ -324,11 +312,9 @@ public class ReadMoreLabel: UILabel {
         }
     }
     
-    
     // MARK: - Enhanced TextKit 1 Optimization Methods
     
     /// Enhanced TextKit 1: Optimized line counting with improved performance
-    
     
     private func invalidateDisplayAndLayout() {
         invalidateIntrinsicContentSize()
@@ -345,7 +331,6 @@ public class ReadMoreLabel: UILabel {
         updateDisplay()
     }
     
-    
     @objc private func handleTapGesture(_ gesture: UITapGestureRecognizer) {
         guard isExpandable, !isExpanded, let attributedText = attributedText else {
             return
@@ -357,10 +342,7 @@ public class ReadMoreLabel: UILabel {
             return
         }
         
-        let hitTestResult = hasReadMoreTextAtLocation(locationInLabel, in: attributedText)
-        let fallbackCondition = readMoreTextRange != nil
-        
-        if hitTestResult || fallbackCondition {
+        if hasReadMoreTextAtLocation(locationInLabel, in: attributedText) {
             setExpanded(true, animated: true)
         }
     }
@@ -553,9 +535,6 @@ public class ReadMoreLabel: UILabel {
             newLineCharacter: Self.newLineCharacter
         )
     }
-    
-    
-    
 }
 
 // MARK: - NSLayoutManager Extensions
