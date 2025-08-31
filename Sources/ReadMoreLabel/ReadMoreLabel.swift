@@ -201,110 +201,20 @@ public class ReadMoreLabel: UILabel {
         let alignedText = originalText.applyingTextAlignment(textAlignment, font: font, textColor: textColor)
         
         // Enhanced TextKit 1: Proven reliability with optimized performance
-        return applyReadMoreWithTextKit1(alignedText, numberOfLines: numberOfLines, containerWidth: containerWidth, suffix: suffix)
-    }
-    
-    /// Enhanced TextKit 1: Proven text truncation logic with optimized performance
-    private func applyReadMoreWithTextKit1(
-        _ alignedText: NSAttributedString,
-        numberOfLines: Int,
-        containerWidth: CGFloat,
-        suffix: NSAttributedString
-    ) -> TextTruncationResult {
-        let (textStorage, layoutManager, textContainer) = TextKitStackBuilder.createStack(
-            for: alignedText,
+        return alignedText.applyingReadMoreTruncation(
+            numberOfLines: numberOfLines,
             containerWidth: containerWidth,
+            suffix: suffix,
             lineFragmentPadding: lineFragmentPadding,
             lineBreakMode: lineBreakMode
         )
-        
-        let totalGlyphCount = layoutManager.numberOfGlyphs
-        
-        guard totalGlyphCount > 0 else {
-            return .noTruncationNeeded
-        }
-        
-        // Enhanced line count calculation with boundary condition fix
-        var actualLinesNeeded = 0
-        layoutManager.enumerateLineFragments(forGlyphRange: NSRange(location: 0, length: totalGlyphCount)) { 
-            (rect, usedRect, textContainer, glyphRange, stop) in
-            // Count all line fragments with positive height
-            if rect.height > 0 {
-                actualLinesNeeded += 1
-            }
-        }
-        
-        // Fixed boundary condition: >= to handle exact line matches
-        if actualLinesNeeded <= numberOfLines {
-            return .noTruncationNeeded
-        }
-        
-        // Find the target line with consistent newline handling
-        var lastLineRange = NSRange()
-        var currentLineCount = 0
-        layoutManager.enumerateLineFragments(forGlyphRange: NSRange(location: 0, length: totalGlyphCount)) { 
-            (rect, usedRect, textContainer, glyphRange, stop) in
-            // Only count line fragments with positive height (consistent with line counting above)
-            if rect.height > 0 {
-                currentLineCount += 1
-                if currentLineCount == numberOfLines {
-                    lastLineRange = glyphRange
-                    stop.pointee = true
-                }
-            }
-        }
-        
-        // Calculate actual used text width (based on usedRect)
-        var lastLineUsedWidth: CGFloat = 0
-        layoutManager.enumerateLineFragments(forGlyphRange: lastLineRange) { 
-            (rect, usedRect, textContainer, glyphRange, stop) in
-            lastLineUsedWidth = usedRect.width
-        }
-        
-        // Enhanced suffix width calculation using TextKit 1 precision with proper padding and line break mode
-        let suffixWidth = suffix.calculateWidth(
-            withContainerWidth: containerWidth,
-            lineFragmentPadding: lineFragmentPadding,
-            lineBreakMode: lineBreakMode
-        )
-        
-        // Enhanced truncation with improved precision
-        let availableWidth = max(0, containerWidth - suffixWidth)
-        let truncateCharacterIndex = layoutManager.findTruncateLocation(withWidth: availableWidth, in: lastLineRange)
-        
-        let truncatedText = alignedText.attributedSubstring(from: NSRange(location: 0, length: truncateCharacterIndex))
-        let cleanedTruncatedText = truncatedText.removingTrailingNewlineIfNeeded()
-        let finalText = NSMutableAttributedString(attributedString: cleanedTruncatedText)
-        finalText.append(suffix)
-        
-        let readMoreRange = NSRange(location: cleanedTruncatedText.length, length: suffix.length)
-        
-        return .truncated(finalText, readMoreRange)
     }
     
     
     
     
     
-    private func createReadMoreSuffix(from originalText: NSAttributedString) -> NSAttributedString {
-        let lastAttributes = originalText.lastTextAttributes(defaultAttributes: defaultTextAttributes)
-        
-        let suffix = NSMutableAttributedString()
-        
-        let ellipsisWithLastAttributes = ellipsisText.createMutableWithAttributes(lastAttributes)
-        
-        suffix.append(ellipsisWithLastAttributes)
-        suffix.append(NSAttributedString(string: Self.defaultSpaceBetweenEllipsisAndReadMore, attributes: lastAttributes))
-        let readMoreStartLocation = suffix.length
-        
-        let readMoreWithOriginalAttributes = readMoreText.createMutableWithAttributes(lastAttributes)
-        
-        suffix.append(readMoreWithOriginalAttributes)
-        let readMoreRange = NSRange(location: readMoreStartLocation, length: readMoreWithOriginalAttributes.length)
-        suffix.addAttribute(AttributeKey.isReadMore, value: true, range: readMoreRange)
-        
-        return suffix
-    }
+    
         
     private func setInternalNumberOfLines(_ lines: Int) {
         internalNumberOfLines = lines
@@ -348,7 +258,13 @@ public class ReadMoreLabel: UILabel {
             return
         }
         
-        let suffix = createReadMoreSuffix(from: attributedText)
+        let suffix = attributedText.creatingReadMoreSuffix(
+            ellipsisText: ellipsisText,
+            readMoreText: readMoreText,
+            spaceBetween: Self.defaultSpaceBetweenEllipsisAndReadMore,
+            attributeKey: AttributeKey.isReadMore,
+            defaultAttributes: defaultTextAttributes
+        )
         
         let result = applyReadMore(
             originalText: attributedText,
@@ -379,10 +295,18 @@ public class ReadMoreLabel: UILabel {
         
         
         // Cut text to numberOfLinesWhenCollapsed lines and add "Read More" at the beginning of next line
-        let result = applyReadMoreForNewLine(
-            originalText: attributedText,
+        let result = attributedText.applyingReadMoreForNewLine(
             numberOfLines: numberOfLinesWhenCollapsed,
-            containerWidth: availableWidth
+            containerWidth: availableWidth,
+            textAlignment: textAlignment,
+            font: font,
+            textColor: textColor,
+            lineFragmentPadding: lineFragmentPadding,
+            lineBreakMode: lineBreakMode,
+            readMoreText: readMoreText,
+            newLineCharacter: Self.newLineCharacter,
+            attributeKey: AttributeKey.isReadMore,
+            defaultAttributes: defaultTextAttributes
         )
         
         
@@ -400,79 +324,6 @@ public class ReadMoreLabel: UILabel {
         }
     }
     
-    private func applyReadMoreForNewLine(
-        originalText: NSAttributedString,
-        numberOfLines: Int,
-        containerWidth: CGFloat
-    ) -> TextTruncationResult {
-        
-        let alignedText = originalText.applyingTextAlignment(textAlignment, font: font, textColor: textColor)
-        let (textStorage, layoutManager, textContainer) = TextKitStackBuilder.createStack(
-            for: alignedText,
-            containerWidth: containerWidth,
-            lineFragmentPadding: lineFragmentPadding,
-            lineBreakMode: lineBreakMode
-        )
-        
-        let totalGlyphCount = layoutManager.numberOfGlyphs
-        
-        guard totalGlyphCount > 0 else {
-            return .noTruncationNeeded
-        }
-        
-        // Collect and analyze line information in single pass
-        var lineFragments: [(rect: CGRect, glyphRange: NSRange)] = []
-        
-        layoutManager.enumerateLineFragments(forGlyphRange: NSRange(location: 0, length: totalGlyphCount)) { 
-            (rect, usedRect, textContainer, glyphRange, stop) in
-            
-            // Exclude lines with zero height
-            if rect.height > 0 {
-                lineFragments.append((rect: rect, glyphRange: glyphRange))
-            }
-        }
-        
-        let actualLinesNeeded = lineFragments.count
-        
-        // Early exit: no truncation needed
-        if actualLinesNeeded <= numberOfLines {
-            return .noTruncationNeeded
-        }
-        
-        // Extract target line information
-        guard numberOfLines <= lineFragments.count else {
-            return .noTruncationNeeded
-        }
-        
-        let targetLineFragment = lineFragments[numberOfLines - 1]
-        let lastLineRange = targetLineFragment.glyphRange
-        let lastLineRect = targetLineFragment.rect
-        let characterRange = layoutManager.characterRange(forGlyphRange: lastLineRange, actualGlyphRange: nil)
-        
-        // Generate read more text and calculate size
-        let lastAttributes = originalText.lastTextAttributes(defaultAttributes: defaultTextAttributes)
-        let readMoreWithNewLine = NSMutableAttributedString(string: Self.newLineCharacter, attributes: lastAttributes)
-        let readMoreWithOriginalAttributes = readMoreText.createMutableWithAttributes(lastAttributes)
-        readMoreWithNewLine.append(readMoreWithOriginalAttributes)
-        
-        // No need to secure space for "Read More" in current line for newLine position
-        // Cut text at the end of numberOfLines line
-        let truncateOffset = characterRange.location + characterRange.length
-        
-        // Compose final text
-        let truncatedSubstring = originalText.attributedSubstring(from: NSRange(location: 0, length: truncateOffset))
-        let cleanedTruncatedText = truncatedSubstring.removingTrailingNewlineIfNeeded()
-        let finalText = NSMutableAttributedString(attributedString: cleanedTruncatedText)
-        
-        finalText.append(NSAttributedString(string: Self.newLineCharacter, attributes: lastAttributes))
-        let readMoreStartLocation = finalText.length
-        finalText.append(readMoreWithOriginalAttributes)
-        
-        let finalReadMoreRange = NSRange(location: readMoreStartLocation, length: readMoreWithOriginalAttributes.length)
-        finalText.addAttribute(AttributeKey.isReadMore, value: true, range: finalReadMoreRange)
-        
-        return .truncated(finalText, finalReadMoreRange)
-    }
     
     // MARK: - Enhanced TextKit 1 Optimization Methods
     
@@ -1012,6 +863,222 @@ private extension NSAttributedString {
         let attributes = attributes(at: characterIndex, effectiveRange: nil)
         return (attributes[ReadMoreLabel.AttributeKey.isReadMore] as? Bool) == true
     }
+    
+    /// Enhanced TextKit 1: Proven text truncation logic with optimized performance
+    /// - Parameters:
+    ///   - numberOfLines: Maximum number of lines to display
+    ///   - containerWidth: Available width for text layout
+    ///   - suffix: ReadMore suffix to append
+    ///   - lineFragmentPadding: Line fragment padding
+    ///   - lineBreakMode: Line break mode
+    /// - Returns: TextTruncationResult with truncated text and range
+    func applyingReadMoreTruncation(
+        numberOfLines: Int,
+        containerWidth: CGFloat,
+        suffix: NSAttributedString,
+        lineFragmentPadding: CGFloat = 0,
+        lineBreakMode: NSLineBreakMode = .byWordWrapping
+    ) -> ReadMoreLabel.TextTruncationResult {
+        let (textStorage, layoutManager, textContainer) = TextKitStackBuilder.createStack(
+            for: self,
+            containerWidth: containerWidth,
+            lineFragmentPadding: lineFragmentPadding,
+            lineBreakMode: lineBreakMode
+        )
+        
+        let totalGlyphCount = layoutManager.numberOfGlyphs
+        
+        guard totalGlyphCount > 0 else {
+            return .noTruncationNeeded
+        }
+        
+        // Enhanced line count calculation with boundary condition fix
+        var actualLinesNeeded = 0
+        layoutManager.enumerateLineFragments(forGlyphRange: NSRange(location: 0, length: totalGlyphCount)) { 
+            (rect, usedRect, textContainer, glyphRange, stop) in
+            // Count all line fragments with positive height
+            if rect.height > 0 {
+                actualLinesNeeded += 1
+            }
+        }
+        
+        // Fixed boundary condition: >= to handle exact line matches
+        if actualLinesNeeded <= numberOfLines {
+            return .noTruncationNeeded
+        }
+        
+        // Find the target line with consistent newline handling
+        var lastLineRange = NSRange()
+        var currentLineCount = 0
+        layoutManager.enumerateLineFragments(forGlyphRange: NSRange(location: 0, length: totalGlyphCount)) { 
+            (rect, usedRect, textContainer, glyphRange, stop) in
+            // Only count line fragments with positive height (consistent with line counting above)
+            if rect.height > 0 {
+                currentLineCount += 1
+                if currentLineCount == numberOfLines {
+                    lastLineRange = glyphRange
+                    stop.pointee = true
+                }
+            }
+        }
+        
+        // Calculate actual used text width (based on usedRect)
+        var lastLineUsedWidth: CGFloat = 0
+        layoutManager.enumerateLineFragments(forGlyphRange: lastLineRange) { 
+            (rect, usedRect, textContainer, glyphRange, stop) in
+            lastLineUsedWidth = usedRect.width
+        }
+        
+        // Enhanced suffix width calculation using TextKit 1 precision with proper padding and line break mode
+        let suffixWidth = suffix.calculateWidth(
+            withContainerWidth: containerWidth,
+            lineFragmentPadding: lineFragmentPadding,
+            lineBreakMode: lineBreakMode
+        )
+        
+        // Enhanced truncation with improved precision
+        let availableWidth = max(0, containerWidth - suffixWidth)
+        let truncateCharacterIndex = layoutManager.findTruncateLocation(withWidth: availableWidth, in: lastLineRange)
+        
+        let truncatedText = attributedSubstring(from: NSRange(location: 0, length: truncateCharacterIndex))
+        let cleanedTruncatedText = truncatedText.removingTrailingNewlineIfNeeded()
+        let finalText = NSMutableAttributedString(attributedString: cleanedTruncatedText)
+        finalText.append(suffix)
+        
+        let readMoreRange = NSRange(location: cleanedTruncatedText.length, length: suffix.length)
+        
+        return .truncated(finalText, readMoreRange)
+    }
+    
+    /// Creates a ReadMore suffix with ellipsis and ReadMore text
+    /// - Parameters:
+    ///   - ellipsisText: Ellipsis text to prepend
+    ///   - readMoreText: ReadMore text to append
+    ///   - spaceBetween: Space character between ellipsis and ReadMore
+    ///   - attributeKey: Attribute key for ReadMore identification
+    ///   - defaultAttributes: Default text attributes to use
+    /// - Returns: Complete ReadMore suffix with proper attributes
+    func creatingReadMoreSuffix(
+        ellipsisText: NSAttributedString,
+        readMoreText: NSAttributedString,
+        spaceBetween: String,
+        attributeKey: NSAttributedString.Key,
+        defaultAttributes: [NSAttributedString.Key: Any]
+    ) -> NSAttributedString {
+        let lastAttributes = lastTextAttributes(defaultAttributes: defaultAttributes)
+        
+        let suffix = NSMutableAttributedString()
+        
+        let ellipsisWithLastAttributes = ellipsisText.createMutableWithAttributes(lastAttributes)
+        
+        suffix.append(ellipsisWithLastAttributes)
+        suffix.append(NSAttributedString(string: spaceBetween, attributes: lastAttributes))
+        let readMoreStartLocation = suffix.length
+        
+        let readMoreWithOriginalAttributes = readMoreText.createMutableWithAttributes(lastAttributes)
+        
+        suffix.append(readMoreWithOriginalAttributes)
+        let readMoreRange = NSRange(location: readMoreStartLocation, length: readMoreWithOriginalAttributes.length)
+        suffix.addAttribute(attributeKey, value: true, range: readMoreRange)
+        
+        return suffix
+    }
+    
+    /// Applies ReadMore truncation for newLine position
+    /// - Parameters:
+    ///   - numberOfLines: Maximum number of lines to display
+    ///   - containerWidth: Available width for text layout
+    ///   - textAlignment: Text alignment
+    ///   - font: Font to apply
+    ///   - textColor: Text color to apply
+    ///   - lineFragmentPadding: Line fragment padding
+    ///   - lineBreakMode: Line break mode
+    ///   - readMoreText: ReadMore text to append
+    ///   - newLineCharacter: Character for new line
+    ///   - attributeKey: Attribute key for ReadMore identification
+    ///   - defaultAttributes: Default text attributes to use
+    /// - Returns: TextTruncationResult with truncated text and range
+    func applyingReadMoreForNewLine(
+        numberOfLines: Int,
+        containerWidth: CGFloat,
+        textAlignment: NSTextAlignment,
+        font: UIFont,
+        textColor: UIColor?,
+        lineFragmentPadding: CGFloat = 0,
+        lineBreakMode: NSLineBreakMode = .byWordWrapping,
+        readMoreText: NSAttributedString,
+        newLineCharacter: String,
+        attributeKey: NSAttributedString.Key,
+        defaultAttributes: [NSAttributedString.Key: Any]
+    ) -> ReadMoreLabel.TextTruncationResult {
+        
+        let alignedText = applyingTextAlignment(textAlignment, font: font, textColor: textColor)
+        let (textStorage, layoutManager, textContainer) = TextKitStackBuilder.createStack(
+            for: alignedText,
+            containerWidth: containerWidth,
+            lineFragmentPadding: lineFragmentPadding,
+            lineBreakMode: lineBreakMode
+        )
+        
+        let totalGlyphCount = layoutManager.numberOfGlyphs
+        
+        guard totalGlyphCount > 0 else {
+            return .noTruncationNeeded
+        }
+        
+        // Collect and analyze line information in single pass
+        var lineFragments: [(rect: CGRect, glyphRange: NSRange)] = []
+        
+        layoutManager.enumerateLineFragments(forGlyphRange: NSRange(location: 0, length: totalGlyphCount)) { 
+            (rect, usedRect, textContainer, glyphRange, stop) in
+            
+            // Exclude lines with zero height
+            if rect.height > 0 {
+                lineFragments.append((rect: rect, glyphRange: glyphRange))
+            }
+        }
+        
+        let actualLinesNeeded = lineFragments.count
+        
+        // Early exit: no truncation needed
+        if actualLinesNeeded <= numberOfLines {
+            return .noTruncationNeeded
+        }
+        
+        // Extract target line information
+        guard numberOfLines <= lineFragments.count else {
+            return .noTruncationNeeded
+        }
+        
+        let targetLineFragment = lineFragments[numberOfLines - 1]
+        let lastLineRange = targetLineFragment.glyphRange
+        let lastLineRect = targetLineFragment.rect
+        let characterRange = layoutManager.characterRange(forGlyphRange: lastLineRange, actualGlyphRange: nil)
+        
+        // Generate read more text and calculate size
+        let lastAttributes = lastTextAttributes(defaultAttributes: defaultAttributes)
+        let readMoreWithNewLine = NSMutableAttributedString(string: newLineCharacter, attributes: lastAttributes)
+        let readMoreWithOriginalAttributes = readMoreText.createMutableWithAttributes(lastAttributes)
+        readMoreWithNewLine.append(readMoreWithOriginalAttributes)
+        
+        // No need to secure space for "Read More" in current line for newLine position
+        // Cut text at the end of numberOfLines line
+        let truncateOffset = characterRange.location + characterRange.length
+        
+        // Compose final text
+        let truncatedSubstring = attributedSubstring(from: NSRange(location: 0, length: truncateOffset))
+        let cleanedTruncatedText = truncatedSubstring.removingTrailingNewlineIfNeeded()
+        let finalText = NSMutableAttributedString(attributedString: cleanedTruncatedText)
+        
+        finalText.append(NSAttributedString(string: newLineCharacter, attributes: lastAttributes))
+        let readMoreStartLocation = finalText.length
+        finalText.append(readMoreWithOriginalAttributes)
+        
+        let finalReadMoreRange = NSRange(location: readMoreStartLocation, length: readMoreWithOriginalAttributes.length)
+        finalText.addAttribute(attributeKey, value: true, range: finalReadMoreRange)
+        
+        return .truncated(finalText, finalReadMoreRange)
+    }
 }
 
 // MARK: - ReadMoreLabel Nested Types
@@ -1027,7 +1094,7 @@ extension ReadMoreLabel {
         public static let isReadMore = NSAttributedString.Key("ReadMoreLabel.isReadMore")
     }
     
-    private enum TextTruncationResult {
+    enum TextTruncationResult {
         case noTruncationNeeded
         case truncated(NSAttributedString, NSRange)
         
