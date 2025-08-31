@@ -451,8 +451,7 @@ public class ReadMoreLabel: UILabel {
     /// Enhanced text size calculation with improved precision
     private func calculateTextSize(for text: NSAttributedString, width: CGFloat) -> CGSize {
         let alignedText = text.applyingTextAlignment(textAlignment, font: font, textColor: textColor)
-        let (textStorage, layoutManager, textContainer) = TextKitStackBuilder.createStack(
-            for: alignedText,
+        let (textStorage, layoutManager, textContainer) = alignedText.creatingTextKitStack(
             containerWidth: width,
             lineFragmentPadding: lineFragmentPadding,
             lineBreakMode: lineBreakMode
@@ -656,12 +655,10 @@ private extension NSAttributedString {
         lineBreakMode: NSLineBreakMode = .byWordWrapping
     ) -> CGFloat {
         // Create TextKit 1 stack using unified builder for reliable width measurement
-        let (textStorage, layoutManager, textContainer) = TextKitStackBuilder.createStack(
-            for: self,
+        let (textStorage, layoutManager, textContainer) = creatingTextKitStack(
             containerWidth: containerWidth,
             lineFragmentPadding: lineFragmentPadding,
-            lineBreakMode: lineBreakMode,
-            maximumNumberOfLines: 0
+            lineBreakMode: lineBreakMode
         )
         
         let usedRect = layoutManager.usedRect(for: textContainer)
@@ -729,12 +726,10 @@ private extension NSAttributedString {
         let alignedText = applyingTextAlignment(textAlignment, font: font, textColor: textColor)
         
         // Create TextKit 1 stack using unified builder
-        let (textStorage, layoutManager, textContainer) = TextKitStackBuilder.createStack(
-            for: alignedText,
+        let (textStorage, layoutManager, textContainer) = alignedText.creatingTextKitStack(
             containerWidth: containerWidth,
             lineFragmentPadding: lineFragmentPadding,
-            lineBreakMode: lineBreakMode,
-            maximumNumberOfLines: 0
+            lineBreakMode: lineBreakMode
         )
         
         let totalGlyphCount = layoutManager.numberOfGlyphs
@@ -787,8 +782,7 @@ private extension NSAttributedString {
         readMorePosition: ReadMoreLabel.Position,
         newLineCharacter: String
     ) -> Bool {
-        let (textStorage, layoutManager, textContainer) = TextKitStackBuilder.createStack(
-            for: self,
+        let (textStorage, layoutManager, textContainer) = creatingTextKitStack(
             containerWidth: containerWidth,
             lineFragmentPadding: lineFragmentPadding,
             lineBreakMode: lineBreakMode
@@ -858,8 +852,7 @@ private extension NSAttributedString {
         lineFragmentPadding: CGFloat = 0,
         lineBreakMode: NSLineBreakMode = .byWordWrapping
     ) -> ReadMoreLabel.TextTruncationResult {
-        let (textStorage, layoutManager, textContainer) = TextKitStackBuilder.createStack(
-            for: self,
+        let (textStorage, layoutManager, textContainer) = creatingTextKitStack(
             containerWidth: containerWidth,
             lineFragmentPadding: lineFragmentPadding,
             lineBreakMode: lineBreakMode
@@ -992,8 +985,7 @@ private extension NSAttributedString {
     ) -> ReadMoreLabel.TextTruncationResult {
         
         let alignedText = applyingTextAlignment(textAlignment, font: font, textColor: textColor)
-        let (textStorage, layoutManager, textContainer) = TextKitStackBuilder.createStack(
-            for: alignedText,
+        let (textStorage, layoutManager, textContainer) = alignedText.creatingTextKitStack(
             containerWidth: containerWidth,
             lineFragmentPadding: lineFragmentPadding,
             lineBreakMode: lineBreakMode
@@ -1057,6 +1049,28 @@ private extension NSAttributedString {
         finalText.addAttribute(attributeKey, value: true, range: finalReadMoreRange)
         
         return .truncated(finalText, finalReadMoreRange)
+    }
+    
+    /// Creates a configured TextKit 1 stack for text measurement and layout
+    /// - Parameters:
+    ///   - containerWidth: Width constraint for the text container
+    ///   - lineFragmentPadding: Line fragment padding (default: 0)
+    ///   - lineBreakMode: Line break mode (default: .byWordWrapping)
+    ///   - maximumNumberOfLines: Maximum number of lines (default: 0 = no limit)
+    /// - Returns: Tuple containing connected TextKit components
+    func creatingTextKitStack(
+        containerWidth: CGFloat,
+        lineFragmentPadding: CGFloat = 0,
+        lineBreakMode: NSLineBreakMode = .byWordWrapping,
+        maximumNumberOfLines: Int = 0
+    ) -> (textStorage: NSTextStorage, layoutManager: NSLayoutManager, textContainer: NSTextContainer) {
+        return TextKitStackBuilder.createStack(
+            for: self,
+            containerWidth: containerWidth,
+            lineFragmentPadding: lineFragmentPadding,
+            lineBreakMode: lineBreakMode,
+            maximumNumberOfLines: maximumNumberOfLines
+        )
     }
 }
 
