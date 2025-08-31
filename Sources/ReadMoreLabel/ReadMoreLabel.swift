@@ -154,20 +154,7 @@ public class ReadMoreLabel: UILabel {
             return []
         }
         
-        var ranges: [NSRange] = []
-        let fullRange = NSRange(location: 0, length: attributedText.length)
-        
-        attributedText.enumerateAttribute(
-            AttributeKey.isReadMore,
-            in: fullRange,
-            options: []
-        ) { value, range, _ in
-            if let isReadMore = value as? Bool, isReadMore {
-                ranges.append(range)
-            }
-        }
-        
-        return ranges
+        return attributedText.findReadMoreTextRanges()
     }
     
     
@@ -201,7 +188,7 @@ public class ReadMoreLabel: UILabel {
         suffix: NSAttributedString
     ) -> TextTruncationResult {
         
-        let alignedText = applyTextAlignment(to: originalText)
+        let alignedText = originalText.applyingTextAlignment(textAlignment, font: font, textColor: textColor)
         
         // Enhanced TextKit 1: Proven reliability with optimized performance
         return applyReadMoreWithTextKit1(alignedText, numberOfLines: numberOfLines, containerWidth: containerWidth, suffix: suffix)
@@ -429,7 +416,7 @@ public class ReadMoreLabel: UILabel {
         containerWidth: CGFloat
     ) -> TextTruncationResult {
         
-        let alignedText = applyTextAlignment(to: originalText)
+        let alignedText = originalText.applyingTextAlignment(textAlignment, font: font, textColor: textColor)
         let (textStorage, layoutManager, textContainer) = createTextKitStack(for: alignedText, containerWidth: containerWidth)
         
         let totalGlyphCount = layoutManager.numberOfGlyphs
@@ -499,7 +486,7 @@ public class ReadMoreLabel: UILabel {
         _ text: NSAttributedString,
         containerWidth: CGFloat
     ) -> Int {
-        let alignedText = applyTextAlignment(to: text)
+        let alignedText = text.applyingTextAlignment(textAlignment, font: font, textColor: textColor)
         let (textStorage, layoutManager, textContainer) = createTextKitStack(for: alignedText, containerWidth: containerWidth)
         
         let totalGlyphCount = layoutManager.numberOfGlyphs
@@ -537,6 +524,16 @@ public class ReadMoreLabel: UILabel {
     private func invalidateDisplayAndLayout() {
         invalidateIntrinsicContentSize()
         setNeedsLayout()
+    }
+    
+    /// Reapplies current text styling (alignment, font, color) and refreshes display
+    private func reapplyTextStylingAndRefreshDisplay() {
+        if let originalText = originalAttributedText {
+            originalAttributedText = originalText.applyingTextAlignment(textAlignment, font: font, textColor: textColor)
+        }
+        
+        invalidateDisplayAndLayout()
+        updateDisplay()
     }
     
     
@@ -583,13 +580,7 @@ public class ReadMoreLabel: UILabel {
             guard font != oldValue else { return }
             
             // Reapply font to original text and trigger display update
-            if let originalText = originalAttributedText {
-                originalAttributedText = applyTextAlignment(to: originalText)
-            }
-            
-            // Trigger display update when font changes
-            invalidateDisplayAndLayout()
-            updateDisplay()
+            reapplyTextStylingAndRefreshDisplay()
         }
     }
     
@@ -599,13 +590,7 @@ public class ReadMoreLabel: UILabel {
             guard textColor != oldValue else { return }
             
             // Reapply color to original text and trigger display update
-            if let originalText = originalAttributedText {
-                originalAttributedText = applyTextAlignment(to: originalText)
-            }
-            
-            // Trigger display update when text color changes
-            invalidateDisplayAndLayout()
-            updateDisplay()
+            reapplyTextStylingAndRefreshDisplay()
         }
     }
     
@@ -615,13 +600,7 @@ public class ReadMoreLabel: UILabel {
             guard textAlignment != oldValue else { return }
             
             // Reapply alignment to original text and trigger display update
-            if let originalText = originalAttributedText {
-                originalAttributedText = applyTextAlignment(to: originalText)
-            }
-            
-            // Trigger display update when text alignment changes
-            invalidateDisplayAndLayout()
-            updateDisplay()
+            reapplyTextStylingAndRefreshDisplay()
         }
     }
     
@@ -641,7 +620,7 @@ public class ReadMoreLabel: UILabel {
     }
     
     private func setOriginalText(_ text: NSAttributedString) {
-        originalAttributedText = applyTextAlignment(to: text)
+        originalAttributedText = text.applyingTextAlignment(textAlignment, font: font, textColor: textColor)
         invalidateDisplayAndLayout()
         updateDisplay()
     }
@@ -673,7 +652,7 @@ public class ReadMoreLabel: UILabel {
     
     /// Enhanced text size calculation with improved precision
     private func calculateTextSize(for text: NSAttributedString, width: CGFloat) -> CGSize {
-        let alignedText = applyTextAlignment(to: text)
+        let alignedText = text.applyingTextAlignment(textAlignment, font: font, textColor: textColor)
         let (textStorage, layoutManager, textContainer) = createTextKitStack(for: alignedText, containerWidth: width)
         
         // Enhanced size calculation with proper bounds checking
@@ -711,49 +690,6 @@ public class ReadMoreLabel: UILabel {
              checkAndResetExpandedStateIfNeeded()
         } else {
             checkAndResetTruncationStateIfNeeded()
-        }
-    }
-    
-//    public override var intrinsicContentSize: CGSize {
-//        guard let attributedText = attributedText, attributedText.length > 0 else {
-//            return super.intrinsicContentSize
-//        }
-//        
-//        let width = bounds.width
-//        let size = calculateTextSizeWithNumberOfLines(for: attributedText, width: width, numberOfLines: super.numberOfLines)
-//        
-//        return CGSize(width: size.width, height: size.height)
-//    }
-    
-    /// Enhanced text size calculation with line limit consideration
-    private func calculateTextSizeWithNumberOfLines(for attributedText: NSAttributedString, width: CGFloat, numberOfLines: Int) -> CGSize {
-        guard width > 0 else { return .zero }
-        
-        let (textStorage, layoutManager, textContainer) = createTextKitStack(for: attributedText, containerWidth: width)
-        
-        // Enhanced calculation with line limit awareness
-        if numberOfLines > 0 {
-            var lineCount = 0
-            var totalHeight: CGFloat = 0
-            var maxWidth: CGFloat = 0
-            
-            layoutManager.enumerateLineFragments(forGlyphRange: NSRange(location: 0, length: layoutManager.numberOfGlyphs)) { 
-                (rect, usedRect, _, _, stop) in
-                if rect.height > 0 {
-                    lineCount += 1
-                    totalHeight += rect.height
-                    maxWidth = max(maxWidth, usedRect.width)
-                    
-                    if lineCount >= numberOfLines {
-                        stop.pointee = true
-                    }
-                }
-            }
-            
-            return CGSize(width: ceil(maxWidth), height: ceil(totalHeight))
-        } else {
-            let usedRect = layoutManager.usedRect(for: textContainer)
-            return CGSize(width: ceil(usedRect.width), height: ceil(usedRect.height))
         }
     }
     
@@ -843,28 +779,6 @@ public class ReadMoreLabel: UILabel {
         return (attributes[AttributeKey.isReadMore] as? Bool) == true
     }
     
-    private func applyTextAlignment(to attributedText: NSAttributedString) -> NSAttributedString {
-        let range = NSRange(location: 0, length: attributedText.length)
-        let mutableAttributedText = NSMutableAttributedString(attributedString: attributedText)
-        mutableAttributedText.addAttribute(.font, value: self.font, range: range)
-        
-        if let existingStyle = attributedText.attribute(.paragraphStyle, at: 0, effectiveRange: nil) as? NSParagraphStyle,
-           existingStyle.alignment == self.textAlignment {
-            return mutableAttributedText
-        }
-        
-        let paragraphStyle: NSMutableParagraphStyle
-        if let existingStyle = attributedText.attribute(.paragraphStyle, at: 0, effectiveRange: nil) as? NSParagraphStyle {
-            paragraphStyle = (existingStyle.mutableCopy() as? NSMutableParagraphStyle) ?? NSMutableParagraphStyle()
-        } else {
-            paragraphStyle = NSMutableParagraphStyle()
-        }
-        
-        paragraphStyle.alignment = self.textAlignment
-        mutableAttributedText.addAttribute(.paragraphStyle, value: paragraphStyle, range: range)
-        
-        return mutableAttributedText
-    }
 }
 
 // MARK: - NSLayoutManager Extensions
@@ -891,6 +805,38 @@ private extension NSLayoutManager {
                               min(characterIndex, characterRange.location + characterRange.length))
         
         return clampedIndex
+    }
+    
+    /// Calculates text size with maximum number of lines constraint
+    /// - Parameters:
+    ///   - maxLines: Maximum number of lines (0 means no limit)
+    ///   - textContainer: Text container for layout calculation
+    /// - Returns: CGSize with width and height for the specified line constraint
+    func calculateSizeWithMaxLines(_ maxLines: Int, in textContainer: NSTextContainer) -> CGSize {
+        guard maxLines > 0 else {
+            // No line limit - return full used rect
+            let usedRect = self.usedRect(for: textContainer)
+            return CGSize(width: ceil(usedRect.width), height: ceil(usedRect.height))
+        }
+        
+        var lineCount = 0
+        var totalHeight: CGFloat = 0
+        var maxWidth: CGFloat = 0
+        
+        self.enumerateLineFragments(forGlyphRange: NSRange(location: 0, length: self.numberOfGlyphs)) { 
+            (rect, usedRect, _, _, stop) in
+            if rect.height > 0 {
+                lineCount += 1
+                totalHeight += rect.height
+                maxWidth = max(maxWidth, usedRect.width)
+                
+                if lineCount >= maxLines {
+                    stop.pointee = true
+                }
+            }
+        }
+        
+        return CGSize(width: ceil(maxWidth), height: ceil(totalHeight))
     }
 }
 
@@ -927,6 +873,24 @@ private extension NSAttributedString {
         } else {
             return defaultAttributes
         }
+    }
+    
+    /// Finds all text ranges marked with ReadMoreLabel.isReadMore attribute
+    func findReadMoreTextRanges() -> [NSRange] {
+        var ranges: [NSRange] = []
+        let fullRange = NSRange(location: 0, length: length)
+        
+        enumerateAttribute(
+            ReadMoreLabel.AttributeKey.isReadMore,
+            in: fullRange,
+            options: []
+        ) { value, range, _ in
+            if let isReadMore = value as? Bool, isReadMore {
+                ranges.append(range)
+            }
+        }
+        
+        return ranges
     }
     
     /// Enhanced TextKit 1 suffix width calculation with precision
@@ -966,5 +930,36 @@ private extension NSAttributedString {
             mutableString.deleteCharacters(in: NSRange(location: newLength, length: 1))
         }
         return mutableString
+    }
+    
+    /// Applies text alignment and font to attributed string
+    func applyingTextAlignment(_ textAlignment: NSTextAlignment, font: UIFont, textColor: UIColor? = nil) -> NSAttributedString {
+        let range = NSRange(location: 0, length: length)
+        let mutableAttributedText = NSMutableAttributedString(attributedString: self)
+        mutableAttributedText.addAttribute(.font, value: font, range: range)
+        
+        // Apply text color if provided
+        if let textColor = textColor {
+            mutableAttributedText.addAttribute(.foregroundColor, value: textColor, range: range)
+        }
+        
+        // Check if alignment is already correct
+        if let existingStyle = attribute(.paragraphStyle, at: 0, effectiveRange: nil) as? NSParagraphStyle,
+           existingStyle.alignment == textAlignment {
+            return mutableAttributedText
+        }
+        
+        // Create or modify paragraph style
+        let paragraphStyle: NSMutableParagraphStyle
+        if let existingStyle = attribute(.paragraphStyle, at: 0, effectiveRange: nil) as? NSParagraphStyle {
+            paragraphStyle = (existingStyle.mutableCopy() as? NSMutableParagraphStyle) ?? NSMutableParagraphStyle()
+        } else {
+            paragraphStyle = NSMutableParagraphStyle()
+        }
+        
+        paragraphStyle.alignment = textAlignment
+        mutableAttributedText.addAttribute(.paragraphStyle, value: paragraphStyle, range: range)
+        
+        return mutableAttributedText
     }
 }
