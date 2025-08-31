@@ -510,19 +510,6 @@ public class ReadMoreLabel: UILabel {
     // MARK: - Enhanced TextKit 1 Optimization Methods
     
     /// Enhanced TextKit 1: Optimized line counting with improved performance
-    private func countLinesInText(
-        _ text: NSAttributedString,
-        containerWidth: CGFloat
-    ) -> Int {
-        return text.countLines(
-            withContainerWidth: containerWidth,
-            textAlignment: textAlignment,
-            font: font,
-            textColor: textColor,
-            lineFragmentPadding: lineFragmentPadding,
-            lineBreakMode: lineBreakMode
-        )
-    }
     
     
     private func invalidateDisplayAndLayout() {
@@ -651,7 +638,14 @@ public class ReadMoreLabel: UILabel {
     
     /// Enhanced line count calculation using optimized TextKit 1
     private func calculateActualLinesNeeded(for text: NSAttributedString, width: CGFloat) -> Int {
-        return countLinesInText(text, containerWidth: width)
+        return text.countLines(
+            withContainerWidth: width,
+            textAlignment: textAlignment,
+            font: font,
+            textColor: textColor,
+            lineFragmentPadding: lineFragmentPadding,
+            lineBreakMode: lineBreakMode
+        )
     }
     
     /// Enhanced text size calculation with improved precision
