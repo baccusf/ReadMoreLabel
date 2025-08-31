@@ -259,15 +259,19 @@ public class ReadMoreLabel: UILabel {
             lastLineUsedWidth = usedRect.width
         }
         
-        // Enhanced suffix width calculation using TextKit 1 precision
-        let suffixWidth = calculateSuffixWidthWithTextKit1(suffix, containerWidth: containerWidth)
+        // Enhanced suffix width calculation using TextKit 1 precision with proper padding and line break mode
+        let suffixWidth = suffix.calculateWidth(
+            withContainerWidth: containerWidth,
+            lineFragmentPadding: lineFragmentPadding,
+            lineBreakMode: lineBreakMode
+        )
         
         // Enhanced truncation with improved precision
         let availableWidth = max(0, containerWidth - suffixWidth)
-        let truncateCharacterIndex = findTruncateLocationWithWidth(availableWidth, in: lastLineRange, layoutManager: layoutManager)
+        let truncateCharacterIndex = layoutManager.findTruncateLocation(withWidth: availableWidth, in: lastLineRange)
         
         let truncatedText = alignedText.attributedSubstring(from: NSRange(location: 0, length: truncateCharacterIndex))
-        let cleanedTruncatedText = removeTrailingNewlineIfNeeded(from: truncatedText)
+        let cleanedTruncatedText = truncatedText.removingTrailingNewlineIfNeeded()
         let finalText = NSMutableAttributedString(attributedString: cleanedTruncatedText)
         finalText.append(suffix)
         
@@ -276,39 +280,9 @@ public class ReadMoreLabel: UILabel {
         return .truncated(finalText, readMoreRange)
     }
     
-    /// Enhanced TextKit 1 suffix width calculation with precision
-    private func calculateSuffixWidthWithTextKit1(_ suffix: NSAttributedString, containerWidth: CGFloat) -> CGFloat {
-        // Use TextKit 1 for reliable suffix width measurement
-        let (textStorage, layoutManager, textContainer) = createTextKitStack(for: suffix, containerWidth: containerWidth)
-        
-        let usedRect = layoutManager.usedRect(for: textContainer)
-        return ceil(usedRect.width)
-    }
     
     
     
-    /// Enhanced TextKit 1 truncation location finder with precision
-    private func findTruncateLocationWithWidth(_ targetWidth: CGFloat, in glyphRange: NSRange, layoutManager: NSLayoutManager) -> Int {
-        let characterRange = layoutManager.characterRange(forGlyphRange: glyphRange, actualGlyphRange: nil)
-        
-        // Enhanced hit testing with improved precision
-        let lineRect = layoutManager.lineFragmentRect(forGlyphAt: glyphRange.location, effectiveRange: nil)
-        
-        // Accurate character boundary detection
-        let targetPoint = CGPoint(x: lineRect.origin.x + targetWidth, y: lineRect.midY)
-        
-        let characterIndex = layoutManager.characterIndex(
-            for: targetPoint,
-            in: layoutManager.textContainers[0],
-            fractionOfDistanceBetweenInsertionPoints: nil
-        )
-        
-        // Enhanced boundary checking
-        let clampedIndex = max(characterRange.location, 
-                              min(characterIndex, characterRange.location + characterRange.length))
-        
-        return clampedIndex
-    }
     
     private func createReadMoreSuffix(from originalText: NSAttributedString) -> NSAttributedString {
         let lastAttributes = originalText.lastTextAttributes(defaultAttributes: defaultTextAttributes)
@@ -328,14 +302,6 @@ public class ReadMoreLabel: UILabel {
         suffix.addAttribute(AttributeKey.isReadMore, value: true, range: readMoreRange)
         
         return suffix
-    }
-    private func removeTrailingNewlineIfNeeded(from attributedString: NSAttributedString) -> NSAttributedString {
-        let mutableString = NSMutableAttributedString(attributedString: attributedString)
-        if mutableString.string.hasSuffix(Self.newLineCharacter) {
-            let newLength = mutableString.length - 1
-            mutableString.deleteCharacters(in: NSRange(location: newLength, length: 1))
-        }
-        return mutableString
     }
         
     private func setInternalNumberOfLines(_ lines: Int) {
@@ -513,7 +479,7 @@ public class ReadMoreLabel: UILabel {
         
         // Compose final text
         let truncatedSubstring = originalText.attributedSubstring(from: NSRange(location: 0, length: truncateOffset))
-        let cleanedTruncatedText = removeTrailingNewlineIfNeeded(from: truncatedSubstring)
+        let cleanedTruncatedText = truncatedSubstring.removingTrailingNewlineIfNeeded()
         let finalText = NSMutableAttributedString(attributedString: cleanedTruncatedText)
         
         finalText.append(NSAttributedString(string: Self.newLineCharacter, attributes: lastAttributes))
@@ -901,6 +867,33 @@ public class ReadMoreLabel: UILabel {
     }
 }
 
+// MARK: - NSLayoutManager Extensions
+
+private extension NSLayoutManager {
+    /// Enhanced TextKit 1 truncation location finder with precision
+    func findTruncateLocation(withWidth targetWidth: CGFloat, in glyphRange: NSRange) -> Int {
+        let characterRange = self.characterRange(forGlyphRange: glyphRange, actualGlyphRange: nil)
+        
+        // Enhanced hit testing with improved precision
+        let lineRect = self.lineFragmentRect(forGlyphAt: glyphRange.location, effectiveRange: nil)
+        
+        // Accurate character boundary detection
+        let targetPoint = CGPoint(x: lineRect.origin.x + targetWidth, y: lineRect.midY)
+        
+        let characterIndex = self.characterIndex(
+            for: targetPoint,
+            in: self.textContainers[0],
+            fractionOfDistanceBetweenInsertionPoints: nil
+        )
+        
+        // Enhanced boundary checking
+        let clampedIndex = max(characterRange.location, 
+                              min(characterIndex, characterRange.location + characterRange.length))
+        
+        return clampedIndex
+    }
+}
+
 // MARK: - NSAttributedString Extensions
 
 private extension NSAttributedString {
@@ -934,5 +927,44 @@ private extension NSAttributedString {
         } else {
             return defaultAttributes
         }
+    }
+    
+    /// Enhanced TextKit 1 suffix width calculation with precision
+    func calculateWidth(
+        withContainerWidth containerWidth: CGFloat,
+        lineFragmentPadding: CGFloat = 0,
+        lineBreakMode: NSLineBreakMode = .byWordWrapping
+    ) -> CGFloat {
+        // Create TextKit 1 stack for reliable width measurement
+        let textStorage = NSTextStorage(attributedString: self)
+        let layoutManager = NSLayoutManager()
+        let textContainer = NSTextContainer(size: CGSize(width: containerWidth, height: .greatestFiniteMagnitude))
+        
+        // Enhanced connection setup with proper reference management
+        textStorage.addLayoutManager(layoutManager)
+        layoutManager.addTextContainer(textContainer)
+        
+        // Optimized container configuration with provided parameters
+        textContainer.lineFragmentPadding = lineFragmentPadding
+        textContainer.lineBreakMode = lineBreakMode
+        textContainer.maximumNumberOfLines = 0
+        textContainer.widthTracksTextView = false
+        textContainer.heightTracksTextView = false
+        
+        // Ensure layout completion for accurate measurements
+        layoutManager.ensureLayout(for: textContainer)
+        
+        let usedRect = layoutManager.usedRect(for: textContainer)
+        return ceil(usedRect.width)
+    }
+    
+    /// Removes trailing newline character if present
+    func removingTrailingNewlineIfNeeded() -> NSAttributedString {
+        let mutableString = NSMutableAttributedString(attributedString: self)
+        if mutableString.string.hasSuffix("\n") {
+            let newLength = mutableString.length - 1
+            mutableString.deleteCharacters(in: NSRange(location: newLength, length: 1))
+        }
+        return mutableString
     }
 }
