@@ -798,13 +798,134 @@ ReadMoreLabel 빌드 후 반드시 확인해야 할 사항:
 - 통합된 로그 출력으로 문제점 빠른 식별
 - 자동화된 테스트 환경 제공
 
-## Phase 4 계획: TextKit 2 Migration (Future Enhancement)
+## Phase 4: Single Responsibility Principle (SRP) 리팩토링 개선 계획
 
 ### 개요
 
-Phase 4에서는 ReadMoreLabel의 핵심 텍스트 처리 엔진을 TextKit 1에서 TextKit 2로 전환하여 최신 iOS 텍스트 처리 기술을 활용하고 성능과 정확도를 더욱 향상시킬 예정입니다.
+ReadMoreLabel 코드를 SRP(Single Responsibility Principle) 관점에서 분석하여 더 나은 코드 구조와 유지보수성을 달성하기 위한 리팩토링 계획입니다.
 
-### Phase 4 목표
+### 🔍 **주요 SRP 위반 사항**
+
+#### 1. **`updateDisplay()` 메서드** (220-241행)
+**문제**: 4가지 책임을 동시에 처리
+- 상태 검증 (originalAttributedText, bounds 확인)
+- 확장 상태 처리 (numberOfLinesWhenCollapsed == 0 || isExpanded)
+- Position별 분기 처리 (end vs newLine)
+- 레이아웃 무효화 (invalidateIntrinsicContentSize)
+
+#### 2. **`layoutSubviews()` 메서드** (467-477행)
+**문제**: UI 레이아웃과 비즈니스 로직 혼재
+- UIView 생명주기 처리 (super.layoutSubviews())
+- 확장 상태별 분기 처리
+- 내부 상태 검증 및 재설정 로직
+
+#### 3. **텍스트 스타일링 메서드들** (368-396행)
+**문제**: Property observer에서 복잡한 로직 수행
+```swift
+public override var font: UIFont! {
+    didSet {
+        guard font != oldValue else { return }
+        reapplyTextStylingAndRefreshDisplay() // 복잡한 재계산
+    }
+}
+```
+
+### 🎯 **SRP 개선 계획**
+
+#### **Phase 1: 상태 관리 분리**
+현재의 `updateDisplay()` 메서드를 다음과 같이 분리:
+
+```swift
+// 상태 검증만 담당
+private func validateDisplayState() -> Bool
+
+// 확장 상태별 처리만 담당  
+private func handleExpandedState()
+
+// Position별 분기만 담당
+private func displayTextForPosition()
+```
+
+#### **Phase 2: 레이아웃 로직 분리**
+`layoutSubviews()`에서 비즈니스 로직 추출:
+
+```swift
+// 순수 레이아웃만 처리
+public override func layoutSubviews() 
+
+// 상태 검증 및 업데이트만 담당
+private func updateStateIfNeeded()
+```
+
+#### **Phase 3: 텍스트 처리 캡슐화**
+텍스트 관련 로직을 별도 구조체로 분리:
+
+```swift
+private struct TextProcessor {
+    static func processTextForDisplay(...) -> ProcessedText
+    static func calculateDisplayMetrics(...) -> DisplayMetrics
+}
+```
+
+#### **Phase 4: 이벤트 처리 모듈화**
+터치 및 제스처 처리를 별도 모듈로 분리:
+
+```swift
+private struct GestureHandler {
+    static func processTapGesture(...) -> GestureResult
+    static func validateTapLocation(...) -> Bool
+}
+```
+
+### ✅ **SRP 개선 효과**
+
+1. **단일 책임**: 각 메서드가 하나의 명확한 책임만 가짐
+2. **테스트 용이성**: 개별 기능 단위로 테스트 가능
+3. **유지보수성**: 특정 기능 수정 시 영향 범위 최소화
+4. **가독성**: 메서드명으로 정확한 역할 파악 가능
+5. **확장성**: 새로운 기능 추가 시 기존 코드 영향 최소화
+
+### 🚀 **단계별 구현 계획**
+
+#### **1단계: 메서드 책임 분리 (1-2일)**
+- `updateDisplay()` 메서드 세분화
+- 상태 검증, 확장 처리, Position 처리 분리
+- 기존 기능 완전 호환성 유지
+
+#### **2단계: 레이아웃 로직 정리 (1일)**
+- `layoutSubviews()` 단순화
+- 비즈니스 로직을 별도 메서드로 추출
+- UI 생명주기와 상태 관리 분리
+
+#### **3단계: 텍스트 처리 모듈화 (2-3일)**
+- TextProcessor 구조체 도입
+- 텍스트 계산 로직 캡슐화
+- 재사용 가능한 텍스트 처리 유틸리티 구성
+
+#### **4단계: 통합 검증 및 최적화 (1일)**
+- 전체 기능 동작 검증
+- 성능 테스트 및 최적화
+- 코드 품질 메트릭 측정
+
+### 📊 **예상 품질 개선**
+
+**Before (현재)**:
+- 메서드당 평균 책임: 2.8개
+- 복잡도: 높음 (다중 책임으로 인한 복잡한 분기)
+- 테스트 난이도: 어려움 (통합 테스트만 가능)
+
+**After (SRP 적용 후)**:
+- 메서드당 평균 책임: 1.0개
+- 복잡도: 낮음 (단일 책임으로 인한 명확한 로직)
+- 테스트 난이도: 쉬움 (단위 테스트 가능)
+
+## Phase 5 계획: TextKit 2 Migration (Future Enhancement)
+
+### 개요
+
+Phase 5에서는 ReadMoreLabel의 핵심 텍스트 처리 엔진을 TextKit 1에서 TextKit 2로 전환하여 최신 iOS 텍스트 처리 기술을 활용하고 성능과 정확도를 더욱 향상시킬 예정입니다.
+
+### Phase 5 목표
 
 #### 🔄 **TextKit 2 완전 전환**
 - **텍스트 측정**: `NSTextLayoutManager` 기반 정밀 계산
@@ -814,7 +935,7 @@ Phase 4에서는 ReadMoreLabel의 핵심 텍스트 처리 엔진을 TextKit 1에
 
 #### ⚡ **성능 최적화**
 ```swift
-// Phase 4 목표 API 구조
+// Phase 5 목표 API 구조
 // TextKit 2 네이티브 스택
 let textLayoutManager = NSTextLayoutManager()
 let textContainer = NSTextContainer(size: CGSize(width: containerWidth, height: .greatestFiniteMagnitude))
@@ -845,7 +966,7 @@ textLayoutManager.enumerateTextLayoutFragments(
 - **레이아웃 안정성**: TextKit 2의 향상된 레이아웃 엔진 활용
 
 #### 🏗️ **하이브리드 아키텍처**
-Phase 4에서는 안정성을 위해 **하이브리드 접근법** 채택:
+Phase 5에서는 안정성을 위해 **하이브리드 접근법** 채택:
 
 ```swift
 // 텍스트 측정 및 레이아웃: TextKit 2
@@ -859,7 +980,7 @@ private func hasReadMoreTextAtLocation(...) -> Bool {
 }
 ```
 
-### Phase 4 구현 전략
+### Phase 5 구현 전략
 
 #### **1단계: 텍스트 측정 전환** 
 - `calculateLineCount`, `findTargetLineRange` → TextKit 2 전환
@@ -893,7 +1014,7 @@ private func hasReadMoreTextAtLocation(...) -> Bool {
 - **복합 문자**: 이모지, 다국어 텍스트 처리 개선
 - **레이아웃 안정성**: 다양한 폰트 크기와 스타일에서 일관된 동작
 
-### Phase 4 리스크 관리
+### Phase 5 리스크 관리
 
 #### **호환성 리스크**
 - **API 변경**: TextKit 2 API의 미래 변경 가능성 대비
@@ -905,7 +1026,7 @@ private func hasReadMoreTextAtLocation(...) -> Bool {
 - **폴백 메커니즘**: 필요시 TextKit 1 복원 가능한 구조
 - **광범위한 테스트**: 다양한 텍스트 시나리오 검증
 
-### Phase 4 성공 기준
+### Phase 5 성공 기준
 
 - [ ] **성능**: TextKit 1 대비 동등하거나 향상된 성능
 - [ ] **정확도**: 픽셀 단위 텍스트 처리 정밀도 달성
