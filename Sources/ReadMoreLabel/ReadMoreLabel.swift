@@ -263,7 +263,7 @@ public class ReadMoreLabel: UILabel {
         let suffixWidth = calculateSuffixWidthWithTextKit1(suffix, containerWidth: containerWidth)
         
         // Enhanced truncation with improved precision
-        let availableWidth = max(0, containerWidth - suffixWidth - 2.0) // Add 2pt safety margin
+        let availableWidth = max(0, containerWidth - suffixWidth)
         let truncateCharacterIndex = findTruncateLocationWithWidth(availableWidth, in: lastLineRange, layoutManager: layoutManager)
         
         let truncatedText = alignedText.attributedSubstring(from: NSRange(location: 0, length: truncateCharacterIndex))
@@ -294,8 +294,8 @@ public class ReadMoreLabel: UILabel {
         // Enhanced hit testing with improved precision
         let lineRect = layoutManager.lineFragmentRect(forGlyphAt: glyphRange.location, effectiveRange: nil)
         
-        // Add slight offset for more accurate character boundary detection
-        let targetPoint = CGPoint(x: lineRect.origin.x + targetWidth - 1.0, y: lineRect.midY)
+        // Accurate character boundary detection
+        let targetPoint = CGPoint(x: lineRect.origin.x + targetWidth, y: lineRect.midY)
         
         let characterIndex = layoutManager.characterIndex(
             for: targetPoint,
@@ -303,12 +303,11 @@ public class ReadMoreLabel: UILabel {
             fractionOfDistanceBetweenInsertionPoints: nil
         )
         
-        // Enhanced boundary checking with safety margins
-        let safeIndex = max(characterRange.location, 
-                           min(characterIndex, characterRange.location + characterRange.length))
+        // Enhanced boundary checking
+        let clampedIndex = max(characterRange.location, 
+                              min(characterIndex, characterRange.location + characterRange.length))
         
-        // Ensure we don't truncate too aggressively - keep at least some text
-        return max(characterRange.location + 1, safeIndex)
+        return clampedIndex
     }
     
     private func createReadMoreSuffix(from originalText: NSAttributedString) -> NSAttributedString {
@@ -821,24 +820,17 @@ public class ReadMoreLabel: UILabel {
             let stringIndex = attributedText.string.index(attributedText.string.startIndex, offsetBy: readMoreStartIndex - 1)
             let previousChar = attributedText.string[stringIndex]
             if String(previousChar) == Self.newLineCharacter {
-                // Enhanced line rect calculation with safety margins
+                // Line rect calculation for newLine position
                 let lineRect = layoutManager.lineFragmentRect(forGlyphAt: readMoreStartIndex, effectiveRange: nil)
-                let usedRect = layoutManager.lineFragmentUsedRect(forGlyphAt: readMoreStartIndex, effectiveRange: nil)
-                
-                // Create expanded touch area for better user experience
-                let expandedRect = lineRect.union(usedRect).insetBy(dx: -8, dy: -4)
-                return expandedRect.contains(location)
+                return lineRect.contains(location)
             }
         }
         
         // Enhanced hit testing with improved accuracy
         let usedRect = layoutManager.usedRect(for: textContainer)
         
-        // Expand hit testing area slightly for better touch handling
-        let expandedUsedRect = usedRect.insetBy(dx: -4, dy: -2)
-        
-        // Early bounds check with expanded area
-        guard expandedUsedRect.contains(location) else {
+        // Early bounds check
+        guard usedRect.contains(location) else {
             return false
         }
         
@@ -860,13 +852,8 @@ public class ReadMoreLabel: UILabel {
             return false
         }
         
-        // Enhanced range checking with boundary safety
-        let safeRange = NSRange(
-            location: max(0, range.location),
-            length: min(range.length, attributedText.length - range.location)
-        )
-        
-        guard NSLocationInRange(characterIndex, safeRange) else {
+        // Enhanced range checking
+        guard NSLocationInRange(characterIndex, range) else {
             return false
         }
         
@@ -878,7 +865,6 @@ public class ReadMoreLabel: UILabel {
     private func applyTextAlignment(to attributedText: NSAttributedString) -> NSAttributedString {
         let range = NSRange(location: 0, length: attributedText.length)
         let mutableAttributedText = NSMutableAttributedString(attributedString: attributedText)
-        
         mutableAttributedText.addAttribute(.font, value: self.font, range: range)
         
         if let existingStyle = attributedText.attribute(.paragraphStyle, at: 0, effectiveRange: nil) as? NSParagraphStyle,
