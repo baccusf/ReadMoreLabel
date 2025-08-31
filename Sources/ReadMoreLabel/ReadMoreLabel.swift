@@ -889,17 +889,21 @@ public class ReadMoreLabel: UILabel {
 // MARK: - NSAttributedString Extensions
 
 private extension NSAttributedString {
-    /// Creates a mutable attributed string with base attributes, then merges source attributes
-    /// The source attributes will override base attributes where they conflict
+    /// Creates a mutable attributed string with base attributes prioritizing font and textColor from label
+    /// Base font and textColor always override existing attributes to maintain consistency
     func createMutableWithAttributes(_ baseAttributes: [NSAttributedString.Key: Any]) -> NSMutableAttributedString {
         let mutableString = NSMutableAttributedString(attributedString: self)
         
-        // Add base attributes only where they don't already exist
+        // Apply base attributes, with special handling for font and textColor
         enumerateAttributes(in: NSRange(location: 0, length: length), options: []) { existingAttributes, range, _ in
             var attributesToAdd: [NSAttributedString.Key: Any] = [:]
             
             for (key, value) in baseAttributes {
-                if existingAttributes[key] == nil {
+                // Always prioritize label's font and textColor to maintain visual consistency
+                if key == .font || key == .foregroundColor {
+                    attributesToAdd[key] = value
+                } else if existingAttributes[key] == nil {
+                    // For other attributes, only add if they don't already exist
                     attributesToAdd[key] = value
                 }
             }
