@@ -448,25 +448,6 @@ public class ReadMoreLabel: UILabel {
         )
     }
     
-    /// Enhanced text size calculation with improved precision
-    private func calculateTextSize(for text: NSAttributedString, width: CGFloat) -> CGSize {
-        let alignedText = text.applyingTextAlignment(textAlignment, font: font, textColor: textColor)
-        let (textStorage, layoutManager, textContainer) = alignedText.creatingTextKitStack(
-            containerWidth: width,
-            lineFragmentPadding: lineFragmentPadding,
-            lineBreakMode: lineBreakMode
-        )
-        
-        // Enhanced size calculation with proper bounds checking
-        let usedRect = layoutManager.usedRect(for: textContainer)
-        let boundingRect = layoutManager.boundingRect(forGlyphRange: NSRange(location: 0, length: layoutManager.numberOfGlyphs), in: textContainer)
-        
-        // Use the more accurate measurement
-        let finalWidth = max(usedRect.width, boundingRect.width)
-        let finalHeight = max(usedRect.height, boundingRect.height)
-        
-        return CGSize(width: ceil(finalWidth), height: ceil(finalHeight))
-    }
     
     private func checkAndResetTruncationStateIfNeeded() {
         guard let originalText = originalAttributedText,
