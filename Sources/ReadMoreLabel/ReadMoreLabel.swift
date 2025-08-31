@@ -61,9 +61,7 @@ public class ReadMoreLabel: UILabel {
         public static let isReadMore = NSAttributedString.Key("ReadMoreLabel.isReadMore")
     }
     
-    
     @objc public weak var delegate: ReadMoreLabelDelegate?
-    
     
     private var numberOfLinesWhenCollapsed: Int = 3 {
         didSet {
@@ -248,7 +246,7 @@ public class ReadMoreLabel: UILabel {
             for: alignedText,
             containerWidth: containerWidth,
             lineFragmentPadding: lineFragmentPadding,
-            lineBreakMode: .byWordWrapping
+            lineBreakMode: lineBreakMode
         )
         
         let totalGlyphCount = layoutManager.numberOfGlyphs
@@ -444,7 +442,7 @@ public class ReadMoreLabel: UILabel {
             for: alignedText,
             containerWidth: containerWidth,
             lineFragmentPadding: lineFragmentPadding,
-            lineBreakMode: .byWordWrapping
+            lineBreakMode: lineBreakMode
         )
         
         let totalGlyphCount = layoutManager.numberOfGlyphs
@@ -655,7 +653,7 @@ public class ReadMoreLabel: UILabel {
             for: alignedText,
             containerWidth: width,
             lineFragmentPadding: lineFragmentPadding,
-            lineBreakMode: .byWordWrapping
+            lineBreakMode: lineBreakMode
         )
         
         // Enhanced size calculation with proper bounds checking
