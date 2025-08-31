@@ -51,15 +51,6 @@ private struct TextKitStackBuilder {
 @objc @IBDesignable
 public class ReadMoreLabel: UILabel {
     
-    @objc public enum Position: Int {
-        case end = 0
-        case newLine = 1
-    }
-    
-    
-    public struct AttributeKey {
-        public static let isReadMore = NSAttributedString.Key("ReadMoreLabel.isReadMore")
-    }
     
     @objc public weak var delegate: ReadMoreLabelDelegate?
     
@@ -199,28 +190,6 @@ public class ReadMoreLabel: UILabel {
     }
     
     
-    private enum TextTruncationResult {
-        case noTruncationNeeded
-        case truncated(NSAttributedString, NSRange)
-        
-        var needsTruncation: Bool {
-            switch self {
-            case .noTruncationNeeded:
-                return false
-            case .truncated:
-                return true
-            }
-        }
-        
-        var textAndRange: (NSAttributedString, NSRange?)? {
-            switch self {
-            case .noTruncationNeeded:
-                return nil
-            case .truncated(let text, let range):
-                return (text, range)
-            }
-        }
-    }
     
     private func applyReadMore(
         originalText: NSAttributedString,
@@ -1043,4 +1012,42 @@ private extension NSAttributedString {
         let attributes = attributes(at: characterIndex, effectiveRange: nil)
         return (attributes[ReadMoreLabel.AttributeKey.isReadMore] as? Bool) == true
     }
+}
+
+// MARK: - ReadMoreLabel Nested Types
+
+extension ReadMoreLabel {
+    
+    @objc public enum Position: Int {
+        case end = 0
+        case newLine = 1
+    }
+    
+    public struct AttributeKey {
+        public static let isReadMore = NSAttributedString.Key("ReadMoreLabel.isReadMore")
+    }
+    
+    private enum TextTruncationResult {
+        case noTruncationNeeded
+        case truncated(NSAttributedString, NSRange)
+        
+        var needsTruncation: Bool {
+            switch self {
+            case .noTruncationNeeded:
+                return false
+            case .truncated:
+                return true
+            }
+        }
+        
+        var textAndRange: (NSAttributedString, NSRange?)? {
+            switch self {
+            case .noTruncationNeeded:
+                return nil
+            case .truncated(let text, let range):
+                return (text, range)
+            }
+        }
+    }
+    
 }
