@@ -223,20 +223,13 @@ public class ReadMoreLabel: UILabel {
             return .noTruncationNeeded
         }
         
-        // Calculate line count by reusing existing layoutManager (original logic fully restored)
+        // Calculate line count with consistent handling of explicit newlines
         var actualLinesNeeded = 0
         layoutManager.enumerateLineFragments(forGlyphRange: NSRange(location: 0, length: totalGlyphCount)) { 
             (rect, usedRect, textContainer, glyphRange, stop) in
-            actualLinesNeeded += 1
-        }
-        
-        // Exclude lines with zero height from count (original logic fully restored)
-        if actualLinesNeeded > 0 {
-            let lastLineGlyphIndex = totalGlyphCount - 1
-            let lastLineRect = layoutManager.lineFragmentRect(forGlyphAt: lastLineGlyphIndex, effectiveRange: nil)
-            
-            if lastLineRect.height == 0 {
-                actualLinesNeeded -= 1
+            // Count all line fragments with positive height
+            if rect.height > 0 {
+                actualLinesNeeded += 1
             }
         }
         
@@ -244,15 +237,18 @@ public class ReadMoreLabel: UILabel {
             return .noTruncationNeeded
         }
         
-        // Find the last line with second enumeration (original logic fully restored)
+        // Find the target line with consistent newline handling
         var lastLineRange = NSRange()
         var currentLineCount = 0
         layoutManager.enumerateLineFragments(forGlyphRange: NSRange(location: 0, length: totalGlyphCount)) { 
             (rect, usedRect, textContainer, glyphRange, stop) in
-            currentLineCount += 1
-            if currentLineCount == numberOfLines {
-                lastLineRange = glyphRange
-                stop.pointee = true
+            // Only count line fragments with positive height (consistent with line counting above)
+            if rect.height > 0 {
+                currentLineCount += 1
+                if currentLineCount == numberOfLines {
+                    lastLineRange = glyphRange
+                    stop.pointee = true
+                }
             }
         }
         
