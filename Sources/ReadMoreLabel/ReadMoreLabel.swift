@@ -612,6 +612,39 @@ public class ReadMoreLabel: UILabel {
         }
     }
     
+    public override var font: UIFont! {
+        didSet {
+            // Only update if font actually changed to avoid unnecessary redraws
+            guard font != oldValue else { return }
+            
+            // Trigger display update when font changes
+            invalidateDisplayAndLayout()
+            updateDisplay()
+        }
+    }
+    
+    public override var textColor: UIColor! {
+        didSet {
+            // Only update if color actually changed to avoid unnecessary redraws  
+            guard textColor != oldValue else { return }
+            
+            // Trigger display update when text color changes
+            invalidateDisplayAndLayout()
+            updateDisplay()
+        }
+    }
+    
+    public override var textAlignment: NSTextAlignment {
+        didSet {
+            // Only update if alignment actually changed to avoid unnecessary redraws
+            guard textAlignment != oldValue else { return }
+            
+            // Trigger display update when text alignment changes
+            invalidateDisplayAndLayout()
+            updateDisplay()
+        }
+    }
+    
     public override var text: String? {
         didSet {
             setOriginalText(NSAttributedString(string: text ?? ""))
