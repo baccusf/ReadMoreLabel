@@ -616,6 +616,11 @@ public class ReadMoreLabel: UILabel {
             // Only update if font actually changed to avoid unnecessary redraws
             guard font != oldValue else { return }
             
+            // Reapply font to original text and trigger display update
+            if let originalText = originalAttributedText {
+                originalAttributedText = applyTextAlignment(to: originalText)
+            }
+            
             // Trigger display update when font changes
             invalidateDisplayAndLayout()
             updateDisplay()
@@ -627,6 +632,11 @@ public class ReadMoreLabel: UILabel {
             // Only update if color actually changed to avoid unnecessary redraws  
             guard textColor != oldValue else { return }
             
+            // Reapply color to original text and trigger display update
+            if let originalText = originalAttributedText {
+                originalAttributedText = applyTextAlignment(to: originalText)
+            }
+            
             // Trigger display update when text color changes
             invalidateDisplayAndLayout()
             updateDisplay()
@@ -637,6 +647,11 @@ public class ReadMoreLabel: UILabel {
         didSet {
             // Only update if alignment actually changed to avoid unnecessary redraws
             guard textAlignment != oldValue else { return }
+            
+            // Reapply alignment to original text and trigger display update
+            if let originalText = originalAttributedText {
+                originalAttributedText = applyTextAlignment(to: originalText)
+            }
             
             // Trigger display update when text alignment changes
             invalidateDisplayAndLayout()
@@ -889,21 +904,17 @@ public class ReadMoreLabel: UILabel {
 // MARK: - NSAttributedString Extensions
 
 private extension NSAttributedString {
-    /// Creates a mutable attributed string with base attributes prioritizing font and textColor from label
-    /// Base font and textColor always override existing attributes to maintain consistency
+    /// Creates a mutable attributed string with base attributes, then merges source attributes
+    /// The source attributes will override base attributes where they conflict
     func createMutableWithAttributes(_ baseAttributes: [NSAttributedString.Key: Any]) -> NSMutableAttributedString {
         let mutableString = NSMutableAttributedString(attributedString: self)
         
-        // Apply base attributes, with special handling for font and textColor
+        // Add base attributes only where they don't already exist
         enumerateAttributes(in: NSRange(location: 0, length: length), options: []) { existingAttributes, range, _ in
             var attributesToAdd: [NSAttributedString.Key: Any] = [:]
             
             for (key, value) in baseAttributes {
-                // Always prioritize label's font and textColor to maintain visual consistency
-                if key == .font || key == .foregroundColor {
-                    attributesToAdd[key] = value
-                } else if existingAttributes[key] == nil {
-                    // For other attributes, only add if they don't already exist
+                if existingAttributes[key] == nil {
                     attributesToAdd[key] = value
                 }
             }
