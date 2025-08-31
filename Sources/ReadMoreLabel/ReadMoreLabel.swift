@@ -725,15 +725,9 @@ public class ReadMoreLabel: UILabel {
         }
         
         // Use enhanced TextKit 1 hit testing for reliability
-        return hasReadMoreTextAtLocationWithTextKit1(location, in: attributedText, range: readMoreRange)
-    }
-    
-    
-    /// Enhanced TextKit 1 hit testing with improved accuracy and reliability
-    private func hasReadMoreTextAtLocationWithTextKit1(_ location: CGPoint, in attributedText: NSAttributedString, range: NSRange) -> Bool {
         return attributedText.hitTestReadMoreText(
             at: location,
-            in: range,
+            in: readMoreRange,
             containerWidth: bounds.width,
             lineFragmentPadding: lineFragmentPadding,
             lineBreakMode: lineBreakMode,
@@ -741,6 +735,8 @@ public class ReadMoreLabel: UILabel {
             newLineCharacter: Self.newLineCharacter
         )
     }
+    
+    
     
 }
 
