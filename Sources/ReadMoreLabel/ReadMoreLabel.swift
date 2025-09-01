@@ -65,18 +65,6 @@ public class ReadMoreLabel: UILabel {
             self.layoutIfNeeded()
         }
     }
-    @objc public var isExpandable_old: Bool {
-        if isExpanded {
-            return true
-        }
-        
-        guard numberOfLinesWhenCollapsed > 0,
-              let readMoreRange = state.readMoreTextRange else {
-            return false
-        }
-        return readMoreRange.length > 0
-    }
-    
     
     private var tapGestureRecognizer: UITapGestureRecognizer?
     
