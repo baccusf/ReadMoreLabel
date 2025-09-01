@@ -439,7 +439,7 @@ public class ReadMoreLabel: UILabel {
     /// Enhanced line count calculation using optimized TextKit 1
     private func calculateActualLinesNeeded(for text: NSAttributedString, width: CGFloat) -> Int {
         return text.countLines(
-            withContainerWidth: width,
+            with containerWidth: width,
             textAlignment: textAlignment,
             font: font,
             textColor: textColor,
@@ -631,7 +631,7 @@ private extension NSAttributedString {
     
     /// Enhanced TextKit 1 suffix width calculation with precision
     func calculateWidth(
-        withContainerWidth containerWidth: CGFloat,
+        with containerWidth: CGFloat,
         lineFragmentPadding: CGFloat = 0,
         lineBreakMode: NSLineBreakMode = .byWordWrapping
     ) -> CGFloat {
@@ -697,7 +697,7 @@ private extension NSAttributedString {
     ///   - lineBreakMode: Line break mode (default: .byWordWrapping)
     /// - Returns: Number of lines needed to display the text
     func countLines(
-        withContainerWidth containerWidth: CGFloat,
+        with containerWidth: CGFloat,
         textAlignment: NSTextAlignment,
         font: UIFont,
         textColor: UIColor? = nil,
@@ -884,7 +884,7 @@ private extension NSAttributedString {
         
         // Enhanced suffix width calculation using TextKit 1 precision with proper padding and line break mode
         let suffixWidth = suffix.calculateWidth(
-            withContainerWidth: containerWidth,
+            with: containerWidth,
             lineFragmentPadding: lineFragmentPadding,
             lineBreakMode: lineBreakMode
         )
