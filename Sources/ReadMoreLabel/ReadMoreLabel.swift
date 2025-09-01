@@ -997,19 +997,40 @@ private extension NSAttributedString {
     ///   - lineBreakMode: Line break mode (default: .byWordWrapping)
     ///   - maximumNumberOfLines: Maximum number of lines (default: 0 = no limit)
     /// - Returns: Tuple containing connected TextKit components
+    /// Creates a configured TextKit 1 stack for text measurement and layout
+    /// - Parameters:
+    ///   - containerWidth: Width constraint for the text container
+    ///   - lineFragmentPadding: Line fragment padding (default: 0)
+    ///   - lineBreakMode: Line break mode (default: .byWordWrapping)
+    ///   - maximumNumberOfLines: Maximum number of lines (default: 0 = no limit)
+    /// - Returns: Tuple containing connected TextKit components
     func creatingTextKitStack(
         containerWidth: CGFloat,
         lineFragmentPadding: CGFloat = 0,
         lineBreakMode: NSLineBreakMode = .byWordWrapping,
         maximumNumberOfLines: Int = 0
     ) -> (textStorage: NSTextStorage, layoutManager: NSLayoutManager, textContainer: NSTextContainer) {
-        return ReadMoreLabel.createTextKitStack(
-            for: self,
-            containerWidth: containerWidth,
-            lineFragmentPadding: lineFragmentPadding,
-            lineBreakMode: lineBreakMode,
-            maximumNumberOfLines: maximumNumberOfLines
-        )
+        
+        // Create TextKit 1 components with enhanced configuration
+        let textStorage = NSTextStorage(attributedString: self)
+        let layoutManager = NSLayoutManager()
+        let textContainer = NSTextContainer(size: CGSize(width: containerWidth, height: .greatestFiniteMagnitude))
+        
+        // Enhanced connection setup with proper reference management
+        textStorage.addLayoutManager(layoutManager)
+        layoutManager.addTextContainer(textContainer)
+        
+        // Optimized container configuration
+        textContainer.lineFragmentPadding = lineFragmentPadding
+        textContainer.lineBreakMode = lineBreakMode
+        textContainer.maximumNumberOfLines = maximumNumberOfLines
+        textContainer.widthTracksTextView = false
+        textContainer.heightTracksTextView = false
+        
+        // Ensure layout completion for accurate measurements
+        layoutManager.ensureLayout(for: textContainer)
+        
+        return (textStorage, layoutManager, textContainer)
     }
 }
 
@@ -1051,44 +1072,3 @@ extension ReadMoreLabel {
     
 }
 
-// MARK: - ReadMoreLabel TextKit Helper
-
-private extension ReadMoreLabel {
-    /// Creates a configured TextKit 1 stack for text measurement and layout
-    /// - Parameters:
-    ///   - attributedText: The attributed text to layout
-    ///   - containerWidth: Width constraint for the text container
-    ///   - lineFragmentPadding: Line fragment padding (default: 0)
-    ///   - lineBreakMode: Line break mode (default: .byWordWrapping)
-    ///   - maximumNumberOfLines: Maximum number of lines (default: 0 = no limit)
-    /// - Returns: Tuple containing connected TextKit components
-    static func createTextKitStack(
-        for attributedText: NSAttributedString,
-        containerWidth: CGFloat,
-        lineFragmentPadding: CGFloat = 0,
-        lineBreakMode: NSLineBreakMode = .byWordWrapping,
-        maximumNumberOfLines: Int = 0
-    ) -> (textStorage: NSTextStorage, layoutManager: NSLayoutManager, textContainer: NSTextContainer) {
-        
-        // Create TextKit 1 components with enhanced configuration
-        let textStorage = NSTextStorage(attributedString: attributedText)
-        let layoutManager = NSLayoutManager()
-        let textContainer = NSTextContainer(size: CGSize(width: containerWidth, height: .greatestFiniteMagnitude))
-        
-        // Enhanced connection setup with proper reference management
-        textStorage.addLayoutManager(layoutManager)
-        layoutManager.addTextContainer(textContainer)
-        
-        // Optimized container configuration
-        textContainer.lineFragmentPadding = lineFragmentPadding
-        textContainer.lineBreakMode = lineBreakMode
-        textContainer.maximumNumberOfLines = maximumNumberOfLines
-        textContainer.widthTracksTextView = false
-        textContainer.heightTracksTextView = false
-        
-        // Ensure layout completion for accurate measurements
-        layoutManager.ensureLayout(for: textContainer)
-        
-        return (textStorage, layoutManager, textContainer)
-    }
-}
