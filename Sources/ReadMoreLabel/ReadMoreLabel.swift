@@ -176,25 +176,52 @@ public class ReadMoreLabel: UILabel {
     
     
     private func updateDisplay() {
-        guard let attributedTextToDisplay = originalAttributedText, 
-              case let availableWidth = bounds.width, 
-              availableWidth > 0 else {
+        guard let displayState = validateDisplayState() else {
             return
         }
         
-        if numberOfLinesWhenCollapsed == 0 || isExpanded {
-            super.attributedText = attributedTextToDisplay
-            setInternalNumberOfLines(0)
-            readMoreTextRange = nil
-            invalidateIntrinsicContentSize()
+        if shouldDisplayExpandedText() {
+            handleExpandedState(displayState.attributedText)
             return
         }
-                
+        
+        displayTruncatedText(
+            displayState.attributedText, 
+            availableWidth: displayState.availableWidth
+        )
+    }
+    
+    /// Validates and returns display state, or nil if invalid
+    private func validateDisplayState() -> (attributedText: NSAttributedString, availableWidth: CGFloat)? {
+        guard let attributedTextToDisplay = originalAttributedText, 
+              case let availableWidth = bounds.width, 
+              availableWidth > 0 else {
+            return nil
+        }
+        
+        return (attributedTextToDisplay, availableWidth)
+    }
+    
+    /// Checks if text should be displayed in expanded form
+    private func shouldDisplayExpandedText() -> Bool {
+        return numberOfLinesWhenCollapsed == 0 || isExpanded
+    }
+    
+    /// Handles expanded text display
+    private func handleExpandedState(_ attributedText: NSAttributedString) {
+        super.attributedText = attributedText
+        setInternalNumberOfLines(0)
+        readMoreTextRange = nil
+        invalidateIntrinsicContentSize()
+    }
+    
+    /// Displays truncated text based on position setting
+    private func displayTruncatedText(_ attributedText: NSAttributedString, availableWidth: CGFloat) {
         switch readMorePosition {
         case .end:
-            displayTruncatedTextAtEnd(attributedTextToDisplay, availableWidth: availableWidth)
+            displayTruncatedTextAtEnd(attributedText, availableWidth: availableWidth)
         case .newLine:
-            displayTruncatedTextAtNewLineBeginning(attributedTextToDisplay, availableWidth: availableWidth)
+            displayTruncatedTextAtNewLineBeginning(attributedText, availableWidth: availableWidth)
         }
     }
     
