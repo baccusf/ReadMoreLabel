@@ -213,6 +213,68 @@ func readMoreLabel(_ label: ReadMoreLabel, didChangeExpandedState isExpanded: Bo
 
 ## 코딩 규칙 및 원칙
 
+### Swift Style Guide 준수 원칙
+
+**코드 구조 표준화**:
+```swift
+// ✅ 권장: 변수 선언 순서
+// MARK: - Static Properties
+static let defaultValue = "기본값"
+
+// MARK: - Private Properties  
+private var internalState = State()
+private let textProcessor = TextProcessor()
+
+// MARK: - Public Properties
+public var numberOfLines: Int = 3
+public var readMoreText: NSAttributedString?
+```
+
+**메서드 구조화 원칙**:
+```swift
+// ✅ 권장: 메서드 배치 순서
+// MARK: - Initialization
+override init(frame: CGRect)
+convenience init()
+
+// MARK: - UILabel Overrides  
+override func layoutSubviews()
+override var text: String?
+
+// MARK: - Public Interface
+public func setExpanded(_ expanded: Bool, animated: Bool)
+public func prepareForCellReuse()
+
+// MARK: - Private Implementation
+private func updateDisplay()
+private func calculateTextSize() -> CGSize
+```
+
+**Extension 타입 정리 원칙**:
+```swift
+// ✅ 권장: extension 내부 타입 순서
+extension ReadMoreLabel {
+    // MARK: - Public Types
+    public enum Position: Int
+    public struct AttributeKey
+    
+    // MARK: - Private Protocols
+    private protocol TruncationStrategy
+    
+    // MARK: - Private Structs  
+    private struct EndPositionStrategy: TruncationStrategy
+    private struct State
+    
+    // MARK: - Internal Enums
+    enum TextTruncationResult (메인 클래스 접근 필요시)
+}
+```
+
+**MARK 주석 표준**:
+- **클래스 레벨**: `// MARK: - [Category Name]`
+- **Extension 레벨**: `// MARK: - [Access Level] [Type Category]`
+- **일관성 유지**: 모든 주요 섹션에 MARK 주석 필수 적용
+
 ### TextKit 2 우선 원칙
 - **이진 탐색 금지**: 텍스트 자르기 위치 결정에 이진 탐색이나 반복적 계산 방법 사용하지 않음
 - **boundingRect 금지**: 문자열 크기/너비 측정에 `boundingRect(with:options:context:)` 사용하지 않음
@@ -664,6 +726,59 @@ private func hasReadMoreTextAtLocationWithTextKit1ForNewLine(_ location: CGPoint
 ### 12. iOS 16+ 전용 코드 정리 및 최적화 (2025년 8월 30일)
 
 **배경**: 3번째 시도로 진행된 코드 정리 작업에서 TextKit 메모리 관리 이슈를 완전히 해결
+
+### 13. Swift Style Guide 적용 코드 구조 개선 (2025년 9월 1일)
+
+**목적**: ReadMoreLabel 클래스 전체를 Swift Style Guide 표준에 따라 체계적으로 재구성하여 가독성과 유지보수성 향상
+
+#### **메인 클래스 구조 개선**
+**변수 정리**:
+- **중복 제거**: `isExpandable_old` 불필요한 중복 변수 완전 제거
+- **순서 정리**: static → private → public 순서로 변수 재배치
+- **MARK 섹션**: 각 접근 수준별로 명확한 구분
+
+**메서드 구조화**:
+```swift
+// Swift Style Guide 표준 순서 적용
+// MARK: - Initialization (init 관련)
+// MARK: - UILabel Overrides (override 메서드들)  
+// MARK: - Public Interface (public 메서드들)
+// MARK: - Private Implementation (private 메서드들)
+```
+
+#### **Extension 구조 개선**
+**Before**: 타입들이 섞여서 배치되어 가독성 저하
+```swift
+Position enum → TruncationStrategy → EndPositionStrategy → NewLinePositionStrategy → AttributeKey → State → TextTruncationResult
+```
+
+**After**: Swift Style Guide 접근 수준 순서로 체계화
+```swift
+// MARK: - Public Types
+- Position enum
+- AttributeKey struct
+
+// MARK: - Private Protocols  
+- TruncationStrategy protocol
+
+// MARK: - Private Structs
+- EndPositionStrategy, NewLinePositionStrategy (Strategy Pattern 구현체)
+- State (상태 관리 객체)
+
+// MARK: - Internal Enums
+- TextTruncationResult (메인 클래스 접근 필요로 internal 수준)
+```
+
+#### **기술적 개선 성과**
+- **가독성 향상**: 명확한 MARK 섹션으로 코드 네비게이션 개선
+- **표준 준수**: Swift 커뮤니티 표준 코드 구조 적용
+- **접근성 최적화**: `TextTruncationResult` 접근 수준 조정으로 빌드 오류 해결
+- **아키텍처 보존**: 기존 Strategy Pattern과 State 관리 패턴 완전 유지
+
+#### **검증 결과**
+- ✅ **XcodeBuildMCP 빌드 테스트 통과**: 모든 기능 정상 작동 확인
+- ✅ **Strategy Pattern 무결성**: 기존 TruncationStrategy 아키텍처 완전 보존
+- ✅ **상태 관리 안정성**: State 구조체 기능 및 메서드 모두 정상 동작
 
 #### 주요 제거 사항
 
@@ -1229,6 +1344,13 @@ private func hasReadMoreTextAtLocation(...) -> Bool {
 **Phase 4는 ReadMoreLabel을 차세대 iOS 텍스트 처리 기술의 최전선으로 이끌 혁신적인 업그레이드가 될 것입니다.** 🚀
 
 ## 🚨 중요 개발 지침
+
+### Swift Style Guide 준수 의무
+- **필수 사항**: 모든 새로운 코드는 Swift Style Guide 표준을 따라야 함
+- **구조 순서**: 변수는 static → private → public, 메서드는 init → override → public → private
+- **MARK 주석**: 모든 주요 섹션에 명확한 MARK 구분 필수
+- **접근 수준**: 최소 필요 접근 수준 사용 원칙 (private-first approach)
+- **일관성**: 기존 코드와 동일한 스타일과 패턴 유지
 
 ### 마진 및 패딩 정책
 - **금지 사항**: 사용자 허락 없이 안전 마진, 터치 영역 확장, 패딩 추가 금지
