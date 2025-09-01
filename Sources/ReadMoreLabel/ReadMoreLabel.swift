@@ -1074,17 +1074,25 @@ private extension NSAttributedString {
 
 extension ReadMoreLabel {
     
+    // MARK: - Public Types
+    
     @objc public enum Position: Int {
         case end = 0
         case newLine = 1
     }
     
-    // MARK: - Strategy Pattern for Position-based Text Processing
+    public struct AttributeKey {
+        public static let isReadMore = NSAttributedString.Key("ReadMoreLabel.isReadMore")
+    }
+    
+    // MARK: - Private Protocols
     
     /// Strategy protocol for different text truncation positions
     private protocol TruncationStrategy {
         func displayTruncatedText(_ attributedText: NSAttributedString, availableWidth: CGFloat, in label: ReadMoreLabel)
     }
+    
+    // MARK: - Private Structs
     
     /// Strategy for .end position - displays "더보기" at the end of truncated text
     private struct EndPositionStrategy: TruncationStrategy {
@@ -1098,10 +1106,6 @@ extension ReadMoreLabel {
         func displayTruncatedText(_ attributedText: NSAttributedString, availableWidth: CGFloat, in label: ReadMoreLabel) {
             label.displayTruncatedTextAtNewLineBeginning(attributedText, availableWidth: availableWidth)
         }
-    }
-    
-    public struct AttributeKey {
-        public static let isReadMore = NSAttributedString.Key("ReadMoreLabel.isReadMore")
     }
     
     /// State management object for ReadMoreLabel
@@ -1168,6 +1172,8 @@ extension ReadMoreLabel {
             }
         }
     }
+    
+    // MARK: - Internal Enums
     
     enum TextTruncationResult {
         case noTruncationNeeded
