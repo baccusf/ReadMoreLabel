@@ -52,7 +52,13 @@
       "mcp__XcodeBuildMCP__get_app_bundle_id",
       "mcp__XcodeBuildMCP__install_app_sim",
       "mcp__XcodeBuildMCP__discover_projs",
-      "mcp__XcodeBuildMCP__list_schemes"
+      "mcp__XcodeBuildMCP__list_schemes",
+      "Read(/Users/seungho/Development/inappwebview_inspector/**)",
+      "Read(/Users/seungho/Development/inappwebview_inspector/.github/**)",
+      "Read(/Users/seungho/Development/inappwebview_inspector/.github/ISSUE_TEMPLATE/**)",
+      "Read(/Users/seungho/Development/inappwebview_inspector/.github/**)",
+      "Read(/Users/seungho/Development/inappwebview_inspector/.github/ISSUE_TEMPLATE/**)",
+      "Read(/Users/seungho/Development/inappwebview_inspector/.github/ISSUE_TEMPLATE/**)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits",
