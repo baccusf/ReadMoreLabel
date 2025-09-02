@@ -40,7 +40,6 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
     
     private var state = State()
     private let layoutEngine: TextLayoutEngine = TextKit1LayoutEngine()
-    private lazy var layoutStateManager = LayoutStateManager(label: self)
     
     private var numberOfLinesWhenCollapsed: Int {
         get { return state.numberOfLines }
@@ -184,8 +183,12 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
     public override func layoutSubviews() {
         super.layoutSubviews()
         
-        // Delegate state management to separate object for SRP compliance
-        layoutStateManager.updateIfNeeded()
+        // Update layout state based on current expansion state
+        if isExpanded {
+            checkAndResetExpandedStateIfNeeded()
+        } else {
+            checkAndResetTruncationStateIfNeeded()
+        }
     }
     
     // MARK: - Initialization
@@ -1144,25 +1147,6 @@ extension ReadMoreLabel {
         ) -> TextTruncationResult
     }
     
-    /// Layout state manager for separating UI lifecycle from business logic
-    private struct LayoutStateManager {
-        private weak var label: ReadMoreLabel?
-        
-        init(label: ReadMoreLabel) {
-            self.label = label
-        }
-        
-        /// Updates layout state based on current expansion state
-        func updateIfNeeded() {
-            guard let label = label else { return }
-            
-            if label.isExpanded {
-                label.checkAndResetExpandedStateIfNeeded()
-            } else {
-                label.checkAndResetTruncationStateIfNeeded()
-            }
-        }
-    }
     
     /// TextKit 1 based layout engine implementation
     private struct TextKit1LayoutEngine: TextLayoutEngine {
