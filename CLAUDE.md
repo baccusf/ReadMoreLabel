@@ -1088,13 +1088,13 @@ ReadMoreLabel 프로젝트는 **Git Flow 워크플로우**를 따릅니다:
 - **`main`**: 프로덕션 릴리즈 브랜치 (안정된 버전만)
 - **`develop`**: 개발 통합 브랜치 (다음 릴리즈 준비)
 - **`feature/*`**: 새 기능 개발 브랜치 (`feature/feature-name`)
-- **`release/*`**: 릴리즈 준비 브랜치 (`release/v1.0.0`)
+- **`release/*`**: 릴리즈 준비 브랜치 (`release/1.0.0`)
 - **`hotfix/*`**: 긴급 버그 수정 브랜치 (`hotfix/critical-bug`)
 
 #### 워크플로우 규칙
 1. **Feature 개발**: `develop`에서 `feature/feature-name` 브랜치 생성
 2. **코드 리뷰**: Feature 완료 후 `develop`으로 Pull Request
-3. **릴리즈 준비**: `develop`에서 `release/vX.Y.Z` 브랜치 생성
+3. **릴리즈 준비**: `develop`에서 `release/X.Y.Z` 브랜치 생성
 4. **프로덕션 배포**: `release` 브랜치를 `main`과 `develop`으로 머지
 5. **핫픽스**: `main`에서 `hotfix/bug-name` 생성 후 `main`과 `develop`으로 머지
 
