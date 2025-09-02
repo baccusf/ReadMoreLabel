@@ -1117,29 +1117,6 @@ extension ReadMoreLabel {
     
     // MARK: - Private Structs (Enhanced State Management)
     
-    /// Expansion state management with optimized validation
-    private struct ExpansionState {
-        private(set) var isExpanded: Bool = false
-        
-        /// Sets expansion state with validation
-        mutating func setExpanded(_ expanded: Bool, isExpandable: Bool) -> Bool {
-            // Performance optimization: early return for no-change
-            guard expanded != isExpanded else { return false }
-            
-            // Validation: can't expand if not expandable
-            guard !expanded || isExpandable else { return false }
-            
-            isExpanded = expanded
-            return true
-        }
-        
-        /// Resets state for cell reuse (optimized)
-        mutating func resetIfExpanded() {
-            if isExpanded {
-                isExpanded = false
-            }
-        }
-    }
     
     /// Text content and layout state management
     private struct TextContentState {
@@ -1189,15 +1166,11 @@ extension ReadMoreLabel {
     
     /// Composite state management object for ReadMoreLabel
     private struct State {
-        private var expansionState = ExpansionState()
+        private(set) var isExpanded: Bool = false
         private var textContentState = TextContentState()
         private var layoutConfigState = LayoutConfigState()
         
         // MARK: - Computed Properties
-        
-        var isExpanded: Bool {
-            get { expansionState.isExpanded }
-        }
         
         var numberOfLines: Int {
             get { layoutConfigState.numberOfLines }
@@ -1230,7 +1203,7 @@ extension ReadMoreLabel {
             
             // Reset expansion state if changing from expandable to non-expandable
             if didChange && numberOfLines == 0 && isExpanded {
-                _ = expansionState.setExpanded(false, isExpandable: false)
+                isExpanded = false
             }
         }
         
@@ -1240,18 +1213,23 @@ extension ReadMoreLabel {
             
             // Reset expansion state if no text
             if newText == nil && isExpanded {
-                _ = expansionState.setExpanded(false, isExpandable: false)
+                isExpanded = false
             }
         }
         
         /// Sets the expansion state with validation
         mutating func setExpanded(_ expanded: Bool) -> Bool {
-            return expansionState.setExpanded(expanded, isExpandable: isExpandable)
+            guard expanded != isExpanded else { return false }
+            guard !expanded || isExpandable else { return false }
+            isExpanded = expanded
+            return true
         }
         
         /// Resets state for cell reuse
         mutating func prepareForCellReuse() {
-            expansionState.resetIfExpanded()
+            if isExpanded {
+                isExpanded = false
+            }
         }
     }
     
