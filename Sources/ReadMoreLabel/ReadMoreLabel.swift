@@ -40,6 +40,7 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
     
     private var state = State()
     private let layoutEngine: TextLayoutEngine = TextKit1LayoutEngine()
+    private lazy var layoutStateManager = LayoutStateManager(label: self)
     
     private var numberOfLinesWhenCollapsed: Int {
         get { return state.numberOfLines }
@@ -76,22 +77,22 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
     
     @objc public var readMoreText: NSAttributedString = NSAttributedString(string: "Read More..") {
         didSet {
-            invalidateDisplayAndLayout()
-            self.layoutIfNeeded()
+            guard readMoreText != oldValue else { return }
+            handleConfigurationChange()
         }
     }
     
     @objc public var ellipsisText: NSAttributedString = NSAttributedString(string: "..") {
         didSet {
-            invalidateDisplayAndLayout()
-            self.layoutIfNeeded()
+            guard ellipsisText != oldValue else { return }
+            handleConfigurationChange()
         }
     }
     
     @objc public var readMorePosition: Position = .end {
         didSet {
-            invalidateDisplayAndLayout()
-            self.layoutIfNeeded()
+            guard readMorePosition != oldValue else { return }
+            handleConfigurationChange()
         }
     }
     
@@ -134,9 +135,7 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
             return numberOfLinesWhenCollapsed
         }
         set {
-            #if DEBUG
-            print("⚠️ ReadMoreLabel: numberOfLines는 직접 설정할 수 없습니다. numberOfLinesWhenCollapsed를 사용하세요.")
-            #endif
+            self.numberOfLinesWhenCollapsed = newValue
         }
     }
     
@@ -185,13 +184,8 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
     public override func layoutSubviews() {
         super.layoutSubviews()
         
-        if isExpanded {
-            // Do NOT auto-reset expanded state when user has explicitly expanded text
-            // The user's explicit action should take precedence over automatic calculations
-             checkAndResetExpandedStateIfNeeded()
-        } else {
-            checkAndResetTruncationStateIfNeeded()
-        }
+        // Delegate state management to separate object for SRP compliance
+        layoutStateManager.updateIfNeeded()
     }
     
     // MARK: - Initialization
@@ -274,6 +268,12 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
         tapGesture.delaysTouchesEnded = false
         tapGestureRecognizer = tapGesture
         addGestureRecognizer(tapGesture)
+    }
+    
+    /// Single responsibility method for handling configuration changes
+    private func handleConfigurationChange() {
+        invalidateDisplayAndLayout()
+        updateDisplay()
     }
     
     
@@ -1141,6 +1141,26 @@ extension ReadMoreLabel {
             attributeKey: NSAttributedString.Key,
             defaultAttributes: [NSAttributedString.Key: Any]
         ) -> TextTruncationResult
+    }
+    
+    /// Layout state manager for separating UI lifecycle from business logic
+    private struct LayoutStateManager {
+        private weak var label: ReadMoreLabel?
+        
+        init(label: ReadMoreLabel) {
+            self.label = label
+        }
+        
+        /// Updates layout state based on current expansion state
+        func updateIfNeeded() {
+            guard let label = label else { return }
+            
+            if label.isExpanded {
+                label.checkAndResetExpandedStateIfNeeded()
+            } else {
+                label.checkAndResetTruncationStateIfNeeded()
+            }
+        }
     }
     
     /// TextKit 1 based layout engine implementation
