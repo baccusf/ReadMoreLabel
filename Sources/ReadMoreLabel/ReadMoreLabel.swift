@@ -98,6 +98,73 @@ public class ReadMoreLabel: UILabel {
         return attributes
     }
     
+    // MARK: - UILabel Overrides
+        
+    public override var numberOfLines: Int {
+        get {
+            return numberOfLinesWhenCollapsed
+        }
+        set {
+            #if DEBUG
+            print("⚠️ ReadMoreLabel: numberOfLines는 직접 설정할 수 없습니다. numberOfLinesWhenCollapsed를 사용하세요.")
+            #endif
+        }
+    }
+    
+    public override var lineBreakMode: NSLineBreakMode {
+        didSet {
+            super.lineBreakMode = .byWordWrapping
+        }
+    }
+    
+    public override var font: UIFont! {
+        didSet {
+            guard font != oldValue else { return }
+            reapplyTextStylingAndRefreshDisplay()
+        }
+    }
+    
+    public override var textColor: UIColor! {
+        didSet {
+            guard textColor != oldValue else { return }
+            reapplyTextStylingAndRefreshDisplay()
+        }
+    }
+    
+    public override var textAlignment: NSTextAlignment {
+        didSet {
+            guard textAlignment != oldValue else { return }
+            reapplyTextStylingAndRefreshDisplay()
+        }
+    }
+    
+    public override var text: String? {
+        didSet {
+            setOriginalText(NSAttributedString(string: text ?? ""))
+        }
+    }
+    
+    public override var attributedText: NSAttributedString? {
+        get {
+            return super.attributedText
+        }
+        set {
+            setOriginalText(newValue ?? NSAttributedString())
+        }
+    }
+    
+    public override func layoutSubviews() {
+        super.layoutSubviews()
+        
+        if isExpanded {
+            // Do NOT auto-reset expanded state when user has explicitly expanded text
+            // The user's explicit action should take precedence over automatic calculations
+             checkAndResetExpandedStateIfNeeded()
+        } else {
+            checkAndResetTruncationStateIfNeeded()
+        }
+    }
+    
     // MARK: - Initialization
     
     public override init(frame: CGRect) {
@@ -110,6 +177,7 @@ public class ReadMoreLabel: UILabel {
         setupLabel()
     }
     
+    // MARK: - Private Implementation
     
     private func setupLabel() {
         setInternalNumberOfLines(numberOfLinesWhenCollapsed == 0 ? 0 : numberOfLinesWhenCollapsed)
@@ -363,82 +431,6 @@ public class ReadMoreLabel: UILabel {
         
         if hasReadMoreTextAtLocation(locationInLabel, in: attributedText) {
             setExpanded(true, animated: true)
-        }
-    }
-    
-    // MARK: - UILabel Overrides
-        
-    public override var numberOfLines: Int {
-        get {
-            return numberOfLinesWhenCollapsed
-        }
-        set {
-            if !isExpanded {
-                numberOfLinesWhenCollapsed = newValue
-            }
-        }
-    }
-    
-    public override var lineBreakMode: NSLineBreakMode {
-        didSet {
-            updateDisplay()
-        }
-    }
-    
-    public override var font: UIFont! {
-        didSet {
-            // Only update if font actually changed to avoid unnecessary redraws
-            guard font != oldValue else { return }
-            
-            // Reapply font to original text and trigger display update
-            reapplyTextStylingAndRefreshDisplay()
-        }
-    }
-    
-    public override var textColor: UIColor! {
-        didSet {
-            // Only update if color actually changed to avoid unnecessary redraws  
-            guard textColor != oldValue else { return }
-            
-            // Reapply color to original text and trigger display update
-            reapplyTextStylingAndRefreshDisplay()
-        }
-    }
-    
-    public override var textAlignment: NSTextAlignment {
-        didSet {
-            // Only update if alignment actually changed to avoid unnecessary redraws
-            guard textAlignment != oldValue else { return }
-            
-            // Reapply alignment to original text and trigger display update
-            reapplyTextStylingAndRefreshDisplay()
-        }
-    }
-    
-    public override var text: String? {
-        didSet {
-            setOriginalText(NSAttributedString(string: text ?? ""))
-        }
-    }
-    
-    public override var attributedText: NSAttributedString? {
-        get {
-            return super.attributedText
-        }
-        set {
-            setOriginalText(newValue ?? NSAttributedString())
-        }
-    }
-    
-    public override func layoutSubviews() {
-        super.layoutSubviews()
-        
-        if isExpanded {
-            // Do NOT auto-reset expanded state when user has explicitly expanded text
-            // The user's explicit action should take precedence over automatic calculations
-             checkAndResetExpandedStateIfNeeded()
-        } else {
-            checkAndResetTruncationStateIfNeeded()
         }
     }
     
