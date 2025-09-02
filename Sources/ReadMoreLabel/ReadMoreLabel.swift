@@ -73,6 +73,31 @@ public class ReadMoreLabel: UILabel {
     private static let defaultSpaceBetweenEllipsisAndReadMore: String = " "
     private static let newLineCharacter: String = "\n"
     
+    // MARK: - Private Properties
+    
+    private var lineFragmentPadding: CGFloat {
+        return 0.0
+    }
+    
+    private var defaultTextAttributes: [NSAttributedString.Key: Any] {
+        var attributes: [NSAttributedString.Key: Any] = [:]
+        attributes[.font] = font
+        attributes[.foregroundColor] = textColor
+        
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.lineSpacing = 0
+        paragraphStyle.lineHeightMultiple = 0
+        paragraphStyle.paragraphSpacing = 0
+        paragraphStyle.paragraphSpacingBefore = 0
+        paragraphStyle.lineBreakMode = self.lineBreakMode
+        paragraphStyle.alignment = self.textAlignment
+        paragraphStyle.usesDefaultHyphenation = false
+        
+        attributes[.paragraphStyle] = paragraphStyle
+        
+        return attributes
+    }
+    
     // MARK: - Initialization
     
     public override init(frame: CGRect) {
@@ -471,29 +496,6 @@ public class ReadMoreLabel: UILabel {
         case .newLine:
             displayTruncatedTextAtNewLineBeginning(originalText, availableWidth: bounds.width)
         }
-    }
-    
-    private var lineFragmentPadding: CGFloat {
-        return 0.0
-    }
-    
-    private var defaultTextAttributes: [NSAttributedString.Key: Any] {
-        var attributes: [NSAttributedString.Key: Any] = [:]
-        attributes[.font] = font
-        attributes[.foregroundColor] = textColor
-        
-        let paragraphStyle = NSMutableParagraphStyle()
-        paragraphStyle.lineSpacing = 0
-        paragraphStyle.lineHeightMultiple = 0
-        paragraphStyle.paragraphSpacing = 0
-        paragraphStyle.paragraphSpacingBefore = 0
-        paragraphStyle.lineBreakMode = self.lineBreakMode
-        paragraphStyle.alignment = self.textAlignment
-        paragraphStyle.usesDefaultHyphenation = false
-        
-        attributes[.paragraphStyle] = paragraphStyle
-        
-        return attributes
     }
     
     private func hasReadMoreTextAtLocation(_ location: CGPoint, in attributedText: NSAttributedString) -> Bool {
