@@ -73,6 +73,8 @@ public class ReadMoreLabel: UILabel {
     private static let defaultSpaceBetweenEllipsisAndReadMore: String = " "
     private static let newLineCharacter: String = "\n"
     
+    // MARK: - Initialization
+    
     public override init(frame: CGRect) {
         super.init(frame: frame)
         setupLabel()
@@ -338,7 +340,8 @@ public class ReadMoreLabel: UILabel {
             setExpanded(true, animated: true)
         }
     }
-
+    
+    // MARK: - UILabel Overrides
         
     public override var numberOfLines: Int {
         get {
@@ -402,6 +405,20 @@ public class ReadMoreLabel: UILabel {
         }
     }
     
+    public override func layoutSubviews() {
+        super.layoutSubviews()
+        
+        if isExpanded {
+            // Do NOT auto-reset expanded state when user has explicitly expanded text
+            // The user's explicit action should take precedence over automatic calculations
+             checkAndResetExpandedStateIfNeeded()
+        } else {
+            checkAndResetTruncationStateIfNeeded()
+        }
+    }
+    
+    // MARK: - Private Implementation
+    
     private func setOriginalText(_ text: NSAttributedString) {
         state.updateOriginalText(text.applyingTextAlignment(textAlignment, font: font, textColor: textColor))
         invalidateDisplayAndLayout()
@@ -453,18 +470,6 @@ public class ReadMoreLabel: UILabel {
             displayTruncatedTextAtEnd(originalText, availableWidth: bounds.width)
         case .newLine:
             displayTruncatedTextAtNewLineBeginning(originalText, availableWidth: bounds.width)
-        }
-    }
-    
-    public override func layoutSubviews() {
-        super.layoutSubviews()
-        
-        if isExpanded {
-            // Do NOT auto-reset expanded state when user has explicitly expanded text
-            // The user's explicit action should take precedence over automatic calculations
-             checkAndResetExpandedStateIfNeeded()
-        } else {
-            checkAndResetTruncationStateIfNeeded()
         }
     }
     
