@@ -39,7 +39,6 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
     @objc public weak var delegate: ReadMoreLabelDelegate?
     
     private var state = State()
-    private let layoutEngine: TextLayoutEngine = TextKit1LayoutEngine()
     
     private var numberOfLinesWhenCollapsed: Int {
         get { return state.numberOfLines }
@@ -287,15 +286,14 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
         containerWidth: CGFloat,
         suffix: NSAttributedString
     ) -> TextTruncationResult {
-        // Use abstracted layout engine for Dependency Inversion Principle
-        return layoutEngine.calculateTruncation(
-            text: originalText.applyingTextAlignment(textAlignment, font: font, textColor: textColor),
-            numberOfLines: numberOfLines,
-            containerWidth: containerWidth,
-            suffix: suffix,
-            lineFragmentPadding: lineFragmentPadding,
-            lineBreakMode: lineBreakMode
-        )
+        return originalText.applyingTextAlignment(textAlignment, font: font, textColor: textColor)
+            .applyingReadMoreTruncation(
+                numberOfLines: numberOfLines,
+                containerWidth: containerWidth,
+                suffix: suffix,
+                lineFragmentPadding: lineFragmentPadding,
+                lineBreakMode: lineBreakMode
+            )
     }
         
     private func setInternalNumberOfLines(_ lines: Int) {
@@ -405,9 +403,7 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
             return
         }
         
-        // Use abstracted layout engine for newLine position
-        let result = layoutEngine.calculateTruncationForNewLine(
-            text: attributedText,
+        let result = attributedText.applyingReadMoreForNewLine(
             numberOfLines: numberOfLinesWhenCollapsed,
             containerWidth: availableWidth,
             textAlignment: textAlignment,
@@ -1118,84 +1114,6 @@ extension ReadMoreLabel {
         public static let isReadMore = NSAttributedString.Key("ReadMoreLabel.isReadMore")
     }
     
-    // MARK: - Private Protocols
-    
-    /// Text layout engine abstraction for Dependency Inversion Principle
-    private protocol TextLayoutEngine {
-        func calculateTruncation(
-            text: NSAttributedString,
-            numberOfLines: Int,
-            containerWidth: CGFloat,
-            suffix: NSAttributedString,
-            lineFragmentPadding: CGFloat,
-            lineBreakMode: NSLineBreakMode
-        ) -> TextTruncationResult
-        
-        func calculateTruncationForNewLine(
-            text: NSAttributedString,
-            numberOfLines: Int,
-            containerWidth: CGFloat,
-            textAlignment: NSTextAlignment,
-            font: UIFont,
-            textColor: UIColor?,
-            lineFragmentPadding: CGFloat,
-            lineBreakMode: NSLineBreakMode,
-            readMoreText: NSAttributedString,
-            newLineCharacter: String,
-            attributeKey: NSAttributedString.Key,
-            defaultAttributes: [NSAttributedString.Key: Any]
-        ) -> TextTruncationResult
-    }
-    
-    
-    /// TextKit 1 based layout engine implementation
-    private struct TextKit1LayoutEngine: TextLayoutEngine {
-        func calculateTruncation(
-            text: NSAttributedString,
-            numberOfLines: Int,
-            containerWidth: CGFloat,
-            suffix: NSAttributedString,
-            lineFragmentPadding: CGFloat,
-            lineBreakMode: NSLineBreakMode
-        ) -> TextTruncationResult {
-            return text.applyingReadMoreTruncation(
-                numberOfLines: numberOfLines,
-                containerWidth: containerWidth,
-                suffix: suffix,
-                lineFragmentPadding: lineFragmentPadding,
-                lineBreakMode: lineBreakMode
-            )
-        }
-        
-        func calculateTruncationForNewLine(
-            text: NSAttributedString,
-            numberOfLines: Int,
-            containerWidth: CGFloat,
-            textAlignment: NSTextAlignment,
-            font: UIFont,
-            textColor: UIColor?,
-            lineFragmentPadding: CGFloat,
-            lineBreakMode: NSLineBreakMode,
-            readMoreText: NSAttributedString,
-            newLineCharacter: String,
-            attributeKey: NSAttributedString.Key,
-            defaultAttributes: [NSAttributedString.Key: Any]
-        ) -> TextTruncationResult {
-            return text.applyingReadMoreForNewLine(
-                numberOfLines: numberOfLines,
-                containerWidth: containerWidth,
-                textAlignment: textAlignment,
-                font: font,
-                textColor: textColor,
-                lineFragmentPadding: lineFragmentPadding,
-                lineBreakMode: lineBreakMode,
-                readMoreText: readMoreText,
-                newLineCharacter: newLineCharacter,
-                attributeKey: attributeKey,
-                defaultAttributes: defaultAttributes
-            )
-        }
-    }
     
     // MARK: - Private Structs (Enhanced State Management)
     
