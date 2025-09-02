@@ -222,19 +222,13 @@ public class ReadMoreLabel: UILabel {
         invalidateIntrinsicContentSize()
     }
     
-    /// Displays truncated text using Strategy Pattern
+    /// Displays truncated text based on readMorePosition
     private func displayTruncatedText(_ attributedText: NSAttributedString, availableWidth: CGFloat) {
-        let strategy = createTruncationStrategy(for: readMorePosition)
-        strategy.displayTruncatedText(attributedText, availableWidth: availableWidth, in: self)
-    }
-    
-    /// Factory method to create truncation strategy based on position
-    private func createTruncationStrategy(for position: Position) -> TruncationStrategy {
-        switch position {
+        switch readMorePosition {
         case .end:
-            return EndPositionStrategy()
+            displayTruncatedTextAtEnd(attributedText, availableWidth: availableWidth)
         case .newLine:
-            return NewLinePositionStrategy()
+            displayTruncatedTextAtNewLineBeginning(attributedText, availableWidth: availableWidth)
         }
     }
     
@@ -454,8 +448,12 @@ public class ReadMoreLabel: UILabel {
             return
         }
 
-        let strategy = createTruncationStrategy(for: readMorePosition)
-        strategy.displayTruncatedText(originalText, availableWidth: bounds.width, in: self)
+        switch readMorePosition {
+        case .end:
+            displayTruncatedTextAtEnd(originalText, availableWidth: bounds.width)
+        case .newLine:
+            displayTruncatedTextAtNewLineBeginning(originalText, availableWidth: bounds.width)
+        }
     }
     
     public override func layoutSubviews() {
@@ -1085,28 +1083,7 @@ extension ReadMoreLabel {
         public static let isReadMore = NSAttributedString.Key("ReadMoreLabel.isReadMore")
     }
     
-    // MARK: - Private Protocols
-    
-    /// Strategy protocol for different text truncation positions
-    private protocol TruncationStrategy {
-        func displayTruncatedText(_ attributedText: NSAttributedString, availableWidth: CGFloat, in label: ReadMoreLabel)
-    }
-    
     // MARK: - Private Structs
-    
-    /// Strategy for .end position - displays "더보기" at the end of truncated text
-    private struct EndPositionStrategy: TruncationStrategy {
-        func displayTruncatedText(_ attributedText: NSAttributedString, availableWidth: CGFloat, in label: ReadMoreLabel) {
-            label.displayTruncatedTextAtEnd(attributedText, availableWidth: availableWidth)
-        }
-    }
-    
-    /// Strategy for .newLine position - displays "더보기" on a new line
-    private struct NewLinePositionStrategy: TruncationStrategy {
-        func displayTruncatedText(_ attributedText: NSAttributedString, availableWidth: CGFloat, in label: ReadMoreLabel) {
-            label.displayTruncatedTextAtNewLineBeginning(attributedText, availableWidth: availableWidth)
-        }
-    }
     
     /// State management object for ReadMoreLabel
     private struct State {
