@@ -277,18 +277,16 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
     }
     
     
+    
     private func applyReadMore(
         originalText: NSAttributedString,
         numberOfLines: Int,
         containerWidth: CGFloat,
         suffix: NSAttributedString
     ) -> TextTruncationResult {
-        
-        let alignedText = originalText.applyingTextAlignment(textAlignment, font: font, textColor: textColor)
-        
         // Use abstracted layout engine for Dependency Inversion Principle
         return layoutEngine.calculateTruncation(
-            text: alignedText,
+            text: originalText.applyingTextAlignment(textAlignment, font: font, textColor: textColor),
             numberOfLines: numberOfLines,
             containerWidth: containerWidth,
             suffix: suffix,
@@ -324,20 +322,23 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
         )
     }
     
-    /// Validates and returns display state, or nil if invalid
+    /// Validates and returns display state, or nil if invalid (optimized)
     private func validateDisplayState() -> (attributedText: NSAttributedString, availableWidth: CGFloat)? {
-        guard let attributedTextToDisplay = state.originalText, 
-              case let availableWidth = bounds.width, 
-              availableWidth > 0 else {
+        // Performance optimization: early bounds check
+        let availableWidth = bounds.width
+        guard availableWidth > 0,
+              let attributedTextToDisplay = state.originalText,
+              attributedTextToDisplay.length > 0 else {
             return nil
         }
         
         return (attributedTextToDisplay, availableWidth)
     }
     
-    /// Checks if text should be displayed in expanded form
+    /// Checks if text should be displayed in expanded form (optimized)
     private func shouldDisplayExpandedText() -> Bool {
-        return numberOfLinesWhenCollapsed == 0 || isExpanded
+        // Performance optimization: check cheaper condition first
+        return isExpanded || numberOfLinesWhenCollapsed == 0
     }
     
     /// Handles expanded text display
@@ -1212,70 +1213,143 @@ extension ReadMoreLabel {
         }
     }
     
-    // MARK: - Private Structs
+    // MARK: - Private Structs (Enhanced State Management)
     
-    /// State management object for ReadMoreLabel
-    private struct State {
-        var isExpanded: Bool = false
-        var numberOfLines: Int = 3
-        var originalText: NSAttributedString?
-        var readMoreTextRange: NSRange?
-        var internalNumberOfLines: Int = 0
+    /// Expansion state management with optimized validation
+    private struct ExpansionState {
+        private(set) var isExpanded: Bool = false
         
-        /// Checks if the text can be expanded (has truncated content)
-        var isExpandable: Bool {
-            guard numberOfLines > 0,
-                  let range = readMoreTextRange else {
-                return false
-            }
-            return range.length > 0
-        }
-        
-        /// Updates the number of lines and resets expansion state if needed
-        mutating func updateNumberOfLines(_ newValue: Int) {
-            let sanitizedValue = max(0, newValue)
-            guard sanitizedValue != numberOfLines else { return }
+        /// Sets expansion state with validation
+        mutating func setExpanded(_ expanded: Bool, isExpandable: Bool) -> Bool {
+            // Performance optimization: early return for no-change
+            guard expanded != isExpanded else { return false }
             
-            numberOfLines = sanitizedValue
-            
-            // Reset expansion state if changing from expandable to non-expandable
-            if numberOfLines == 0 && isExpanded {
-                isExpanded = false
-            }
-        }
-        
-        /// Updates the original text and resets related state
-        mutating func updateOriginalText(_ newText: NSAttributedString?) {
-            originalText = newText
-            readMoreTextRange = nil
-            
-            // Reset expansion state if no text or text changed significantly
-            if newText == nil {
-                isExpanded = false
-            }
-        }
-        
-        /// Sets the expansion state with validation
-        mutating func setExpanded(_ expanded: Bool) -> Bool {
-            // Can't expand if not expandable
-            if expanded && !isExpandable {
-                return false
-            }
-            
-            // No change needed
-            if expanded == isExpanded {
-                return false
-            }
+            // Validation: can't expand if not expandable
+            guard !expanded || isExpandable else { return false }
             
             isExpanded = expanded
             return true
         }
         
-        /// Resets state for cell reuse
-        mutating func prepareForCellReuse() {
+        /// Resets state for cell reuse (optimized)
+        mutating func resetIfExpanded() {
             if isExpanded {
                 isExpanded = false
             }
+        }
+    }
+    
+    /// Text content and layout state management
+    private struct TextContentState {
+        private(set) var originalText: NSAttributedString?
+        private(set) var readMoreTextRange: NSRange?
+        
+        /// Updates original text and clears related state
+        mutating func updateOriginalText(_ newText: NSAttributedString?) {
+            // Performance optimization: avoid unnecessary changes
+            guard originalText != newText else { return }
+            
+            originalText = newText
+            readMoreTextRange = nil
+        }
+        
+        /// Updates ReadMore text range
+        mutating func updateReadMoreTextRange(_ range: NSRange?) {
+            readMoreTextRange = range
+        }
+        
+        /// Checks if content is expandable
+        var isExpandable: Bool {
+            guard let range = readMoreTextRange else { return false }
+            return range.length > 0
+        }
+    }
+    
+    /// Layout configuration state management
+    private struct LayoutConfigState {
+        private(set) var numberOfLines: Int = 3
+        private(set) var internalNumberOfLines: Int = 0
+        
+        /// Updates number of lines with validation
+        mutating func updateNumberOfLines(_ newValue: Int) -> Bool {
+            let sanitizedValue = max(0, newValue)
+            guard sanitizedValue != numberOfLines else { return false }
+            
+            numberOfLines = sanitizedValue
+            return true
+        }
+        
+        /// Updates internal number of lines
+        mutating func updateInternalNumberOfLines(_ lines: Int) {
+            internalNumberOfLines = lines
+        }
+    }
+    
+    /// Composite state management object for ReadMoreLabel
+    private struct State {
+        private var expansionState = ExpansionState()
+        private var textContentState = TextContentState()
+        private var layoutConfigState = LayoutConfigState()
+        
+        // MARK: - Computed Properties
+        
+        var isExpanded: Bool {
+            get { expansionState.isExpanded }
+        }
+        
+        var numberOfLines: Int {
+            get { layoutConfigState.numberOfLines }
+        }
+        
+        var originalText: NSAttributedString? {
+            get { textContentState.originalText }
+        }
+        
+        var readMoreTextRange: NSRange? {
+            get { textContentState.readMoreTextRange }
+            set { textContentState.updateReadMoreTextRange(newValue) }
+        }
+        
+        var internalNumberOfLines: Int {
+            get { layoutConfigState.internalNumberOfLines }
+            set { layoutConfigState.updateInternalNumberOfLines(newValue) }
+        }
+        
+        var isExpandable: Bool {
+            guard numberOfLines > 0 else { return false }
+            return textContentState.isExpandable
+        }
+        
+        // MARK: - Mutating Methods
+        
+        /// Updates the number of lines and resets expansion state if needed
+        mutating func updateNumberOfLines(_ newValue: Int) {
+            let didChange = layoutConfigState.updateNumberOfLines(newValue)
+            
+            // Reset expansion state if changing from expandable to non-expandable
+            if didChange && numberOfLines == 0 && isExpanded {
+                _ = expansionState.setExpanded(false, isExpandable: false)
+            }
+        }
+        
+        /// Updates the original text and resets related state
+        mutating func updateOriginalText(_ newText: NSAttributedString?) {
+            textContentState.updateOriginalText(newText)
+            
+            // Reset expansion state if no text
+            if newText == nil && isExpanded {
+                _ = expansionState.setExpanded(false, isExpandable: false)
+            }
+        }
+        
+        /// Sets the expansion state with validation
+        mutating func setExpanded(_ expanded: Bool) -> Bool {
+            return expansionState.setExpanded(expanded, isExpandable: isExpandable)
+        }
+        
+        /// Resets state for cell reuse
+        mutating func prepareForCellReuse() {
+            expansionState.resetIfExpanded()
         }
     }
     
