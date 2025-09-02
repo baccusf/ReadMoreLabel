@@ -290,16 +290,12 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
         super.numberOfLines = lines
     }
     
+    // MARK: - Enhanced TextKit 1 Helper Methods
+    
     /// Helper to get safe line count for display
     private var safeLineCount: Int {
         return numberOfLinesWhenCollapsed == 0 ? 0 : numberOfLinesWhenCollapsed
     }
-    
-    // MARK: - Enhanced TextKit 1 Helper Methods
-    
-    /// Enhanced TextKit 1 stack with improved memory management
-    /// Optimized for performance and reliability with proven TextKit 1 foundation
-    
     
     private func updateDisplay() {
         guard let displayState = validateDisplayState() else {
@@ -425,25 +421,6 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
         }
     }
     
-    // MARK: - Enhanced TextKit 1 Optimization Methods
-    
-    /// Enhanced TextKit 1: Optimized line counting with improved performance
-    
-    private func invalidateDisplayAndLayout() {
-        invalidateIntrinsicContentSize()
-        setNeedsLayout()
-    }
-    
-    /// Reapplies current text styling (alignment, font, color) and refreshes display
-    private func reapplyTextStylingAndRefreshDisplay() {
-        if let originalText = state.originalText {
-            state.updateOriginalText(originalText.applyingTextAlignment(textAlignment, font: font, textColor: textColor))
-        }
-        
-        invalidateDisplayAndLayout()
-        updateDisplay()
-    }
-    
     @objc private func handleTapGesture(_ gesture: UITapGestureRecognizer) {
         guard isExpandable, !isExpanded, let attributedText = attributedText else {
             return
@@ -460,7 +437,20 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
         }
     }
     
-    // MARK: - Private Implementation
+    private func invalidateDisplayAndLayout() {
+        invalidateIntrinsicContentSize()
+        setNeedsLayout()
+    }
+    
+    /// Reapplies current text styling (alignment, font, color) and refreshes display
+    private func reapplyTextStylingAndRefreshDisplay() {
+        if let originalText = state.originalText {
+            state.updateOriginalText(originalText.applyingTextAlignment(textAlignment, font: font, textColor: textColor))
+        }
+        
+        invalidateDisplayAndLayout()
+        updateDisplay()
+    }
     
     private func setOriginalText(_ text: NSAttributedString) {
         state.updateOriginalText(text.applyingTextAlignment(textAlignment, font: font, textColor: textColor))
