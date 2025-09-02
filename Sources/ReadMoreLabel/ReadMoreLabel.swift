@@ -61,17 +61,6 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
         return state.isExpandable
     }
     
-    private var _numberOfLinesWhenCollapsed: Int = 3 {
-        didSet {
-            let finalValue = max(0, _numberOfLinesWhenCollapsed)
-            if finalValue != _numberOfLinesWhenCollapsed {
-                _numberOfLinesWhenCollapsed = finalValue
-                return
-            }
-            state.updateNumberOfLines(_numberOfLinesWhenCollapsed)
-            invalidateDisplayAndLayout()
-        }
-    }
     
     @objc public var readMoreText: NSAttributedString = NSAttributedString(string: "Read More..") {
         didSet {
@@ -252,7 +241,7 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
     // MARK: - Private Implementation
     
     private func setupLabel() {
-        setInternalNumberOfLines(numberOfLinesWhenCollapsed == 0 ? 0 : numberOfLinesWhenCollapsed)
+        setInternalNumberOfLines(safeLineCount)
         lineBreakMode = .byWordWrapping
         isUserInteractionEnabled = true
         setupTapGesture()
@@ -299,6 +288,11 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
     private func setInternalNumberOfLines(_ lines: Int) {
         state.internalNumberOfLines = lines
         super.numberOfLines = lines
+    }
+    
+    /// Helper to get safe line count for display
+    private var safeLineCount: Int {
+        return numberOfLinesWhenCollapsed == 0 ? 0 : numberOfLinesWhenCollapsed
     }
     
     // MARK: - Enhanced TextKit 1 Helper Methods
@@ -363,7 +357,7 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
     private func displayTruncatedTextAtEnd(_ attributedText: NSAttributedString, availableWidth: CGFloat) {
         guard attributedText.length > 0 && availableWidth > 0 && numberOfLinesWhenCollapsed > 0 else {
             super.attributedText = attributedText
-            setInternalNumberOfLines(numberOfLinesWhenCollapsed == 0 ? 0 : numberOfLinesWhenCollapsed)
+            setInternalNumberOfLines(safeLineCount)
             state.readMoreTextRange = nil
             return
         }
@@ -390,7 +384,7 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
             state.readMoreTextRange = readMoreRange
         } else {
             super.attributedText = attributedText
-            setInternalNumberOfLines(numberOfLinesWhenCollapsed == 0 ? 0 : numberOfLinesWhenCollapsed)
+            setInternalNumberOfLines(safeLineCount)
             state.readMoreTextRange = nil
         }
     }
@@ -398,7 +392,7 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
     private func displayTruncatedTextAtNewLineBeginning(_ attributedText: NSAttributedString, availableWidth: CGFloat) {
         guard attributedText.length > 0 && availableWidth > 0 && numberOfLinesWhenCollapsed > 0 else {
             super.attributedText = attributedText
-            setInternalNumberOfLines(numberOfLinesWhenCollapsed == 0 ? 0 : numberOfLinesWhenCollapsed)
+            setInternalNumberOfLines(safeLineCount)
             state.readMoreTextRange = nil
             return
         }
@@ -426,7 +420,7 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
             
         } else {
             super.attributedText = attributedText
-            setInternalNumberOfLines(numberOfLinesWhenCollapsed == 0 ? 0 : numberOfLinesWhenCollapsed)
+            setInternalNumberOfLines(safeLineCount)
             state.readMoreTextRange = nil
         }
     }
