@@ -176,30 +176,8 @@ public class ReadMoreLabel: UILabel {
         super.init(coder: coder)
         setupLabel()
     }
-    
-    // MARK: - Private Implementation
-    
-    private func setupLabel() {
-        setInternalNumberOfLines(numberOfLinesWhenCollapsed == 0 ? 0 : numberOfLinesWhenCollapsed)
-        lineBreakMode = .byWordWrapping
-        isUserInteractionEnabled = true
-        setupTapGesture()
-    }
-    
-    private func setupTapGesture() {
-        // Remove existing tap gesture if any
-        if let existingGesture = tapGestureRecognizer {
-            removeGestureRecognizer(existingGesture)
-        }
-        
-        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleTapGesture(_:)))
-        tapGesture.cancelsTouchesInView = false
-        tapGesture.delaysTouchesBegan = false
-        tapGesture.delaysTouchesEnded = false
-        tapGestureRecognizer = tapGesture
-        addGestureRecognizer(tapGesture)
-    }
-    
+
+    // MARK: - Public Interface
     
     @objc public func expand() {
         setExpanded(true, animated: true)
@@ -238,7 +216,6 @@ public class ReadMoreLabel: UILabel {
         }
     }
     
-    
     @objc public func findReadMoreTextRanges() -> [NSRange] {
         guard let attributedText = attributedText else {
             return []
@@ -246,6 +223,30 @@ public class ReadMoreLabel: UILabel {
         
         return attributedText.findReadMoreTextRanges()
     }
+
+    // MARK: - Private Implementation
+    
+    private func setupLabel() {
+        setInternalNumberOfLines(numberOfLinesWhenCollapsed == 0 ? 0 : numberOfLinesWhenCollapsed)
+        lineBreakMode = .byWordWrapping
+        isUserInteractionEnabled = true
+        setupTapGesture()
+    }
+    
+    private func setupTapGesture() {
+        // Remove existing tap gesture if any
+        if let existingGesture = tapGestureRecognizer {
+            removeGestureRecognizer(existingGesture)
+        }
+        
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleTapGesture(_:)))
+        tapGesture.cancelsTouchesInView = false
+        tapGesture.delaysTouchesBegan = false
+        tapGesture.delaysTouchesEnded = false
+        tapGestureRecognizer = tapGesture
+        addGestureRecognizer(tapGesture)
+    }
+    
     
     private func applyReadMore(
         originalText: NSAttributedString,
