@@ -1,16 +1,45 @@
 import UIKit
 
+// MARK: - Public Protocols (Interface Segregation Principle)
+
+/// Configuration interface for ReadMore appearance and behavior
+@objc public protocol ReadMoreConfiguration: AnyObject {
+    var readMoreText: NSAttributedString { get set }
+    var ellipsisText: NSAttributedString { get set }
+    var readMorePosition: ReadMoreLabel.Position { get set }
+}
+
+/// Action interface for ReadMore expansion/collapse operations
+@objc public protocol ReadMoreActions: AnyObject {
+    @objc func expand()
+    @objc func collapse()
+    @objc func setExpanded(_ expanded: Bool, animated: Bool)
+}
+
+/// Cell reuse interface for table/collection view integration
+@objc public protocol ReadMoreCellReusable: AnyObject {
+    @objc func prepareForCellReuse()
+}
+
+/// Query interface for ReadMore text range inspection
+@objc public protocol ReadMoreQueryable: AnyObject {
+    @objc func findReadMoreTextRanges() -> [NSRange]
+    var isExpandable: Bool { get }
+    var isExpanded: Bool { get set }
+}
 
 @objc public protocol ReadMoreLabelDelegate: AnyObject {
     @objc optional func readMoreLabel(_ label: ReadMoreLabel, didChangeExpandedState isExpanded: Bool)
 }
 
 /// UILabel with "Read More" functionality for truncated text
+/// Implements segregated interfaces for better maintainability and testability
 @objc @IBDesignable
-public class ReadMoreLabel: UILabel {
+public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, ReadMoreCellReusable, ReadMoreQueryable {
     @objc public weak var delegate: ReadMoreLabelDelegate?
     
     private var state = State()
+    private let layoutEngine: TextLayoutEngine = TextKit1LayoutEngine()
     
     private var numberOfLinesWhenCollapsed: Int {
         get { return state.numberOfLines }
@@ -257,8 +286,9 @@ public class ReadMoreLabel: UILabel {
         
         let alignedText = originalText.applyingTextAlignment(textAlignment, font: font, textColor: textColor)
         
-        // Enhanced TextKit 1: Proven reliability with optimized performance
-        return alignedText.applyingReadMoreTruncation(
+        // Use abstracted layout engine for Dependency Inversion Principle
+        return layoutEngine.calculateTruncation(
+            text: alignedText,
             numberOfLines: numberOfLines,
             containerWidth: containerWidth,
             suffix: suffix,
@@ -371,8 +401,9 @@ public class ReadMoreLabel: UILabel {
             return
         }
         
-        // Cut text to numberOfLinesWhenCollapsed lines and add "Read More" at the beginning of next line
-        let result = attributedText.applyingReadMoreForNewLine(
+        // Use abstracted layout engine for newLine position
+        let result = layoutEngine.calculateTruncationForNewLine(
+            text: attributedText,
             numberOfLines: numberOfLinesWhenCollapsed,
             containerWidth: availableWidth,
             textAlignment: textAlignment,
@@ -1081,6 +1112,84 @@ extension ReadMoreLabel {
     
     public struct AttributeKey {
         public static let isReadMore = NSAttributedString.Key("ReadMoreLabel.isReadMore")
+    }
+    
+    // MARK: - Private Protocols
+    
+    /// Text layout engine abstraction for Dependency Inversion Principle
+    private protocol TextLayoutEngine {
+        func calculateTruncation(
+            text: NSAttributedString,
+            numberOfLines: Int,
+            containerWidth: CGFloat,
+            suffix: NSAttributedString,
+            lineFragmentPadding: CGFloat,
+            lineBreakMode: NSLineBreakMode
+        ) -> TextTruncationResult
+        
+        func calculateTruncationForNewLine(
+            text: NSAttributedString,
+            numberOfLines: Int,
+            containerWidth: CGFloat,
+            textAlignment: NSTextAlignment,
+            font: UIFont,
+            textColor: UIColor?,
+            lineFragmentPadding: CGFloat,
+            lineBreakMode: NSLineBreakMode,
+            readMoreText: NSAttributedString,
+            newLineCharacter: String,
+            attributeKey: NSAttributedString.Key,
+            defaultAttributes: [NSAttributedString.Key: Any]
+        ) -> TextTruncationResult
+    }
+    
+    /// TextKit 1 based layout engine implementation
+    private struct TextKit1LayoutEngine: TextLayoutEngine {
+        func calculateTruncation(
+            text: NSAttributedString,
+            numberOfLines: Int,
+            containerWidth: CGFloat,
+            suffix: NSAttributedString,
+            lineFragmentPadding: CGFloat,
+            lineBreakMode: NSLineBreakMode
+        ) -> TextTruncationResult {
+            return text.applyingReadMoreTruncation(
+                numberOfLines: numberOfLines,
+                containerWidth: containerWidth,
+                suffix: suffix,
+                lineFragmentPadding: lineFragmentPadding,
+                lineBreakMode: lineBreakMode
+            )
+        }
+        
+        func calculateTruncationForNewLine(
+            text: NSAttributedString,
+            numberOfLines: Int,
+            containerWidth: CGFloat,
+            textAlignment: NSTextAlignment,
+            font: UIFont,
+            textColor: UIColor?,
+            lineFragmentPadding: CGFloat,
+            lineBreakMode: NSLineBreakMode,
+            readMoreText: NSAttributedString,
+            newLineCharacter: String,
+            attributeKey: NSAttributedString.Key,
+            defaultAttributes: [NSAttributedString.Key: Any]
+        ) -> TextTruncationResult {
+            return text.applyingReadMoreForNewLine(
+                numberOfLines: numberOfLines,
+                containerWidth: containerWidth,
+                textAlignment: textAlignment,
+                font: font,
+                textColor: textColor,
+                lineFragmentPadding: lineFragmentPadding,
+                lineBreakMode: lineBreakMode,
+                readMoreText: readMoreText,
+                newLineCharacter: newLineCharacter,
+                attributeKey: attributeKey,
+                defaultAttributes: defaultAttributes
+            )
+        }
     }
     
     // MARK: - Private Structs
