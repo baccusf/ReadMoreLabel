@@ -154,7 +154,7 @@ func readMoreLabel(_ label: ReadMoreLabel, didChangeExpandedState isExpanded: Bo
 - **iOS**: 16.0+
 - **tvOS**: 16.0+ 
 - **Swift**: 5.0+
-- **Xcode**: 13.0+
+- **Xcode**: 16.0+
 
 ### iOS 16.0+ 선택 이유
 - **TextKit 1 안정성**: iOS 16+에서 완전히 검증된 TextKit 1 API 활용
@@ -171,7 +171,7 @@ func readMoreLabel(_ label: ReadMoreLabel, didChangeExpandedState isExpanded: Bo
 - **유지보수성**: 크게 향상
 
 ### 핵심 성능 지표
-- **TextKit 2 Segment 계산**: O(n) 직선적 복잡도이지만 픽셀 정확도 보장
+- **TextKit 1 Fragment 계산**: O(n) 직선적 복잡도이지만 픽셀 정확도 보장
 - 메모리 사용량: 최소화된 임시 객체 생성
 - 배터리 효율성: 불필요한 UI 업데이트 방지
 
@@ -307,7 +307,7 @@ guard totalLineCount >= numberOfLines,
 **수정 논리**:
 - 텍스트가 지정된 줄 수와 **정확히 같을 때**도 "더보기" 버튼 표시 필요
 - `>=` 조건으로 변경하여 경계 케이스 포함
-- TextKit 2의 line fragment 계산과 일치하는 논리 구현
+- TextKit 1의 line fragment 계산과 일치하는 논리 구현
 
 **검증 과정**:
 1. **디버그 환경 구축**: Test.swift 파일로 격리된 테스트 환경 생성
@@ -363,7 +363,7 @@ if totalLineCount > numberOfLines {
 4. **완전한 정리**: 디버그 완료 후 모든 임시 코드 제거
 
 **성능 모니터링**:
-- TextKit 2 Segment 순회: O(n) 시간 복잡도 유지
+- TextKit 1 Fragment 순회: O(n) 시간 복잡도 유지
 - 메모리 효율성: 불필요한 배열 생성 및 임시 객체 제거
 - 프로덕션 빌드: 디버그 코드 완전 제거로 바이너리 크기 최적화
 
