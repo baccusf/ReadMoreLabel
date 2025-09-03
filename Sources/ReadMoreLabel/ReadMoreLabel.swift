@@ -61,6 +61,9 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
         return state.isExpandable
     }
     
+    /// Controls whether expansion/collapse animation is enabled when user taps "Read More"
+    /// Default is true for smooth user experience
+    @objc public var isExpandAnimationEnabled: Bool = true
     
     @objc public var readMoreText: NSAttributedString = NSAttributedString(string: "Read More..") {
         didSet {
@@ -194,11 +197,11 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
     // MARK: - Public Interface
     
     @objc public func expand() {
-        setExpanded(true, animated: true)
+        setExpanded(true, animated: isExpandAnimationEnabled)
     }
     
     @objc public func collapse() {
-        setExpanded(false, animated: true)
+        setExpanded(false, animated: isExpandAnimationEnabled)
     }
     
     @objc public func setExpanded(_ expanded: Bool, animated: Bool) {
@@ -433,7 +436,7 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
         }
         
         if hasReadMoreTextAtLocation(locationInLabel, in: attributedText) {
-            setExpanded(true, animated: true)
+            setExpanded(true, animated: false)
         }
     }
     

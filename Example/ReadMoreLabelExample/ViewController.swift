@@ -29,6 +29,7 @@ extension ReadMoreLabel {
 class ViewController: UIViewController {
     
     private let tableView = UITableView()
+    private var isAnimationEnabled = true
     
     private let sampleData = [
         SampleData(
@@ -220,8 +221,28 @@ class ViewController: UIViewController {
         subtitleLabel.textAlignment = .center
         subtitleLabel.translatesAutoresizingMaskIntoConstraints = false
         
+        // Animation toggle switch
+        let animationStack = UIStackView()
+        animationStack.axis = .horizontal
+        animationStack.spacing = 8
+        animationStack.alignment = .center
+        animationStack.translatesAutoresizingMaskIntoConstraints = false
+        
+        let animationLabel = UILabel()
+        animationLabel.text = "Enable Expand Animation:"
+        animationLabel.font = UIFont.systemFont(ofSize: 14, weight: .medium)
+        animationLabel.textColor = .label
+        
+        let animationSwitch = UISwitch()
+        animationSwitch.isOn = isAnimationEnabled
+        animationSwitch.addTarget(self, action: #selector(animationToggled(_:)), for: .valueChanged)
+        
+        animationStack.addArrangedSubview(animationLabel)
+        animationStack.addArrangedSubview(animationSwitch)
+        
         headerView.addSubview(titleLabel)
         headerView.addSubview(subtitleLabel)
+        headerView.addSubview(animationStack)
         
         NSLayoutConstraint.activate([
             titleLabel.topAnchor.constraint(equalTo: headerView.topAnchor, constant: 16),
@@ -231,7 +252,10 @@ class ViewController: UIViewController {
             subtitleLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 4),
             subtitleLabel.leadingAnchor.constraint(equalTo: headerView.leadingAnchor, constant: 16),
             subtitleLabel.trailingAnchor.constraint(equalTo: headerView.trailingAnchor, constant: -16),
-            subtitleLabel.bottomAnchor.constraint(equalTo: headerView.bottomAnchor, constant: -16)
+            
+            animationStack.topAnchor.constraint(equalTo: subtitleLabel.bottomAnchor, constant: 12),
+            animationStack.centerXAnchor.constraint(equalTo: headerView.centerXAnchor),
+            animationStack.bottomAnchor.constraint(equalTo: headerView.bottomAnchor, constant: -16)
         ])
         
         // Calculate required height and set proper frame
@@ -262,6 +286,13 @@ class ViewController: UIViewController {
             self.tableView.endUpdates()
         })
     }
+    
+    @objc private func animationToggled(_ sender: UISwitch) {
+        isAnimationEnabled = sender.isOn
+        
+        // Update all visible ReadMoreLabel instances
+        tableView.reloadData()
+    }
 }
 
 // MARK: - UITableViewDataSource
@@ -275,7 +306,8 @@ extension ViewController: UITableViewDataSource {
         let cell = tableView.dequeueReusableCell(withIdentifier: "ExampleCell", for: indexPath) as! ExampleTableViewCell
         cell.configure(
             with: sampleData[indexPath.row],
-            isExpanded: expandedStates[indexPath.row]
+            isExpanded: expandedStates[indexPath.row],
+            isAnimationEnabled: isAnimationEnabled
         )
         cell.delegate = self
 
@@ -302,7 +334,12 @@ extension ViewController: ExampleTableViewCellDelegate {
         
         expandedStates[indexPath.row] = true
         
-        UIView.animate(withDuration: 0.3) {
+        if isAnimationEnabled {
+            UIView.animate(withDuration: 0.3) {
+                self.tableView.beginUpdates()
+                self.tableView.endUpdates()
+            }
+        } else {
             self.tableView.beginUpdates()
             self.tableView.endUpdates()
         }
@@ -370,7 +407,7 @@ class ExampleTableViewCell: UITableViewCell {
         bottomConstraint.isActive = true
     }
     
-    func configure(with sampleData: SampleData, isExpanded: Bool) {
+    func configure(with sampleData: SampleData, isExpanded: Bool, isAnimationEnabled: Bool) {
         // Temporarily disable delegate to prevent recursion during configuration
         let originalDelegate = readMoreLabel.delegate
         readMoreLabel.delegate = nil
@@ -380,6 +417,9 @@ class ExampleTableViewCell: UITableViewCell {
         
         // Set position first
         readMoreLabel.readMorePosition = sampleData.position
+        
+        // Set animation preference
+        readMoreLabel.isExpandAnimationEnabled = isAnimationEnabled
         
         // Apply different styles and language-specific settings
         applyStyle(sampleData.style, language: sampleData.language)
