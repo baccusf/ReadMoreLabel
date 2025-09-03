@@ -27,14 +27,14 @@ A powerful and flexible UILabel subclass that provides "Read More" functionality
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/yourusername/ReadMoreLabel.git", from: "1.0.0")
+    .package(url: "https://github.com/baccusf/ReadMoreLabel.git", from: "0.1.0")
 ]
 ```
 
 ### CocoaPods
 
 ```ruby
-pod 'ReadMoreLabel'
+pod 'ReadMoreLabel', '~> 0.1.0'
 ```
 
 ### Manual Installation
@@ -192,21 +192,15 @@ Attempting to set these properties directly will show debug warnings and be igno
 
 ### Naming Conflicts
 
-If you encounter naming conflicts with other libraries that also have a `ReadMoreLabel` class, you can resolve them using Swift's module namespace system:
+If you encounter naming conflicts with other libraries, use Swift's module namespace:
 
 ```swift
-// Method 1: Use full module name
 import ReadMoreLabel
-let label = ReadMoreLabel.ReadMoreLabel()
+let label = ReadMoreLabel.ReadMoreLabel()  // Full module name
 
-// Method 2: Create a typealias
-import ReadMoreLabel
-typealias BFReadMoreLabel = ReadMoreLabel.ReadMoreLabel
-let label = BFReadMoreLabel()
-
-// Method 3: Selective import (Swift 5.2+)
-import ReadMoreLabel.ReadMoreLabel
-let label = ReadMoreLabel()
+// Or create a typealias
+typealias MyReadMoreLabel = ReadMoreLabel.ReadMoreLabel
+let label = MyReadMoreLabel()
 ```
 
 ### Best Practices
@@ -215,7 +209,8 @@ let label = ReadMoreLabel()
 2. **Performance**: For large amounts of text, consider setting `numberOfLinesWhenCollapsed = 0` initially and enabling truncation when needed
 3. **Accessibility**: The component automatically supports VoiceOver and Dynamic Type
 4. **Thread Safety**: Always update properties on the main thread
-5. **Naming Conflicts**: Use module namespaces or typealiases to resolve class name conflicts
+5. **TextKit 1**: Built on stable TextKit 1 APIs for reliable text processing
+6. **Memory Management**: Component maintains proper TextKit stack references for stability
 
 ## 🔧 Advanced Usage
 
@@ -269,11 +264,28 @@ ReadMoreLabel is available under the MIT license. See the [LICENSE](LICENSE) fil
 
 ## 🤝 Contributing
 
+ReadMoreLabel follows **Git Flow** workflow. Please follow these guidelines:
+
 1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+2. Create your feature branch from `develop` (`git checkout develop && git checkout -b feature/amazing-feature`)
+3. Follow our commit message format: `<type>: <description>`
+   - Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
+4. Ensure your code follows Swift Style Guide principles
+5. Add tests for new functionality
+6. Commit your changes with proper format:
+   ```
+   feat: Add amazing new feature
+   
+   Detailed description of the change
+   
+   🎯 Generated with Claude Code
+   Co-Authored-By: Claude <noreply@anthropic.com>
+   ```
+7. Push to your branch (`git push origin feature/amazing-feature`)
+8. Open a Pull Request targeting the `develop` branch
+9. Fill out the PR template completely
+
+See [CLAUDE.md](CLAUDE.md) for detailed development guidelines and Git Flow workflow.
 
 ## 📞 Support
 

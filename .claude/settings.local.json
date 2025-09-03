@@ -58,7 +58,8 @@
       "Read(/Users/seungho/Development/inappwebview_inspector/.github/ISSUE_TEMPLATE/**)",
       "Read(/Users/seungho/Development/inappwebview_inspector/.github/**)",
       "Read(/Users/seungho/Development/inappwebview_inspector/.github/ISSUE_TEMPLATE/**)",
-      "Read(/Users/seungho/Development/inappwebview_inspector/.github/ISSUE_TEMPLATE/**)"
+      "Read(/Users/seungho/Development/inappwebview_inspector/.github/ISSUE_TEMPLATE/**)",
+      "Bash(git branch:*)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits",
