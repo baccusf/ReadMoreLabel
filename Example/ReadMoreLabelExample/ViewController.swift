@@ -128,7 +128,7 @@ class ViewController: UIViewController {
         
         let targetSize = CGSize(width: view.bounds.width, height: UIView.layoutFittingCompressedSize.height)
         let fittingSize = headerView.systemLayoutSizeFitting(targetSize, withHorizontalFittingPriority: .required, verticalFittingPriority: .fittingSizeLevel)
-        headerView.frame = CGRect(x: 0, y: 0, width: view.bounds.width, height: fittingSize.height)
+        headerView.frame = CGRect(origin: .zero, size: fittingSize)
         
         return headerView
     }
@@ -207,13 +207,30 @@ extension ViewController: UITableViewDelegate {
     }
     
     func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
-        // Add spacing between cells by modifying the cell frame
-        let spacing: CGFloat = 8
-        let cellFrame = cell.frame
-        cell.frame = CGRect(x: cellFrame.origin.x + 16, 
-                           y: cellFrame.origin.y + spacing/2, 
-                           width: cellFrame.size.width - 32, 
-                           height: cellFrame.size.height - spacing)
+        // Apply professional cell presentation with defined spacing and margins
+        applyCellPresentation(to: cell)
+    }
+    
+    /// Applies consistent visual styling to table view cells with proper spacing
+    /// - Parameter cell: The cell to style
+    private func applyCellPresentation(to cell: UITableViewCell) {
+        // Design system constants
+        struct CellDesign {
+            static let horizontalMargin: CGFloat = 16
+            static let verticalSpacing: CGFloat = 8
+            static let cornerRadius: CGFloat = 12
+        }
+        
+        // Apply inset frame with proper calculations
+        let originalFrame = cell.frame
+        let insetFrame = CGRect(
+            x: originalFrame.origin.x + CellDesign.horizontalMargin,
+            y: originalFrame.origin.y + CellDesign.verticalSpacing / 2,
+            width: originalFrame.width - (CellDesign.horizontalMargin * 2),
+            height: originalFrame.height - CellDesign.verticalSpacing
+        )
+        
+        cell.frame = insetFrame
     }
 }
 
