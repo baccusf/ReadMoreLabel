@@ -39,6 +39,8 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
     @objc public weak var delegate: ReadMoreLabelDelegate?
     
     private var state = State()
+    private var isInConfigurationBatch = false
+    private var needsLayoutUpdate = false
     
     private var numberOfLinesWhenCollapsed: Int {
         get { return state.numberOfLines }
@@ -176,7 +178,7 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
             checkAndResetTruncationStateIfNeeded()
         }
     }
-    
+
     // MARK: - Initialization
     
     public override init(frame: CGRect) {
@@ -254,8 +256,32 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
     
     /// Single responsibility method for handling configuration changes
     private func handleConfigurationChange() {
+        if isInConfigurationBatch {
+            needsLayoutUpdate = true
+            return
+        }
+        
         invalidateDisplayAndLayout()
         updateDisplay()
+        forceLayoutInvalidation()
+    }
+    
+    /// 배치 모드 시작 - 다중 속성 변경 시 사용
+    @objc public func beginConfiguration() {
+        isInConfigurationBatch = true
+        needsLayoutUpdate = false
+    }
+    
+    /// 배치 모드 종료 - 모든 설정 완료 후 한 번에 레이아웃 갱신
+    @objc public func endConfiguration() {
+        isInConfigurationBatch = false
+        
+        if needsLayoutUpdate {
+            invalidateDisplayAndLayout()
+            updateDisplay()
+            forceLayoutInvalidation()
+            needsLayoutUpdate = false
+        }
     }
     
     private func applyReadMore(
@@ -491,6 +517,34 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
             displayTruncatedTextAtEnd(originalText, availableWidth: bounds.width)
         case .newLine:
             displayTruncatedTextAtNewLineBeginning(originalText, availableWidth: bounds.width)
+        }
+    }
+    
+    public override var intrinsicContentSize: CGSize {
+        let baseSize = super.intrinsicContentSize
+        
+        // position = .newLine이고 truncation이 필요한 경우에만 추가 높이 적용
+        if readMorePosition == .newLine && isExpandable && !isExpanded {
+            let additionalLineHeight = font.lineHeight
+            return CGSize(width: baseSize.width, height: baseSize.height + additionalLineHeight)
+        }
+        
+        return baseSize
+    }
+    
+    /// 강제 레이아웃 무효화 - position = .newLine에서 크기 변화 확실히 알림
+    private func forceLayoutInvalidation() {
+        invalidateIntrinsicContentSize()
+        setNeedsLayout()
+        
+        // 부모 뷰에게도 레이아웃 변경 알림
+        if let superview = superview {
+            superview.setNeedsLayout()
+            
+            // UITableViewCell 내부인 경우 추가 처리
+            DispatchQueue.main.async { [weak self] in
+                self?.invalidateIntrinsicContentSize()
+            }
         }
     }
     
@@ -997,10 +1051,37 @@ private extension NSAttributedString {
             return .noTruncationNeeded
         }
         
-        let targetLineFragment = lineFragments[numberOfLines - 1]
-        let lastLineRange = targetLineFragment.glyphRange
-        let lastLineRect = targetLineFragment.rect
-        let characterRange = layoutManager.characterRange(forGlyphRange: lastLineRange, actualGlyphRange: nil)
+        // For newLine position: calculate how much text can actually fit in numberOfLines based on container height
+        let lineHeight = lineFragments[0].rect.height
+        let targetHeight = lineHeight * CGFloat(numberOfLines)
+        
+        // Find how many line fragments fit within the target height
+        var accumulatedHeight: CGFloat = 0
+        var lastValidFragmentIndex = 0
+        
+        for (index, fragment) in lineFragments.enumerated() {
+            if accumulatedHeight + fragment.rect.height <= targetHeight {
+                accumulatedHeight += fragment.rect.height
+                lastValidFragmentIndex = index
+            } else {
+                break
+            }
+        }
+        
+        // Ensure we include at least numberOfLines worth of fragments
+        let targetFragmentIndex = max(numberOfLines - 1, lastValidFragmentIndex)
+        let safeFragmentIndex = min(targetFragmentIndex, lineFragments.count - 1)
+        
+        let firstLineRange = lineFragments[0].glyphRange
+        let lastLineRange = lineFragments[safeFragmentIndex].glyphRange
+        
+        // Create combined range covering all selected fragments
+        let combinedGlyphRange = NSRange(
+            location: firstLineRange.location,
+            length: (lastLineRange.location + lastLineRange.length) - firstLineRange.location
+        )
+        let characterRange = layoutManager.characterRange(forGlyphRange: combinedGlyphRange, actualGlyphRange: nil)
+        
         
         // Generate read more text and calculate size
         let lastAttributes = lastTextAttributes(defaultAttributes: defaultAttributes)
@@ -1008,11 +1089,11 @@ private extension NSAttributedString {
         let readMoreWithOriginalAttributes = readMoreText.createMutableWithAttributes(lastAttributes)
         readMoreWithNewLine.append(readMoreWithOriginalAttributes)
         
-        // No need to secure space for "Read More" in current line for newLine position
-        // Cut text at the end of numberOfLines line
+        // For newLine position: keep numberOfLines completely, add readMore on next line
+        // Use the full numberOfLines content without truncation
         let truncateOffset = characterRange.location + characterRange.length
         
-        // Compose final text
+        // Compose final text - keep all numberOfLines intact
         let truncatedSubstring = attributedSubstring(from: NSRange(location: 0, length: truncateOffset))
         let cleanedTruncatedText = truncatedSubstring.removingTrailingNewlineIfNeeded()
         let finalText = NSMutableAttributedString(attributedString: cleanedTruncatedText)
@@ -1020,6 +1101,9 @@ private extension NSAttributedString {
         finalText.append(NSAttributedString(string: newLineCharacter, attributes: lastAttributes))
         let readMoreStartLocation = finalText.length
         finalText.append(readMoreWithOriginalAttributes)
+        
+        // Add an extra newline after the read more text for better spacing
+        finalText.append(NSAttributedString(string: newLineCharacter, attributes: lastAttributes))
         
         let finalReadMoreRange = NSRange(location: readMoreStartLocation, length: readMoreWithOriginalAttributes.length)
         finalText.addAttribute(attributeKey, value: true, range: finalReadMoreRange)

@@ -16,6 +16,7 @@
 		2B1A3E612A8B5C8B00123456 /* ReadMoreLabel in Frameworks */ = {isa = PBXBuildFile; productRef = 2B1A3E602A8B5C8B00123456 /* ReadMoreLabel */; };
 		2B1A3E622A8B5C8B00123457 /* TableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B1A3E632A8B5C8B00123457 /* TableViewController.swift */; };
 		2B1A3E642A8B5C8B00123458 /* LabelViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B1A3E652A8B5C8B00123458 /* LabelViewController.swift */; };
+		A926D5492E69162C00159299 /* ExampleTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A926D5482E69161F00159299 /* ExampleTableViewCell.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -29,6 +30,7 @@
 		2B1A3E5A2A8B5C1F00123456 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		2B1A3E632A8B5C8B00123457 /* TableViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TableViewController.swift; sourceTree = "<group>"; };
 		2B1A3E652A8B5C8B00123458 /* LabelViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabelViewController.swift; sourceTree = "<group>"; };
+		A926D5482E69161F00159299 /* ExampleTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExampleTableViewCell.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -66,6 +68,7 @@
 				2B1A3E4E2A8B5C1E00123456 /* SceneDelegate.swift */,
 				2B1A3E502A8B5C1E00123456 /* ViewController.swift */,
 				2B1A3E632A8B5C8B00123457 /* TableViewController.swift */,
+				A926D5482E69161F00159299 /* ExampleTableViewCell.swift */,
 				2B1A3E652A8B5C8B00123458 /* LabelViewController.swift */,
 				2B1A3E522A8B5C1E00123456 /* Main.storyboard */,
 				2B1A3E552A8B5C1F00123456 /* Assets.xcassets */,
@@ -154,6 +157,7 @@
 			files = (
 				2B1A3E512A8B5C1E00123456 /* ViewController.swift in Sources */,
 				2B1A3E622A8B5C8B00123457 /* TableViewController.swift in Sources */,
+				A926D5492E69162C00159299 /* ExampleTableViewCell.swift in Sources */,
 				2B1A3E642A8B5C8B00123458 /* LabelViewController.swift in Sources */,
 				2B1A3E4D2A8B5C1E00123456 /* AppDelegate.swift in Sources */,
 				2B1A3E4F2A8B5C1E00123456 /* SceneDelegate.swift in Sources */,

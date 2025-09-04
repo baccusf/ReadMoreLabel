@@ -63,7 +63,6 @@ class LabelViewController: UIViewController {
         animationLabel.font = UIFont.systemFont(ofSize: 16, weight: .medium)
         
         animationToggleSwitch.isOn = true
-        animationToggleSwitch.addTarget(self, action: #selector(animationToggled), for: .valueChanged)
         
         animationStack.addArrangedSubview(animationLabel)
         animationStack.addArrangedSubview(animationToggleSwitch)
@@ -160,12 +159,7 @@ class LabelViewController: UIViewController {
             japaneseLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -30)
         ])
     }
-    
-    @objc private func animationToggled() {
-        // 애니메이션 설정은 이제 UI 레벨에서만 처리됩니다
-        // ReadMoreLabel 자체에는 애니메이션 기능이 없습니다
-    }
-    
+
     @objc private func expandCollapseButtonTapped() {
         let allLabels = [englishLabel, koreanLabel, japaneseLabel]
         

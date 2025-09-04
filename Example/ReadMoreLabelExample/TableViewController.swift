@@ -150,14 +150,17 @@ class TableViewController: UIViewController {
     ]
     
     private var expandedStates: [Bool] = []
+    private var isAnimationEnabled: Bool = true
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        expandedStates = Array(repeating: false, count: sampleData.count)
+
         setupUI()
         setupTableView()
-        expandedStates = Array(repeating: false, count: sampleData.count)
     }
-    
+
     private func setupUI() {
         title = "ReadMoreLabel Examples"
         view.backgroundColor = .systemBackground
@@ -173,49 +176,8 @@ class TableViewController: UIViewController {
         ])
         
         // Add header view
-        let headerView = createHeaderView()
-        tableView.tableHeaderView = headerView
-    }
-    
-    private func createHeaderView() -> UIView {
-        let headerView = UIView()
-        headerView.backgroundColor = .systemBackground
-        
-        let titleLabel = UILabel()
-        titleLabel.text = "Different ReadMoreLabel Styles"
-        titleLabel.font = UIFont.systemFont(ofSize: 20, weight: .bold)
-        titleLabel.textColor = .label
-        titleLabel.textAlignment = .center
-        titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        
-        let subtitleLabel = UILabel()
-        subtitleLabel.text = "Multilingual examples with different positions"
-        subtitleLabel.font = UIFont.systemFont(ofSize: 14, weight: .medium)
-        subtitleLabel.textColor = .secondaryLabel
-        subtitleLabel.textAlignment = .center
-        subtitleLabel.translatesAutoresizingMaskIntoConstraints = false
-        
-        headerView.addSubview(titleLabel)
-        headerView.addSubview(subtitleLabel)
-        
-        NSLayoutConstraint.activate([
-            titleLabel.topAnchor.constraint(equalTo: headerView.topAnchor, constant: 16),
-            titleLabel.leadingAnchor.constraint(equalTo: headerView.leadingAnchor, constant: 16),
-            titleLabel.trailingAnchor.constraint(equalTo: headerView.trailingAnchor, constant: -16),
-            
-            subtitleLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 4),
-            subtitleLabel.leadingAnchor.constraint(equalTo: headerView.leadingAnchor, constant: 16),
-            subtitleLabel.trailingAnchor.constraint(equalTo: headerView.trailingAnchor, constant: -16),
-            subtitleLabel.bottomAnchor.constraint(equalTo: headerView.bottomAnchor, constant: -16)
-        ])
-        
-        // Calculate required height and set proper frame
-        headerView.translatesAutoresizingMaskIntoConstraints = false
-        let targetSize = CGSize(width: UIScreen.main.bounds.width, height: UIView.layoutFittingCompressedSize.height)
-        let requiredSize = headerView.systemLayoutSizeFitting(targetSize, withHorizontalFittingPriority: .required, verticalFittingPriority: .fittingSizeLevel)
-        headerView.frame = CGRect(origin: .zero, size: requiredSize)
-        
-        return headerView
+//        let headerView = createHeaderView()
+//        tableView.tableHeaderView = headerView
     }
     
     private func setupTableView() {
@@ -225,19 +187,60 @@ class TableViewController: UIViewController {
             tableView.register(ExampleTableViewCell.self, forCellReuseIdentifier: "ExampleCell")
         }
         tableView.rowHeight = UITableView.automaticDimension
-        tableView.estimatedRowHeight = 100
+        tableView.estimatedRowHeight = 98
         tableView.separatorStyle = .singleLine
-    }
-    
-    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
-        super.viewWillTransition(to: size, with: coordinator)
         
-        coordinator.animate(alongsideTransition: { context in
-            self.tableView.beginUpdates()
-            self.tableView.endUpdates()
-        })
+        // HeaderView와 첫 셀 간격 추가 보장
+        tableView.sectionHeaderHeight = 0
+        tableView.sectionFooterHeight = 0
     }
     
+    private func createHeaderView() -> UIView {
+        let headerView = UIView()
+        headerView.backgroundColor = .systemBackground
+        
+        // 애니메이션 스위치가 포함된 UIStackView 생성
+        let stackView = UIStackView()
+        stackView.axis = .horizontal
+        stackView.alignment = .center
+        stackView.distribution = .equalSpacing
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+        
+        // 애니메이션 라벨 생성
+        let animationLabel = UILabel()
+        animationLabel.text = "Enable Animation:"
+        animationLabel.font = UIFont.systemFont(ofSize: 16, weight: .medium)
+        animationLabel.textColor = .label
+        
+        // 애니메이션 스위치 생성
+        let animationSwitch = UISwitch()
+        animationSwitch.isOn = true
+        animationSwitch.addTarget(self, action: #selector(animationSwitchChanged(_:)), for: .valueChanged)
+        
+        // 스택뷰에 요소들 추가
+        stackView.addArrangedSubview(animationLabel)
+        stackView.addArrangedSubview(animationSwitch)
+        
+        // headerView에 스택뷰 추가
+        headerView.addSubview(stackView)
+        
+        // 스택뷰 양쪽 정렬 제약조건
+        NSLayoutConstraint.activate([
+            stackView.leadingAnchor.constraint(equalTo: headerView.leadingAnchor, constant: 16),
+            stackView.trailingAnchor.constraint(equalTo: headerView.trailingAnchor, constant: -16),
+            stackView.centerYAnchor.constraint(equalTo: headerView.centerYAnchor)
+        ])
+        
+        print(tableView.bounds.width)
+        headerView.frame = CGRect(x: 0, y: 0, width: tableView.bounds.width, height: 63)
+        headerView.autoresizingMask = [.flexibleWidth]
+        
+        return headerView
+    }
+    
+    @objc private func animationSwitchChanged(_ sender: UISwitch) {
+        isAnimationEnabled = sender.isOn
+    }
 }
 
 // MARK: - UITableViewDataSource
@@ -251,9 +254,9 @@ extension TableViewController: UITableViewDataSource {
         let cell = tableView.dequeueReusableCell(withIdentifier: "ExampleCell", for: indexPath) as! ExampleTableViewCell
         cell.configure(
             with: sampleData[indexPath.row],
-            isExpanded: expandedStates[indexPath.row]
+            isExpanded: expandedStates[indexPath.row],
+            delegate: self
         )
-        cell.delegate = self
 
         return cell
     }
@@ -265,20 +268,64 @@ extension TableViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
     }
+    
 }
 
-// MARK: - ExampleTableViewCellDelegate
+// MARK: - ReadMoreLabelDelegate
 
 @available(iOS 16.0, *)
-extension TableViewController: ExampleTableViewCellDelegate {
-    func didChangeExpandedState(_ cell: ExampleTableViewCell) {
-        guard let indexPath = tableView.indexPath(for: cell) else {
+extension TableViewController: ReadMoreLabelDelegate {
+    func readMoreLabel(_ label: ReadMoreLabel, didChangeExpandedState isExpanded: Bool) {
+        // label의 중심점을 tableView 좌표계로 변환
+        let labelCenterInTableView = label.convert(label.center, to: tableView)
+        
+        // 해당 위치의 indexPath를 찾음
+        guard let indexPath = tableView.indexPathForRow(at: labelCenterInTableView) else {
             return
         }
         
-        expandedStates[indexPath.row] = true
+        // 확장 상태 업데이트
+        expandedStates[indexPath.row] = isExpanded
         
-        self.tableView.beginUpdates()
-        self.tableView.endUpdates()
+        // 테이블 뷰 업데이트 (높이 변경 반영)
+        if isAnimationEnabled {
+            UIView.animate(withDuration: 0.3) {
+                self.tableView.beginUpdates()
+                self.tableView.endUpdates()
+            }
+        } else {
+            UIView.performWithoutAnimation {
+                self.tableView.beginUpdates()
+                self.tableView.endUpdates()
+            }
+        }
+    }
+}
+
+
+extension TableViewController {
+    // MARK: - Sample Data Models
+
+    struct SampleData {
+        let text: String
+        let style: ReadMoreLabel.Style
+        let position: ReadMoreLabel.Position
+        let language: String
+    }
+}
+
+// MARK: - ReadMoreLabel Style Extension
+extension ReadMoreLabel {
+    enum Style {
+        case basic
+        case colorful
+        case emoji
+        case gradient
+        case bold
+        case mobile
+        case fontSizeSmall   // 12pt font
+        case fontSizeMedium  // 18pt font
+        case fontSizeLarge   // 24pt font
+        case fontSizeXLarge  // 32pt font
     }
 }
