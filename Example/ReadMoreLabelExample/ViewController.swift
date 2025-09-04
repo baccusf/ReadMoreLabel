@@ -371,7 +371,7 @@ class ExampleTableViewCell: UITableViewCell {
         readMoreLabel.delegate = nil
         
         readMoreLabel.text = sampleData.text
-        readMoreLabel.setExpanded(isExpanded, animated: false)
+        readMoreLabel.setExpanded(isExpanded)
         
         // Set position first
         readMoreLabel.readMorePosition = sampleData.position
@@ -692,7 +692,6 @@ class LabelViewController: UIViewController {
             label.font = UIFont.systemFont(ofSize: 16)
             label.textColor = .label
             label.delegate = self
-            label.isExpandAnimationEnabled = true
             contentView.addSubview(label)
         }
     }
@@ -757,10 +756,8 @@ class LabelViewController: UIViewController {
     }
     
     @objc private func animationToggled() {
-        let isAnimationEnabled = animationToggleSwitch.isOn
-        englishLabel.isExpandAnimationEnabled = isAnimationEnabled
-        koreanLabel.isExpandAnimationEnabled = isAnimationEnabled
-        japaneseLabel.isExpandAnimationEnabled = isAnimationEnabled
+        // 애니메이션 설정은 이제 UI 레벨에서만 처리됩니다
+        // ReadMoreLabel 자체에는 애니메이션 기능이 없습니다
     }
     
     @objc private func expandCollapseButtonTapped() {

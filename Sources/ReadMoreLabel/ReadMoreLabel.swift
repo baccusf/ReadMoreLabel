@@ -13,7 +13,7 @@ import UIKit
 @objc public protocol ReadMoreActions: AnyObject {
     @objc func expand()
     @objc func collapse()
-    @objc func setExpanded(_ expanded: Bool, animated: Bool)
+    @objc func setExpanded(_ expanded: Bool)
 }
 
 /// Cell reuse interface for table/collection view integration
@@ -61,10 +61,6 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
         return state.isExpandable
     }
     
-    /// Controls whether expansion/collapse animation is enabled when user taps "Read More"
-    /// Default is true for smooth user experience
-    @objc public var isExpandAnimationEnabled: Bool = true
-    
     @objc public var readMoreText: NSAttributedString = NSAttributedString(string: "Read More..") {
         didSet {
             guard readMoreText != oldValue else { return }
@@ -89,7 +85,6 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
     private var tapGestureRecognizer: UITapGestureRecognizer?
     
     // MARK: - Constants
-    private static let animationDuration: TimeInterval = 0.3
     private static let defaultSpaceBetweenEllipsisAndReadMore: String = " "
     private static let newLineCharacter: String = "\n"
     
@@ -197,14 +192,14 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
     // MARK: - Public Interface
     
     @objc public func expand() {
-        setExpanded(true, animated: isExpandAnimationEnabled)
+        setExpanded(true)
     }
     
     @objc public func collapse() {
-        setExpanded(false, animated: isExpandAnimationEnabled)
+        setExpanded(false)
     }
     
-    @objc public func setExpanded(_ expanded: Bool, animated: Bool) {
+    @objc public func setExpanded(_ expanded: Bool) {
         guard expanded == false || isExpandable else { 
             return 
         }
@@ -215,21 +210,14 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
         
         isExpanded = expanded
         updateDisplay()
-        
-        if animated {
-            UIView.animate(withDuration: Self.animationDuration) {
-                self.invalidateIntrinsicContentSize()
-            }
-        } else {
-            invalidateDisplayAndLayout()
-        }
+        invalidateDisplayAndLayout()
         
         delegate?.readMoreLabel?(self, didChangeExpandedState: isExpanded)
     }
     
     @objc public func prepareForCellReuse() {
         if isExpanded {
-            setExpanded(false, animated: false)
+            setExpanded(false)
         }
     }
     
@@ -434,7 +422,7 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
         }
         
         if hasReadMoreTextAtLocation(locationInLabel, in: attributedText) {
-            setExpanded(true, animated: isExpandAnimationEnabled)
+            setExpanded(true)
         }
     }
     
