@@ -8,12 +8,12 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         guard let windowScene = (scene as? UIWindowScene) else { return }
         
         window = UIWindow(windowScene: windowScene)
-        if #available(iOS 16.0, *) {
-            window?.rootViewController = UINavigationController(rootViewController: LabelViewController())
-        } else {
-            // Fallback for earlier versions
-            window?.rootViewController = UINavigationController(rootViewController: TableViewController())
-        }
+        
+        // Set main ViewController as root with navigation controller
+        let mainViewController = ViewController()
+        let navigationController = UINavigationController(rootViewController: mainViewController)
+        
+        window?.rootViewController = navigationController
         window?.makeKeyAndVisible()
     }
 
