@@ -55,9 +55,8 @@ class ViewController: UIViewController {
         title = "ReadMoreLabel Demo"
         view.backgroundColor = .systemBackground
         
-        // Setup navigation bar
-        navigationController?.navigationBar.prefersLargeTitles = true
-        navigationItem.largeTitleDisplayMode = .automatic
+        // Setup navigation bar - use standard title size
+        navigationController?.navigationBar.prefersLargeTitles = false
         
         tableView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(tableView)
@@ -86,10 +85,11 @@ class ViewController: UIViewController {
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         
         let subtitleLabel = UILabel()
-        subtitleLabel.text = "iOS 16+ UILabel extension for text truncation"
+        subtitleLabel.text = "iOS 16+ UILabel extension for text truncation with 'Read More' functionality"
         subtitleLabel.font = UIFont.systemFont(ofSize: 16, weight: .medium)
         subtitleLabel.textColor = .secondaryLabel
         subtitleLabel.textAlignment = .center
+        subtitleLabel.numberOfLines = 0
         subtitleLabel.translatesAutoresizingMaskIntoConstraints = false
         
         let descriptionLabel = UILabel()
