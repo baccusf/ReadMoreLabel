@@ -8,7 +8,12 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         guard let windowScene = (scene as? UIWindowScene) else { return }
         
         window = UIWindow(windowScene: windowScene)
-        window?.rootViewController = UINavigationController(rootViewController: ViewController())
+        if #available(iOS 16.0, *) {
+            window?.rootViewController = UINavigationController(rootViewController: LabelViewController())
+        } else {
+            // Fallback for earlier versions
+            window?.rootViewController = UINavigationController(rootViewController: TableViewController())
+        }
         window?.makeKeyAndVisible()
     }
 

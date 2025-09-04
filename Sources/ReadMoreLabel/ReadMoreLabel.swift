@@ -270,8 +270,6 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
         updateDisplay()
     }
     
-    
-    
     private func applyReadMore(
         originalText: NSAttributedString,
         numberOfLines: Int,
@@ -436,7 +434,7 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
         }
         
         if hasReadMoreTextAtLocation(locationInLabel, in: attributedText) {
-            setExpanded(true, animated: false)
+            setExpanded(true, animated: isExpandAnimationEnabled)
         }
     }
     
@@ -492,7 +490,6 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
             lineBreakMode: lineBreakMode
         )
     }
-    
     
     private func checkAndResetTruncationStateIfNeeded() {
         guard let originalText = state.originalText,
