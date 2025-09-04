@@ -119,11 +119,16 @@ class ViewController: UIViewController {
             descriptionLabel.bottomAnchor.constraint(equalTo: headerView.bottomAnchor, constant: -20)
         ])
         
-        // Calculate required height and set proper frame
-        headerView.translatesAutoresizingMaskIntoConstraints = false
-        let targetSize = CGSize(width: UIScreen.main.bounds.width, height: UIView.layoutFittingCompressedSize.height)
-        let requiredSize = headerView.systemLayoutSizeFitting(targetSize, withHorizontalFittingPriority: .required, verticalFittingPriority: .fittingSizeLevel)
-        headerView.frame = CGRect(origin: .zero, size: requiredSize)
+        // Use Auto Layout for proper sizing
+        headerView.translatesAutoresizingMaskIntoConstraints = true
+        
+        // Force layout calculation to get the correct height
+        headerView.setNeedsLayout()
+        headerView.layoutIfNeeded()
+        
+        let targetSize = CGSize(width: view.bounds.width, height: UIView.layoutFittingCompressedSize.height)
+        let fittingSize = headerView.systemLayoutSizeFitting(targetSize, withHorizontalFittingPriority: .required, verticalFittingPriority: .fittingSizeLevel)
+        headerView.frame = CGRect(x: 0, y: 0, width: view.bounds.width, height: fittingSize.height)
         
         return headerView
     }
@@ -188,22 +193,10 @@ extension ViewController: UITableViewDelegate {
         let example = examples[indexPath.row]
         
         // Create and present the selected view controller
-        let viewController: UIViewController
-        
-        if example.viewController == TableViewController.self {
-            viewController = TableViewController()
-        } else if example.viewController == LabelViewController.self {
-            if #available(iOS 16.0, *) {
-                viewController = LabelViewController()
-            } else {
-                // Fallback for earlier iOS versions
-                let alert = UIAlertController(title: "iOS 16+ Required", message: "Animation examples require iOS 16 or later.", preferredStyle: .alert)
-                alert.addAction(UIAlertAction(title: "OK", style: .default))
-                present(alert, animated: true)
-                return
-            }
+        let viewController: UIViewController = if example.viewController == TableViewController.self {
+            TableViewController()
         } else {
-            return
+            LabelViewController()
         }
         
         navigationController?.pushViewController(viewController, animated: true)
