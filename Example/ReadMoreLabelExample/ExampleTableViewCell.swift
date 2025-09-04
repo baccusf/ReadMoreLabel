@@ -33,14 +33,18 @@ class ExampleTableViewCell: UITableViewCell {
         setupUI()
     }
     
-    // UITableViewCell 재활용 시 ReadMoreLabel 캐시 초기화
+    // UITableViewCell 재활용 시 상태 초기화
     override func prepareForReuse() {
         super.prepareForReuse()
-        readMoreLabel.prepareForCellReuse() // 캐시 상태 초기화
+        
+        // ReadMoreLabel의 캐시 상태 초기화
+        // configure에서 올바른 순서로 확장 상태가 복원됨
+        readMoreLabel.prepareForCellReuse()
     }
     
     private func setupUI() {
         selectionStyle = .none  // Disable cell selection to prevent tap interference
+        readMoreLabel.translatesAutoresizingMaskIntoConstraints = false
         contentView.addSubview(readMoreLabel)
         clipsToBounds = true
         
@@ -49,35 +53,31 @@ class ExampleTableViewCell: UITableViewCell {
         readMoreLabel.setContentCompressionResistancePriority(UILayoutPriority(1000), for: .vertical)
         
         NSLayoutConstraint.activate([
-            readMoreLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 16),
-            readMoreLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            readMoreLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
+            readMoreLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 0),
+            readMoreLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 0),
+            readMoreLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: 0),
         ])
 
         // bottom constraint를 더 낮은 우선순위로 설정
-        let bottomConstraint = readMoreLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -16)
-        bottomConstraint.priority = UILayoutPriority(999) // 250으로 낮춤
+        let bottomConstraint = readMoreLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: 0)
+        bottomConstraint.priority = UILayoutPriority(750) // 250으로 낮춤
         bottomConstraint.isActive = true
     }
     
     func configure(with sampleData: TableViewController.SampleData, isExpanded: Bool, delegate: ReadMoreLabelDelegate?) {
-        // 배치 모드 시작 - 모든 속성 설정을 한 번에 처리
-        readMoreLabel.beginConfiguration()
-        
         // Set delegate first
         readMoreLabel.delegate = delegate
         
+        // Set text and position first
         readMoreLabel.text = sampleData.text
-        readMoreLabel.setExpanded(isExpanded)
-        
-        // Set position first
         readMoreLabel.readMorePosition = sampleData.position
         
-        // Apply different styles and language-specific settings
+        // Apply different styles and language-specific settings BEFORE setting expanded state
+        // This prevents font changes from overriding the expanded state
         applyStyle(sampleData.style, language: sampleData.language)
         
-        // 배치 모드 종료 - 이제 한 번에 레이아웃 갱신
-        readMoreLabel.endConfiguration()
+        // Set expanded state LAST to preserve it after style changes
+        readMoreLabel.setExpanded(isExpanded)
     }
     
     private func applyStyle(_ style: ReadMoreLabel.Style, language: String) {

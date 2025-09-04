@@ -22,20 +22,9 @@ class ViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
         setupUI()
         setupTableView()
-    }
-    
-    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
-        super.viewWillTransition(to: size, with: coordinator)
-        
-        coordinator.animate(alongsideTransition: { context in
-            // headerView 크기 업데이트
-            if let headerView = self.tableView.tableHeaderView {
-                headerView.frame = CGRect(x: 0, y: 0, width: size.width, height: 170)
-                self.tableView.tableHeaderView = headerView
-            }
-        })
     }
     
     private func setupUI() {

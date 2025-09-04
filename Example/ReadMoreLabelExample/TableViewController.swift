@@ -161,6 +161,15 @@ class TableViewController: UIViewController {
         setupTableView()
     }
 
+    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+        super.viewWillTransition(to: size, with: coordinator)
+        
+        coordinator.animate(alongsideTransition: { context in
+            self.tableView.beginUpdates()
+            self.tableView.endUpdates()
+        })
+    }
+    
     private func setupUI() {
         title = "ReadMoreLabel Examples"
         view.backgroundColor = .systemBackground
@@ -176,8 +185,8 @@ class TableViewController: UIViewController {
         ])
         
         // Add header view
-//        let headerView = createHeaderView()
-//        tableView.tableHeaderView = headerView
+        let headerView = createHeaderView()
+        tableView.tableHeaderView = headerView
     }
     
     private func setupTableView() {
@@ -187,12 +196,16 @@ class TableViewController: UIViewController {
             tableView.register(ExampleTableViewCell.self, forCellReuseIdentifier: "ExampleCell")
         }
         tableView.rowHeight = UITableView.automaticDimension
-        tableView.estimatedRowHeight = 98
+        tableView.estimatedRowHeight = 120  // Increased to allow for extra spacing
         tableView.separatorStyle = .singleLine
         
         // HeaderView와 첫 셀 간격 추가 보장
         tableView.sectionHeaderHeight = 0
         tableView.sectionFooterHeight = 0
+        
+//        UIView.performWithoutAnimation {
+//            tableView.performBatchUpdates(nil)
+//        }
     }
     
     private func createHeaderView() -> UIView {

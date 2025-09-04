@@ -39,8 +39,6 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
     @objc public weak var delegate: ReadMoreLabelDelegate?
     
     private var state = State()
-    private var isInConfigurationBatch = false
-    private var needsLayoutUpdate = false
     
     private var numberOfLinesWhenCollapsed: Int {
         get { return state.numberOfLines }
@@ -79,7 +77,14 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
     
     @objc public var readMorePosition: Position = .end {
         didSet {
-            guard readMorePosition != oldValue else { return }
+            guard readMorePosition != oldValue else {
+                return
+            }
+            
+            if numberOfLinesWhenCollapsed  > 0 {
+                setInternalNumberOfLines(numberOfLinesWhenCollapsed + 1)
+            }
+            
             handleConfigurationChange()
         }
     }
@@ -117,6 +122,17 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
     
     // MARK: - UILabel Overrides
         
+    public override var bounds: CGRect {
+        didSet {
+            guard bounds.size != oldValue.size else {
+                return
+            }
+
+            print("Bounds changed to: \(bounds.size), oldValue: \(oldValue.size)")
+            reapplyTextStylingAndRefreshDisplay()
+        }
+    }
+
     public override var numberOfLines: Int {
         get {
             return numberOfLinesWhenCollapsed
@@ -168,17 +184,18 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
         }
     }
     
-    public override func layoutSubviews() {
-        super.layoutSubviews()
-        
-        // Update layout state based on current expansion state
-        if isExpanded {
-            checkAndResetExpandedStateIfNeeded()
-        } else {
-            checkAndResetTruncationStateIfNeeded()
-        }
-    }
-
+//    public override func layoutSubviews() {
+//        super.layoutSubviews()
+//        print("layoutSubviews called with preferredMaxLayoutWidth: \(preferredMaxLayoutWidth)")
+//        
+//        // Update layout state based on current expansion state
+//        if isExpanded {
+//            checkAndResetExpandedStateIfNeeded()
+//        } else {
+//            checkAndResetTruncationStateIfNeeded()
+//        }
+//    }
+    
     // MARK: - Initialization
     
     public override init(frame: CGRect) {
@@ -230,7 +247,7 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
         
         return attributedText.findReadMoreTextRanges()
     }
-
+    
     // MARK: - Private Implementation
     
     private func setupLabel() {
@@ -256,32 +273,8 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
     
     /// Single responsibility method for handling configuration changes
     private func handleConfigurationChange() {
-        if isInConfigurationBatch {
-            needsLayoutUpdate = true
-            return
-        }
-        
-        invalidateDisplayAndLayout()
         updateDisplay()
-        forceLayoutInvalidation()
-    }
-    
-    /// 배치 모드 시작 - 다중 속성 변경 시 사용
-    @objc public func beginConfiguration() {
-        isInConfigurationBatch = true
-        needsLayoutUpdate = false
-    }
-    
-    /// 배치 모드 종료 - 모든 설정 완료 후 한 번에 레이아웃 갱신
-    @objc public func endConfiguration() {
-        isInConfigurationBatch = false
-        
-        if needsLayoutUpdate {
-            invalidateDisplayAndLayout()
-            updateDisplay()
-            forceLayoutInvalidation()
-            needsLayoutUpdate = false
-        }
+        invalidateDisplayAndLayout()
     }
     
     private func applyReadMore(
@@ -462,91 +455,64 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
         if let originalText = state.originalText {
             state.updateOriginalText(originalText.applyingTextAlignment(textAlignment, font: font, textColor: textColor))
         }
-        
-        invalidateDisplayAndLayout()
+
         updateDisplay()
+        invalidateDisplayAndLayout()
     }
     
     private func setOriginalText(_ text: NSAttributedString) {
         state.updateOriginalText(text.applyingTextAlignment(textAlignment, font: font, textColor: textColor))
-        invalidateDisplayAndLayout()
-        updateDisplay()
-    }
-    
-    private func checkAndResetExpandedStateIfNeeded() {
-        guard let originalText = state.originalText,
-              numberOfLinesWhenCollapsed > 0,
-              bounds.width > 0 else {
-            return
-        }
-        
-        let actualLinesNeeded = calculateActualLinesNeeded(for: originalText, width: bounds.width)
-        let threshold = max(2, numberOfLinesWhenCollapsed - 1)
-        
-        if !isExpanded, actualLinesNeeded <= threshold {
-            isExpanded = false
-        } else {
-            super.attributedText = originalText
-            setInternalNumberOfLines(0)
-            state.readMoreTextRange = nil
-            invalidateIntrinsicContentSize()
-        }
-    }
-    
-    /// Enhanced line count calculation using optimized TextKit 1
-    private func calculateActualLinesNeeded(for text: NSAttributedString, width: CGFloat) -> Int {
-        return text.countLines(
-            with: width,
-            textAlignment: textAlignment,
-            font: font,
-            textColor: textColor,
-            lineFragmentPadding: lineFragmentPadding,
-            lineBreakMode: lineBreakMode
-        )
-    }
-    
-    private func checkAndResetTruncationStateIfNeeded() {
-        guard let originalText = state.originalText,
-              numberOfLinesWhenCollapsed > 0,
-              bounds.width > 0 else {
-            return
-        }
 
-        switch readMorePosition {
-        case .end:
-            displayTruncatedTextAtEnd(originalText, availableWidth: bounds.width)
-        case .newLine:
-            displayTruncatedTextAtNewLineBeginning(originalText, availableWidth: bounds.width)
-        }
+        updateDisplay()
+        invalidateDisplayAndLayout()
     }
     
-    public override var intrinsicContentSize: CGSize {
-        let baseSize = super.intrinsicContentSize
-        
-        // position = .newLine이고 truncation이 필요한 경우에만 추가 높이 적용
-        if readMorePosition == .newLine && isExpandable && !isExpanded {
-            let additionalLineHeight = font.lineHeight
-            return CGSize(width: baseSize.width, height: baseSize.height + additionalLineHeight)
-        }
-        
-        return baseSize
-    }
+//    private func checkAndResetExpandedStateIfNeeded() {
+//        guard let originalText = state.originalText,
+//              numberOfLinesWhenCollapsed > 0,
+//              bounds.width > 0 else {
+//            return
+//        }
+//        
+//        let actualLinesNeeded = calculateActualLinesNeeded(for: originalText, width: bounds.width)
+//        let threshold = max(2, numberOfLinesWhenCollapsed - 1)
+//        
+//        if !isExpanded, actualLinesNeeded <= threshold {
+//            isExpanded = false
+//        } else {
+//            super.attributedText = originalText
+//            setInternalNumberOfLines(0)
+//            state.readMoreTextRange = nil
+//            invalidateIntrinsicContentSize()
+//        }
+//    }
+//    
+//    /// Enhanced line count calculation using optimized TextKit 1
+//    private func calculateActualLinesNeeded(for text: NSAttributedString, width: CGFloat) -> Int {
+//        return text.countLines(
+//            with: width,
+//            textAlignment: textAlignment,
+//            font: font,
+//            textColor: textColor,
+//            lineFragmentPadding: lineFragmentPadding,
+//            lineBreakMode: lineBreakMode
+//        )
+//    }
     
-    /// 강제 레이아웃 무효화 - position = .newLine에서 크기 변화 확실히 알림
-    private func forceLayoutInvalidation() {
-        invalidateIntrinsicContentSize()
-        setNeedsLayout()
-        
-        // 부모 뷰에게도 레이아웃 변경 알림
-        if let superview = superview {
-            superview.setNeedsLayout()
-            
-            // UITableViewCell 내부인 경우 추가 처리
-            DispatchQueue.main.async { [weak self] in
-                self?.invalidateIntrinsicContentSize()
-            }
-        }
-    }
+//    private func checkAndResetTruncationStateIfNeeded() {
+//        guard let originalText = state.originalText,
+//              numberOfLinesWhenCollapsed > 0,
+//              bounds.width > 0 else {
+//            return
+//        }
+//
+//        switch readMorePosition {
+//        case .end:
+//            displayTruncatedTextAtEnd(originalText, availableWidth: bounds.width)
+//        case .newLine:
+//            displayTruncatedTextAtNewLineBeginning(originalText, availableWidth: bounds.width)
+//        }
+//    }
     
     private func hasReadMoreTextAtLocation(_ location: CGPoint, in attributedText: NSAttributedString) -> Bool {
         guard attributedText.length > 0, let readMoreRange = state.readMoreTextRange else {
@@ -1051,37 +1017,10 @@ private extension NSAttributedString {
             return .noTruncationNeeded
         }
         
-        // For newLine position: calculate how much text can actually fit in numberOfLines based on container height
-        let lineHeight = lineFragments[0].rect.height
-        let targetHeight = lineHeight * CGFloat(numberOfLines)
-        
-        // Find how many line fragments fit within the target height
-        var accumulatedHeight: CGFloat = 0
-        var lastValidFragmentIndex = 0
-        
-        for (index, fragment) in lineFragments.enumerated() {
-            if accumulatedHeight + fragment.rect.height <= targetHeight {
-                accumulatedHeight += fragment.rect.height
-                lastValidFragmentIndex = index
-            } else {
-                break
-            }
-        }
-        
-        // Ensure we include at least numberOfLines worth of fragments
-        let targetFragmentIndex = max(numberOfLines - 1, lastValidFragmentIndex)
-        let safeFragmentIndex = min(targetFragmentIndex, lineFragments.count - 1)
-        
-        let firstLineRange = lineFragments[0].glyphRange
-        let lastLineRange = lineFragments[safeFragmentIndex].glyphRange
-        
-        // Create combined range covering all selected fragments
-        let combinedGlyphRange = NSRange(
-            location: firstLineRange.location,
-            length: (lastLineRange.location + lastLineRange.length) - firstLineRange.location
-        )
-        let characterRange = layoutManager.characterRange(forGlyphRange: combinedGlyphRange, actualGlyphRange: nil)
-        
+        let targetLineFragment = lineFragments[numberOfLines - 1]
+        let lastLineRange = targetLineFragment.glyphRange
+        let lastLineRect = targetLineFragment.rect
+        let characterRange = layoutManager.characterRange(forGlyphRange: lastLineRange, actualGlyphRange: nil)
         
         // Generate read more text and calculate size
         let lastAttributes = lastTextAttributes(defaultAttributes: defaultAttributes)
@@ -1089,11 +1028,11 @@ private extension NSAttributedString {
         let readMoreWithOriginalAttributes = readMoreText.createMutableWithAttributes(lastAttributes)
         readMoreWithNewLine.append(readMoreWithOriginalAttributes)
         
-        // For newLine position: keep numberOfLines completely, add readMore on next line
-        // Use the full numberOfLines content without truncation
+        // No need to secure space for "Read More" in current line for newLine position
+        // Cut text at the end of numberOfLines line
         let truncateOffset = characterRange.location + characterRange.length
         
-        // Compose final text - keep all numberOfLines intact
+        // Compose final text
         let truncatedSubstring = attributedSubstring(from: NSRange(location: 0, length: truncateOffset))
         let cleanedTruncatedText = truncatedSubstring.removingTrailingNewlineIfNeeded()
         let finalText = NSMutableAttributedString(attributedString: cleanedTruncatedText)
@@ -1101,9 +1040,6 @@ private extension NSAttributedString {
         finalText.append(NSAttributedString(string: newLineCharacter, attributes: lastAttributes))
         let readMoreStartLocation = finalText.length
         finalText.append(readMoreWithOriginalAttributes)
-        
-        // Add an extra newline after the read more text for better spacing
-        finalText.append(NSAttributedString(string: newLineCharacter, attributes: lastAttributes))
         
         let finalReadMoreRange = NSRange(location: readMoreStartLocation, length: readMoreWithOriginalAttributes.length)
         finalText.addAttribute(attributeKey, value: true, range: finalReadMoreRange)
