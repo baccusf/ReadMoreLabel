@@ -81,7 +81,7 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
                 return
             }
             
-            if numberOfLinesWhenCollapsed  > 0 {
+            if readMorePosition == .newLine && numberOfLinesWhenCollapsed  > 0 {
                 setInternalNumberOfLines(numberOfLinesWhenCollapsed + 1)
             }
             
@@ -128,7 +128,7 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
                 return
             }
 
-            print("Bounds changed to: \(bounds.size), oldValue: \(oldValue.size)")
+//            print("Bounds changed to: \(bounds.size), oldValue: \(oldValue.size)")
             reapplyTextStylingAndRefreshDisplay()
         }
     }
@@ -219,6 +219,16 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
     }
     
     @objc public func setExpanded(_ expanded: Bool) {
+        setExpanded(expanded, notifyDelegate: true)
+    }
+    
+    /// Set expanded state with option to control delegate notification
+    /// - Parameters:
+    ///   - expanded: The expanded state to set
+    ///   - notifyDelegate: Whether to notify delegate of the change (default: true)
+    public func setExpanded(_ expanded: Bool, notifyDelegate: Bool) {
+        print("🔥 [LABEL] setExpanded(\(expanded), notifyDelegate: \(notifyDelegate)) - 현재 isExpanded: \(isExpanded)")
+        
         guard expanded == false || isExpandable else { 
             return 
         }
@@ -231,13 +241,18 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
         updateDisplay()
         invalidateDisplayAndLayout()
         
-        delegate?.readMoreLabel?(self, didChangeExpandedState: isExpanded)
+        if notifyDelegate {
+            print("🔥 [LABEL] delegate 호출: didChangeExpandedState(\(isExpanded))")
+            delegate?.readMoreLabel?(self, didChangeExpandedState: isExpanded)
+        } else {
+            print("🔥 [LABEL] delegate 호출 생략 (Cell 재사용)")
+        }
     }
     
     @objc public func prepareForCellReuse() {
-        if isExpanded {
-            setExpanded(false)
-        }
+        // 확장 상태는 TableViewController의 expandedStates에서 관리하므로 여기서 강제로 변경하지 않음
+        // Cell 재사용 시 필요한 캐시만 정리
+        state.prepareForCellReuse()
     }
     
     @objc public func findReadMoreTextRanges() -> [NSRange] {
@@ -441,7 +456,8 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
         }
         
         if hasReadMoreTextAtLocation(locationInLabel, in: attributedText) {
-            setExpanded(true)
+            // 사용자 터치로 인한 확장이므로 delegate에 알림
+            setExpanded(true, notifyDelegate: true)
         }
     }
     
@@ -1192,11 +1208,11 @@ extension ReadMoreLabel {
         /// Updates the number of lines and resets expansion state if needed
         mutating func updateNumberOfLines(_ newValue: Int) {
             let didChange = layoutConfigState.updateNumberOfLines(newValue)
-            
-            // Reset expansion state if changing from expandable to non-expandable
-            if didChange && numberOfLines == 0 && isExpanded {
-                isExpanded = false
-            }
+            // Note: Removed problematic expansion state reset logic
+            // numberOfLines = 0 is used for expanded text display, so don't reset expansion state
+//            if didChange && numberOfLines == 0 && isExpanded {
+//                isExpanded = false
+//            }
         }
         
         /// Updates the original text and resets related state
@@ -1219,10 +1235,10 @@ extension ReadMoreLabel {
         
         /// Resets state for cell reuse
         mutating func prepareForCellReuse() {
-            if isExpanded {
-                isExpanded = false
-            }
+            // 확장 상태는 TableViewController에서 관리하므로 여기서 리셋하지 않음
+            // 필요한 경우 캐시 정리 로직만 추가
         }
+        
     }
     
     // MARK: - Internal Enums

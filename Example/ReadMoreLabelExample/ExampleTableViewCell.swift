@@ -77,7 +77,8 @@ class ExampleTableViewCell: UITableViewCell {
         applyStyle(sampleData.style, language: sampleData.language)
         
         // Set expanded state LAST to preserve it after style changes
-        readMoreLabel.setExpanded(isExpanded)
+        // Cell 재사용 시에는 delegate 호출하지 않음 (불필요한 상태 업데이트 방지)
+        readMoreLabel.setExpanded(isExpanded, notifyDelegate: false)
     }
     
     private func applyStyle(_ style: ReadMoreLabel.Style, language: String) {
