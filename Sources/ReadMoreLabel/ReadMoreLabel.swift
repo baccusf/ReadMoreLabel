@@ -51,9 +51,12 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
     @objc public var isExpanded: Bool {
         get { return state.isExpanded }
         set { 
+            // Internal state update without delegate notification
+            // Delegate notification is handled by setExpanded methods
             guard state.setExpanded(newValue) else { return }
             updateDisplay()
-            delegate?.readMoreLabel?(self, didChangeExpandedState: state.isExpanded)
+            // Note: delegate notification removed to prevent double calls
+            // Use setExpanded(_:) or setExpanded(_:notifyDelegate:) for delegate notification
         }
     }
     
