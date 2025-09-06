@@ -47,7 +47,9 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
         set {
             // Internal state update without delegate notification
             // Delegate notification is handled by setExpanded methods
-            guard state.setExpanded(newValue) else { return }
+            guard state.setExpanded(newValue) else {
+                return
+            }
             updateDisplay()
             // Note: delegate notification removed to prevent double calls
             // Use setExpanded(_:) or setExpanded(_:notifyDelegate:) for delegate notification
@@ -60,14 +62,18 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
 
     @objc public var readMoreText: NSAttributedString = .init(string: "Read More..") {
         didSet {
-            guard readMoreText != oldValue else { return }
+            guard readMoreText != oldValue else {
+                return
+            }
             handleConfigurationChange()
         }
     }
 
     @objc public var ellipsisText: NSAttributedString = .init(string: "..") {
         didSet {
-            guard ellipsisText != oldValue else { return }
+            guard ellipsisText != oldValue else {
+                return
+            }
             handleConfigurationChange()
         }
     }
@@ -141,27 +147,36 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
 
     override public var lineBreakMode: NSLineBreakMode {
         didSet {
-            super.lineBreakMode = .byWordWrapping
+            guard lineBreakMode != oldValue else {
+                return
+            }
+            reapplyTextStylingAndRefreshDisplay()
         }
     }
 
     override public var font: UIFont! {
         didSet {
-            guard font != oldValue else { return }
+            guard font != oldValue else {
+                return
+            }
             reapplyTextStylingAndRefreshDisplay()
         }
     }
 
     override public var textColor: UIColor! {
         didSet {
-            guard textColor != oldValue else { return }
+            guard textColor != oldValue else {
+                return
+            }
             reapplyTextStylingAndRefreshDisplay()
         }
     }
 
     override public var textAlignment: NSTextAlignment {
         didSet {
-            guard textAlignment != oldValue else { return }
+            guard textAlignment != oldValue else {
+                return
+            }
             reapplyTextStylingAndRefreshDisplay()
         }
     }
@@ -681,7 +696,9 @@ private extension NSAttributedString {
         )
 
         let totalGlyphCount = layoutManager.numberOfGlyphs
-        guard totalGlyphCount > 0 else { return 0 }
+        guard totalGlyphCount > 0 else {
+            return 0
+        }
 
         var lineCount = 0
         var hasValidLines = false
@@ -1068,7 +1085,9 @@ extension ReadMoreLabel {
         /// Updates original text and clears related state
         mutating func updateOriginalText(_ newText: NSAttributedString?) {
             // Performance optimization: avoid unnecessary changes
-            guard originalText != newText else { return }
+            guard originalText != newText else {
+                return
+            }
 
             originalText = newText
             readMoreTextRange = nil
@@ -1081,7 +1100,9 @@ extension ReadMoreLabel {
 
         /// Checks if content is expandable
         var isExpandable: Bool {
-            guard let range = readMoreTextRange else { return false }
+            guard let range = readMoreTextRange else {
+                return false
+            }
             return range.length > 0
         }
     }
@@ -1094,7 +1115,9 @@ extension ReadMoreLabel {
         /// Updates number of lines with validation
         mutating func updateNumberOfLines(_ newValue: Int) {
             let sanitizedValue = max(0, newValue)
-            guard sanitizedValue != numberOfLines else { return }
+            guard sanitizedValue != numberOfLines else {
+                return
+            }
 
             numberOfLines = sanitizedValue
         }
@@ -1128,7 +1151,9 @@ extension ReadMoreLabel {
         }
 
         var isExpandable: Bool {
-            guard numberOfLines > 0 else { return false }
+            guard numberOfLines > 0 else {
+                return false
+            }
             return textContentState.isExpandable
         }
 
@@ -1151,8 +1176,12 @@ extension ReadMoreLabel {
 
         /// Sets the expansion state with validation
         mutating func setExpanded(_ expanded: Bool) -> Bool {
-            guard expanded != isExpanded else { return false }
-            guard !expanded || isExpandable else { return false }
+            guard expanded != isExpanded else {
+                return false
+            }
+            guard !expanded || isExpandable else {
+                return false
+            }
             isExpanded = expanded
             return true
         }

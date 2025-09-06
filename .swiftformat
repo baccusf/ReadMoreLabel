@@ -34,3 +34,9 @@
 
 # 후행 쉼표 처리
 --commas always
+
+# 비활성화할 룰
+--disable redundantGet
+
+# 활성화할 룰
+--enable wrapConditionalBodies

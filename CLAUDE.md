@@ -1,17 +1,17 @@
 # ReadMoreLabel 개발 작업 내용 정리
 
 ## 프로젝트 개요
-ReadMoreLabel은 iOS용 "더보기" 기능이 포함된 UILabel 서브클래스입니다. 긴 텍스트를 지정된 줄 수로 제한하고, "더보기.." 버튼을 통해 전체 텍스트를 펼칠 수 있는 기능을 제공합니다.
+ReadMoreLabel은 iOS용 "Read More" 기능이 포함된 UILabel 서브클래스입니다. 긴 텍스트를 지정된 줄 수로 제한하고, "Read More.." 버튼을 통해 전체 텍스트를 펼칠 수 있는 기능을 제공합니다.
 
 ## 주요 개발 내용
 
 ### 1. 핵심 기능 구현
-- **텍스트 자르기 알고리즘**: 정확한 줄 수 계산과 "더보기" 텍스트가 들어갈 공간을 고려한 최적화된 자르기
+- **텍스트 자르기 알고리즘**: 정확한 줄 수 계산과 "Read More" 텍스트가 들어갈 공간을 고려한 최적화된 자르기
 - **문자 단위 정밀 계산**: 단어 경계뿐만 아니라 문자 단위로도 정밀하게 자르기 위치 결정
-- **자연스러운 텍스트 연결**: 잘린 텍스트 뒤에 ".." 추가하여 ".. 더보기.." 형태로 자연스러운 연결
+- **자연스러운 텍스트 연결**: 잘린 텍스트 뒤에 ellipsis ".." 추가하여 ".. Read More.." 형태로 자연스러운 연결
 
 ### 2. TextKit 1 기반 정밀 텍스트 처리 (2025년 업데이트)
-**문제**: 초기에는 "더보기.."가 문장 중간에 너무 일찍 표시되거나 화면에 보이지 않는 문제
+**문제**: 초기에는 "Read More.."가 문장 중간에 너무 일찍 표시되거나 화면에 보이지 않는 문제
 **해결**: 
 - **TextKit 1 최적화**: iOS 16+ 환경에서 검증된 TextKit 1 API 활용
 - **Layout Fragment 기반 줄 계산**: `enumerateLineFragments`로 정확한 줄 수 계산
@@ -20,13 +20,14 @@ ReadMoreLabel은 iOS용 "더보기" 기능이 포함된 UILabel 서브클래스�
 
 ### 3. 사용자 경험 개선
 **개선 사항**:
-- 잘린 텍스트와 "더보기" 사이의 자연스러운 시각적 연결
+- 잘린 텍스트와 "Read More" 사이의 자연스러운 시각적 연결
 - 일관된 텍스트 위치 (항상 지정된 줄의 끝에 표시)
-- 부드러운 애니메이션과 탭 제스처 처리
+- 정확한 터치 감지와 탭 제스처 처리
 
 **스타일링**:
-- 첫 번째 ".."는 원본 텍스트와 동일한 스타일
-- "더보기.."는 별도의 NSAttributedString으로 다른 색상/폰트 적용 가능
+- ellipsis ".."는 원본 텍스트와 동일한 스타일
+- "Read More.."는 별도의 NSAttributedString으로 다른 색상/폰트 적용 가능
+- `ellipsisText`와 `readMoreText` 프로퍼티로 각각 개별 커스터마이징 지원
 
 ### 4. 코드 구조 최적화
 **리팩토링 내용**:
@@ -37,45 +38,49 @@ ReadMoreLabel은 iOS용 "더보기" 기능이 포함된 UILabel 서브클래스�
 
 **주요 유틸리티 메서드**:
 ```swift
-private var currentLineHeight: CGFloat
-private var currentAvailableWidth: CGFloat
-private func calculateTextSize(for text: String, width: CGFloat) -> CGSize
-private func calculateNumberOfLines(for textSize: CGSize) -> Int
-private func canFitWithSuffix(_ text: String, suffix: String, width: CGFloat) -> Bool
+private var safeLineCount: Int
+private func validateDisplayState() -> (attributedText: NSAttributedString, availableWidth: CGFloat)?
+private func shouldDisplayExpandedText() -> Bool
+private func handleExpandedState(_ attributedText: NSAttributedString)
+private func displayTruncatedText(_ attributedText: NSAttributedString, availableWidth: CGFloat)
 ```
 
 ### 5. API 안전성 보장
-**문제**: UILabel 상속으로 인한 사용자의 부적절한 프로퍼티 설정
-**해결**:
+**향상된 UILabel 호환성**:
 ```swift
-// numberOfLines 직접 설정 방지
-public override var numberOfLines: Int {
-    get { return super.numberOfLines }
+// numberOfLines 정상 동작 - 사용자가 자유롭게 설정 가능
+override public var numberOfLines: Int {
+    get {
+        numberOfLinesWhenCollapsed
+    }
     set {
-        #if DEBUG
-        print("⚠️ ReadMoreLabel: numberOfLines는 직접 설정할 수 없습니다. numberOfLinesWhenCollapsed를 사용하세요.")
-        #endif
+        numberOfLinesWhenCollapsed = newValue
     }
 }
 
-// lineBreakMode 고정
-public override var lineBreakMode: NSLineBreakMode {
-    get { return super.lineBreakMode }
-    set { super.lineBreakMode = .byWordWrapping }
+// lineBreakMode는 .byWordWrapping으로 강제 설정
+override public var lineBreakMode: NSLineBreakMode {
+    didSet {
+        guard lineBreakMode != oldValue else {
+            return
+        }
+        reapplyTextStylingAndRefreshDisplay()
+    }
 }
 ```
 
 ### 6. 유연성 제공
-**numberOfLinesWhenCollapsed = 0 지원**:
-- 더보기 기능 완전 비활성화
-- 일반 UILabel처럼 동작
-- 개발자가 상황에 따라 기능 켜고 끌 수 있음
+**numberOfLines = 0 지원** (UILabel 표준 동작):
+- `numberOfLines = 0`일 때 무제한 줄 수로 전체 텍스트 표시
+- `shouldDisplayExpandedText()` 메서드에서 자동으로 확장된 상태로 처리
+- `isExpandable`이 false가 되어 Read More 기능 자동 비활성화
+- 표준 UILabel과 완전히 동일한 동작 보장
 
 ## 기술적 도전과 해결
 
 ### 1. 텍스트 레이아웃 정확도
 **도전**: iOS의 텍스트 렌더링과 계산 결과 불일치
-**해결**: NSString.boundingRect + 실제 폰트 메트릭 조합
+**해결**: TextKit 1 기반 정밀 측정 - `creatingTextKitStack` 메서드를 통한 일관된 TextKit 스택 생성과 `enumerateLineFragments`를 활용한 픽셀 정확도 보장
 
 ### 2. 성능 최적화
 **도전**: 실시간 텍스트 크기 계산으로 인한 성능 저하
@@ -94,13 +99,24 @@ public override var lineBreakMode: NSLineBreakMode {
 
 ### 1. 직관적인 인터페이스
 ```swift
-// 간단한 설정
-label.numberOfLinesWhenCollapsed = 3
-label.readMoreText = NSAttributedString(string: "더보기..", attributes: [...])
+// 기본 설정
+label.numberOfLines = 3
+label.readMoreText = NSAttributedString(string: "Read More..")  // 기본값
+label.ellipsisText = NSAttributedString(string: "..")          // 기본값  
+label.readMorePosition = .end  // .end 또는 .newLine
 
-// 이벤트 처리
+// 상태 제어
+label.isExpanded = false
+label.expand()    // 프로그래밍 방식 확장
+label.collapse()  // 프로그래밍 방식 축소
+
+// 델리게이트 처리
 label.delegate = self
-func readMoreLabel(_ label: ReadMoreLabel, didChangeExpandedState isExpanded: Bool)
+
+// 델리게이트 메서드
+func readMoreLabel(_ label: ReadMoreLabel, didChangeExpandedState isExpanded: Bool) {
+    // 사용자 터치로 인한 상태 변경 처리
+}
 ```
 
 ### 2. UILabel과의 호환성
@@ -116,7 +132,7 @@ func readMoreLabel(_ label: ReadMoreLabel, didChangeExpandedState isExpanded: Bo
 
 ### 1. 텍스트 길이별 테스트
 - 매우 짧은 텍스트 (1줄 미만)
-- 정확히 numberOfLinesWhenCollapsed와 같은 길이
+- 정확히 numberOfLines와 같은 길이
 - 매우 긴 텍스트
 
 ### 2. 다양한 폰트 크기
@@ -211,7 +227,7 @@ public func prepareForCellReuse()
 
 // MARK: - Private Implementation
 private func updateDisplay()
-private func calculateTextSize() -> CGSize
+private func creatingTextKitStack() -> (NSTextStorage, NSLayoutManager, NSTextContainer)
 ```
 
 **Extension 타입 정리 원칙**:
@@ -273,8 +289,8 @@ let size = text.boundingRect(
 
 ### 7. TextKit 1 Line Counting 경계 조건 버그 수정 🔧
 
-**이슈**: 사용자 피드백을 통해 발견된 "더보기" 버튼 미표시 문제
-- **증상**: 텍스트가 정확히 지정된 줄 수(예: 3줄)일 때 "더보기" 버튼이 표시되지 않음
+**이슈**: 사용자 피드백을 통해 발견된 "Read More" 버튼 미표시 문제
+- **증상**: 텍스트가 정확히 지정된 줄 수(예: 3줄)일 때 "Read More" 버튼이 표시되지 않음
 - **원인**: `totalLineCount > numberOfLines` 조건으로 인한 경계 조건 오류
 
 **근본 원인 분석**:
@@ -285,9 +301,9 @@ totalLineCount = 3  // 텍스트가 정확히 3줄
 
 // ❌ 잘못된 조건: 3 > 3 = false
 if totalLineCount > numberOfLines {
-    // "더보기" 버튼 표시 로직 - 실행되지 않음
+    // "Read More" 버튼 표시 로직 - 실행되지 않음
 }
-// 결과: .noTruncationNeeded 반환 → "더보기" 버튼 미표시
+// 결과: .noTruncationNeeded 반환 → "Read More" 버튼 미표시
 ```
 
 **해결 방법**:
@@ -305,13 +321,13 @@ guard totalLineCount >= numberOfLines,
 ```
 
 **수정 논리**:
-- 텍스트가 지정된 줄 수와 **정확히 같을 때**도 "더보기" 버튼 표시 필요
+- 텍스트가 지정된 줄 수와 **정확히 같을 때**도 "Read More" 버튼 표시 필요
 - `>=` 조건으로 변경하여 경계 케이스 포함
 - TextKit 2의 line fragment 계산과 일치하는 논리 구현
 
 **검증 과정**:
 1. **디버그 환경 구축**: Test.swift 파일로 격리된 테스트 환경 생성
-2. **문제 재현**: 정확히 3줄 텍스트에서 "더보기" 미표시 확인
+2. **문제 재현**: 정확히 3줄 텍스트에서 "Read More" 미표시 확인
 3. **조건문 수정**: `>` → `>=` 변경
 4. **빌드 및 테스트**: 수정 후 정상 동작 확인
 5. **코드 정리**: 디버그 코드 제거 및 프로젝트 정리
@@ -423,7 +439,8 @@ private func createTextKitStack(for attributedText: NSAttributedString, containe
 
 ```
 성능 순서 (빠른 것부터):
-UILabel < ReadMoreLabel < UITextView
+UILabel > ReadMoreLabel > UITextView
+(UILabel이 가장 빠름, UITextView가 가장 느림)
 ```
 
 ### 🏃‍♂️ **UILabel (가장 가벼움)**
@@ -444,8 +461,13 @@ TextKit 스택: 없음 (필요시에만 생성)
 
 **내부 구조 분석**:
 ```swift
-// 우리 프로젝트의 TextKit 사용량
-private func creatingTextKitStack() -> (NSTextStorage, NSLayoutManager, NSTextContainer) {
+// NSAttributedString extension의 TextKit 스택 생성
+func creatingTextKitStack(
+    containerWidth: CGFloat,
+    lineFragmentPadding: CGFloat = 0,
+    lineBreakMode: NSLineBreakMode = .byWordWrapping,
+    maximumNumberOfLines: Int = 0
+) -> (textStorage: NSTextStorage, layoutManager: NSLayoutManager, textContainer: NSTextContainer) {
     let textStorage = NSTextStorage(attributedString: self)  // ~50KB
     let layoutManager = NSLayoutManager()                    // ~30KB  
     let textContainer = NSTextContainer()                    // ~20KB
@@ -613,12 +635,12 @@ ReadMoreLabel은 사용자 경험과 개발자 편의성을 모두 고려한 견
 
 **성능 측면에서도** UILabel보다는 약간 무겁지만 UITextView보다 훨씬 가벼운 중간 지점을 차지하여, 기능과 성능의 균형잡힌 솔루션을 제공합니다.
 
-**2025년 8월 최신 개선사항**으로 TextKit 1 line counting 경계 조건 버그가 수정되어, 모든 텍스트 길이에서 일관되고 예측 가능한 "더보기" 버튼 표시를 보장합니다.
+**2025년 8월 최신 개선사항**으로 TextKit 1 line counting 경계 조건 버그가 수정되어, 모든 텍스트 길이에서 일관되고 예측 가능한 "Read More" 버튼 표시를 보장합니다.
 
 ### 10. Hit Testing TextKit 1 개선 (2025년 8월)
 
 **개선 사항**: TextKit 1 기반 hit testing의 안정성 및 정확성 향상
-- **목적**: position = .end와 .newLine에서 "더보기" 터치 감지 개선
+- **목적**: position = .end와 .newLine에서 "Read More" 터치 감지 개선
 - **방법**: TextKit 1의 검증된 `characterIndex(for:in:fractionOfDistanceBetweenInsertionPoints:)` API 활용
 
 **해결 방법**: `hasReadMoreTextAtLocation` 메서드를 TextKit 1 기반으로 전환
@@ -665,7 +687,7 @@ private func hasReadMoreTextAtLocationWithTextKit1ForNewLine(_ location: CGPoint
     if checkIndex > 0 {
         let previousChar = attributedText.string[attributedText.string.index(attributedText.string.startIndex, offsetBy: checkIndex - 1)]
         if previousChar == "\n" {
-            // 더보기 텍스트 앞에 \n이 있는 경우, 그 줄의 영역 확장
+            // Read More 텍스트 앞에 \n이 있는 경우, 그 줄의 영역 확장
             let expandedLineRect = lineRange.insetBy(dx: -10, dy: -5)
             return expandedLineRect.contains(location)
         }
@@ -682,7 +704,7 @@ private func hasReadMoreTextAtLocationWithTextKit1ForNewLine(_ location: CGPoint
 3. **안정성**: 오랜 기간 검증된 TextKit 1 API의 높은 안정성
 4. **호환성**: iOS 16+ 환경에서 TextKit 1과 TextKit 2 혼용 가능
 
-**결과**: position = .end와 position = .newLine 모두에서 정확한 "더보기" 터치 감지 및 확장 기능 실현
+**결과**: position = .end와 position = .newLine 모두에서 정확한 "Read More" 터치 감지 및 확장 기능 실현
 
 ### 12. iOS 16+ 전용 코드 정리 및 최적화 (2025년 8월 30일)
 
@@ -840,7 +862,7 @@ private func calculateActualLinesNeeded(for text: NSAttributedString, width: CGF
 - "More Magic" ✅ (첫 번째, 네 번째 예제)
 - "More.." ✅ (두 번째 예제)
 - "Read More" ✅ (세 번째 예제)  
-- "더보기" ✅ (한국어 예제)
+- "더보기" ✅ (한국어 예제 - 한국 앱에서 사용하는 용어)
 
 #### 커밋 이력
 
@@ -917,7 +939,7 @@ textStorage ─(강한 참조)→ layoutManager ─(강한 참조)→ textContai
 - `textStorage`나 `textContainer`를 `_`로 대체하면 즉시 해제됨
 - 이로 인해 TextKit 스택이 불안정해져 텍스트 측정 실패
 - 결과: `calculateLineCount`, `findTargetLineRange` 등에서 잘못된 결과 반환
-- 최종 증상: "더보기" suffix가 화면에 표시되지 않음
+- 최종 증상: "Read More" suffix가 화면에 표시되지 않음
 
 ### 안전한 코드 수정 가이드라인
 
@@ -1044,7 +1066,7 @@ ReadMoreLabel 빌드 후 반드시 확인해야 할 사항:
 
 - [ ] **빌드 성공**: 컴파일 에러 없이 빌드 완료
 - [ ] **앱 실행**: 시뮬레이터에서 정상 실행
-- [ ] **Suffix 기능**: 모든 예제에서 "더보기" 텍스트 표시
+- [ ] **Suffix 기능**: 모든 예제에서 "Read More" 텍스트 표시
 - [ ] **스크린샷 검증**: 시각적으로 기능 동작 확인
 - [ ] **다양한 예제**: English, 한국어, 이모지 케이스 모두 테스트
 
@@ -1111,7 +1133,7 @@ ReadMoreLabel의 지속적인 개선을 위한 주요 방향성입니다.
 
 ### 작업 완료 후 필수 절차
 - **커밋 필수**: 모든 작업이 완료되면 반드시 변경사항을 git 커밋으로 기록
-- **커밋 메시지**: 한국어로 작성, 변경 내용과 해결된 문제 명시
+- **커밋 메시지**: 영어로 작성, 변경 내용과 해결된 문제 명시
 - **검증 완료 후**: 빌드 테스트 및 기능 검증이 완료된 후에만 커밋 수행
 - **예시 커밋 메시지**:
   ```

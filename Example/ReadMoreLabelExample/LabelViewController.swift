@@ -126,7 +126,9 @@ class LabelViewController: UIViewController {
 
     private func setupConstraints() {
         // Find the controls stack view
-        guard let controlsStackView = contentView.subviews.first(where: { $0 is UIStackView }) as? UIStackView else { return }
+        guard let controlsStackView = contentView.subviews.first(where: { $0 is UIStackView }) as? UIStackView else {
+            return
+        }
 
         NSLayoutConstraint.activate([
             // Scroll view constraints
