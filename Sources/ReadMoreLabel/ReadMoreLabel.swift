@@ -19,7 +19,6 @@ import UIKit
 
 /// Query interface for ReadMore text range inspection
 @objc public protocol ReadMoreQueryable: AnyObject {
-    @objc func findReadMoreTextRanges() -> [NSRange]
     var isExpandable: Bool { get }
     var isExpanded: Bool { get set }
 }
@@ -127,7 +126,6 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
                 return
             }
 
-//            print("Bounds changed to: \(bounds.size), oldValue: \(oldValue.size)")
             reapplyTextStylingAndRefreshDisplay()
         }
     }
@@ -231,13 +229,6 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
         }
     }
     
-    @objc public func findReadMoreTextRanges() -> [NSRange] {
-        guard let attributedText = attributedText else {
-            return []
-        }
-        
-        return attributedText.findReadMoreTextRanges()
-    }
     
     // MARK: - Private Implementation
     
