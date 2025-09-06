@@ -188,21 +188,15 @@ ReadMoreLabelは適切な機能を保証するために特定のUILabelプロパ
 
 ### ネーミング競合
 
-他のライブラリにも`ReadMoreLabel`クラスがありネーミング競合が発生する場合、Swiftのモジュールネームスペースシステムを使用して解決できます：
+他のライブラリと競合が発生する場合、Swiftのモジュールネームスペースを使用してください：
 
 ```swift
-// 方法 1: 完全モジュール名を使用
 import ReadMoreLabel
-let label = ReadMoreLabel.ReadMoreLabel()
+let label = ReadMoreLabel.ReadMoreLabel()  // 完全モジュール名
 
-// 方法 2: typealiasを作成
-import ReadMoreLabel
-typealias BFReadMoreLabel = ReadMoreLabel.ReadMoreLabel
-let label = BFReadMoreLabel()
-
-// 方法 3: 選択的import (Swift 5.2+)
-import ReadMoreLabel.ReadMoreLabel
-let label = ReadMoreLabel()
+// またはtypealiasを作成
+typealias MyReadMoreLabel = ReadMoreLabel.ReadMoreLabel
+let label = MyReadMoreLabel()
 ```
 
 ### ベストプラクティス
@@ -211,7 +205,8 @@ let label = ReadMoreLabel()
 2. **パフォーマンス**: 大量のテキストの場合、最初に`numberOfLinesWhenCollapsed = 0`に設定し、必要時に切り取りを有効化することを検討
 3. **アクセシビリティ**: コンポーネントは自動的にVoiceOverとDynamic Typeをサポート
 4. **スレッドセーフティ**: 常にメインスレッドでプロパティを更新
-5. **ネーミング競合**: クラス名競合時はモジュールネームスペースやtypealiasを使用
+5. **TextKit 1**: 安定したテキスト処理のため検証済みTextKit 1 APIを基盤として構築
+6. **メモリ管理**: 安定性のため適切なTextKitスタック参照を維持するコンポーネント
 
 ## 🔧 高度な使用法
 
@@ -329,11 +324,28 @@ ReadMoreLabelはMITライセンスの下で提供されています。詳細は[
 
 ## 🤝 コントリビューション
 
+ReadMoreLabelは**Git Flow**ワークフローに従います。以下のガイドラインを遵守してください：
+
 1. リポジトリをフォーク
-2. 機能ブランチを作成（`git checkout -b feature/amazing-feature`）
-3. 変更をコミット（`git commit -m 'Add some amazing feature'`）
-4. ブランチにプッシュ（`git push origin feature/amazing-feature`）
-5. Pull Requestを開く
+2. `develop`から機能ブランチを作成（`git checkout develop && git checkout -b feature/amazing-feature`）
+3. コミットメッセージ形式を遵守：`<type>: <description>`
+   - タイプ：`feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
+4. Swift Style Guide原則を遵守してください
+5. 新機能にテストを追加してください
+6. 適切な形式で変更をコミット：
+   ```
+   feat: 素晴らしい新機能を追加
+   
+   変更の詳細説明
+   
+   🎯 Generated with Claude Code
+   Co-Authored-By: Claude <noreply@anthropic.com>
+   ```
+7. ブランチにプッシュ（`git push origin feature/amazing-feature`）
+8. `develop`ブランチをターゲットにPull Requestを開く
+9. PRテンプレートを完全に記入してください
+
+詳細な開発ガイドラインとGit Flowワークフローについては[CLAUDE.md](CLAUDE.md)を参照してください。
 
 ## 📞 サポート
 

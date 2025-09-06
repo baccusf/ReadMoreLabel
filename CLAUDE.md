@@ -154,7 +154,7 @@ func readMoreLabel(_ label: ReadMoreLabel, didChangeExpandedState isExpanded: Bo
 - **iOS**: 16.0+
 - **tvOS**: 16.0+ 
 - **Swift**: 5.0+
-- **Xcode**: 13.0+
+- **Xcode**: 16.0+
 
 ### iOS 16.0+ 선택 이유
 - **TextKit 1 안정성**: iOS 16+에서 완전히 검증된 TextKit 1 API 활용
@@ -171,7 +171,7 @@ func readMoreLabel(_ label: ReadMoreLabel, didChangeExpandedState isExpanded: Bo
 - **유지보수성**: 크게 향상
 
 ### 핵심 성능 지표
-- **TextKit 2 Segment 계산**: O(n) 직선적 복잡도이지만 픽셀 정확도 보장
+- **TextKit 1 Fragment 계산**: O(n) 직선적 복잡도이지만 픽셀 정확도 보장
 - 메모리 사용량: 최소화된 임시 객체 생성
 - 배터리 효율성: 불필요한 UI 업데이트 방지
 
@@ -307,7 +307,7 @@ guard totalLineCount >= numberOfLines,
 **수정 논리**:
 - 텍스트가 지정된 줄 수와 **정확히 같을 때**도 "더보기" 버튼 표시 필요
 - `>=` 조건으로 변경하여 경계 케이스 포함
-- TextKit 2의 line fragment 계산과 일치하는 논리 구현
+- TextKit 1의 line fragment 계산과 일치하는 논리 구현
 
 **검증 과정**:
 1. **디버그 환경 구축**: Test.swift 파일로 격리된 테스트 환경 생성
@@ -363,7 +363,7 @@ if totalLineCount > numberOfLines {
 4. **완전한 정리**: 디버그 완료 후 모든 임시 코드 제거
 
 **성능 모니터링**:
-- TextKit 2 Segment 순회: O(n) 시간 복잡도 유지
+- TextKit 1 Fragment 순회: O(n) 시간 복잡도 유지
 - 메모리 효율성: 불필요한 배열 생성 및 임시 객체 제거
 - 프로덕션 빌드: 디버그 코드 완전 제거로 바이너리 크기 최적화
 
@@ -1079,6 +1079,43 @@ ReadMoreLabel의 지속적인 개선을 위한 주요 방향성입니다.
 - **SwiftUI 지원**: SwiftUI 환경을 위한 래퍼 컴포넌트 고려
 
 ## 🚨 중요 개발 지침
+
+### Git Flow 워크플로우
+
+ReadMoreLabel 프로젝트는 **Git Flow 워크플로우**를 따릅니다:
+
+#### 브랜치 구조
+- **`main`**: 프로덕션 릴리즈 브랜치 (안정된 버전만)
+- **`develop`**: 개발 통합 브랜치 (다음 릴리즈 준비)
+- **`feature/*`**: 새 기능 개발 브랜치 (`feature/feature-name`)
+- **`release/*`**: 릴리즈 준비 브랜치 (`release/1.0.0`)
+- **`hotfix/*`**: 긴급 버그 수정 브랜치 (`hotfix/critical-bug`)
+
+#### 워크플로우 규칙
+1. **Feature 개발**: `develop`에서 `feature/feature-name` 브랜치 생성
+2. **코드 리뷰**: Feature 완료 후 `develop`으로 Pull Request
+3. **릴리즈 준비**: `develop`에서 `release/X.Y.Z` 브랜치 생성
+4. **프로덕션 배포**: `release` 브랜치를 `main`과 `develop`으로 머지
+5. **핫픽스**: `main`에서 `hotfix/bug-name` 생성 후 `main`과 `develop`으로 머지
+
+#### 커밋 메시지 규칙
+```
+<type>: <description>
+
+<body>
+
+🎯 Generated with Claude Code
+Co-Authored-By: Claude <noreply@anthropic.com>
+```
+
+**Type 종류**:
+- `feat`: 새 기능 추가
+- `fix`: 버그 수정  
+- `docs`: 문서 업데이트
+- `style`: 코드 포맷팅 (기능 변경 없음)
+- `refactor`: 리팩토링
+- `test`: 테스트 추가/수정
+- `chore`: 빌드/도구 관련 변경
 
 ### Swift Style Guide 준수 의무
 - **필수 사항**: 모든 새로운 코드는 Swift Style Guide 표준을 따라야 함

@@ -188,21 +188,15 @@ ReadMoreLabel은 적절한 기능을 보장하기 위해 특정 UILabel 프로�
 
 ### 네이밍 충돌
 
-다른 라이브러리에도 `ReadMoreLabel` 클래스가 있어 네이밍 충돌이 발생하는 경우, Swift의 모듈 네임스페이스 시스템을 사용해 해결할 수 있습니다:
+다른 라이브러리와 충돌이 발생하는 경우, Swift 모듈 네임스페이스를 사용하세요:
 
 ```swift
-// 방법 1: 전체 모듈명 사용
 import ReadMoreLabel
-let label = ReadMoreLabel.ReadMoreLabel()
+let label = ReadMoreLabel.ReadMoreLabel()  // 전체 모듈명 사용
 
-// 방법 2: typealias 생성
-import ReadMoreLabel
-typealias BFReadMoreLabel = ReadMoreLabel.ReadMoreLabel
-let label = BFReadMoreLabel()
-
-// 방법 3: 선택적 import (Swift 5.2+)
-import ReadMoreLabel.ReadMoreLabel
-let label = ReadMoreLabel()
+// 또는 typealias 생성
+typealias MyReadMoreLabel = ReadMoreLabel.ReadMoreLabel
+let label = MyReadMoreLabel()
 ```
 
 ### 모범 사례
@@ -211,7 +205,8 @@ let label = ReadMoreLabel()
 2. **성능**: 대용량 텍스트의 경우 처음에 `numberOfLinesWhenCollapsed = 0`으로 설정하고 필요할 때 자르기 활성화 고려
 3. **접근성**: 컴포넌트는 VoiceOver와 Dynamic Type을 자동으로 지원
 4. **스레드 안전성**: 항상 메인 스레드에서 프로퍼티 업데이트
-5. **네이밍 충돌**: 클래스명 충돌 시 모듈 네임스페이스나 typealias 사용
+5. **TextKit 1**: 안정적인 텍스트 처리를 위해 검증된 TextKit 1 API를 기반으로 구축
+6. **메모리 관리**: 안정성을 위해 적절한 TextKit 스택 참조를 유지하는 컴포넌트
 
 ## 🔧 고급 사용법
 
@@ -329,11 +324,28 @@ ReadMoreLabel은 MIT 라이센스 하에 제공됩니다. 자세한 내용은 [L
 
 ## 🤝 기여
 
+ReadMoreLabel은 **Git Flow** 워크플로우를 따릅니다. 다음 가이드라인을 준수해 주세요:
+
 1. 저장소 포크
-2. 기능 브랜치 생성 (`git checkout -b feature/amazing-feature`)
-3. 변경사항 커밋 (`git commit -m 'Add some amazing feature'`)
-4. 브랜치에 푸시 (`git push origin feature/amazing-feature`)
-5. Pull Request 열기
+2. `develop`에서 기능 브랜치 생성 (`git checkout develop && git checkout -b feature/amazing-feature`)
+3. 커밋 메시지 형식을 준수: `<type>: <description>`
+   - 타입: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
+4. Swift Style Guide 원칙을 준수하세요
+5. 새 기능에 테스트를 추가하세요
+6. 적절한 형식으로 변경사항 커밋:
+   ```
+   feat: 놀라운 새 기능 추가
+   
+   변경사항에 대한 자세한 설명
+   
+   🎯 Generated with Claude Code
+   Co-Authored-By: Claude <noreply@anthropic.com>
+   ```
+7. 브랜치에 푸시 (`git push origin feature/amazing-feature`)
+8. `develop` 브랜치를 대상으로 Pull Request 열기
+9. PR 템플릿을 완전히 작성하세요
+
+자세한 개발 가이드라인과 Git Flow 워크플로우는 [CLAUDE.md](CLAUDE.md)를 참조하세요.
 
 ## 📞 지원
 

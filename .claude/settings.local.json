@@ -62,7 +62,8 @@
       "mcp__context7__resolve-library-id",
       "mcp__context7__get-library-docs",
       "mcp__XcodeBuildMCP__key_sequence",
-      "mcp__XcodeBuildMCP__stop_app_sim"
+      "mcp__XcodeBuildMCP__stop_app_sim",
+      "Bash(git branch:*)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits",
