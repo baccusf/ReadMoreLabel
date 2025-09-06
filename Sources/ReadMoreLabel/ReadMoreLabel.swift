@@ -207,6 +207,10 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
         setExpanded(expanded, notifyDelegate: false)
     }
     
+    
+    
+    // MARK: - Private Implementation
+    
     /// Set expanded state with option to control delegate notification
     /// - Parameters:
     ///   - expanded: The expanded state to set
@@ -228,9 +232,6 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
             delegate?.readMoreLabel?(self, didChangeExpandedState: isExpanded)
         }
     }
-    
-    
-    // MARK: - Private Implementation
     
     private func setupLabel() {
         setInternalNumberOfLines(safeLineCount)
