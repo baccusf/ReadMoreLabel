@@ -39,6 +39,7 @@ disabled_rules:
   - force_cast
   - for_where
   - unneeded_override
+  - explicit_self
 
 # 추가로 활성화할 규칙들 (opt-in)
 opt_in_rules:

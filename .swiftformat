@@ -14,7 +14,7 @@
 --exclude .build,.swiftpm,Pods,Carthage,DerivedData,Scripts
 
 # self 키워드 처리
---self insert
+--self remove
 
 # import 정렬
 --importgrouping alphabetized
