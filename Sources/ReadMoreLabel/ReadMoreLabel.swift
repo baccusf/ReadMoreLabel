@@ -3,22 +3,21 @@ import UIKit
 // MARK: - Public Protocols (Interface Segregation Principle)
 
 /// Configuration interface for ReadMore appearance and behavior
-@objc public protocol ReadMoreConfiguration: AnyObject {
+public protocol ReadMoreConfiguration: AnyObject {
     var readMoreText: NSAttributedString { get set }
     var ellipsisText: NSAttributedString { get set }
     var readMorePosition: ReadMoreLabel.Position { get set }
 }
 
 /// Action interface for ReadMore expansion/collapse operations
-@objc public protocol ReadMoreActions: AnyObject {
-    @objc func expand()
-    @objc func collapse()
-    @objc func setExpanded(_ expanded: Bool)
+public protocol ReadMoreActions: AnyObject {
+    func expand()
+    func collapse()
+    func setExpanded(_ expanded: Bool)
 }
 
-
 /// Query interface for ReadMore text range inspection
-@objc public protocol ReadMoreQueryable: AnyObject {
+public protocol ReadMoreQueryable: AnyObject {
     var isExpandable: Bool { get }
     var isExpanded: Bool { get set }
 }
@@ -195,15 +194,15 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
 
     // MARK: - Public Interface
     
-    @objc public func expand() {
+    public func expand() {
         setExpanded(true)
     }
     
-    @objc public func collapse() {
+    public func collapse() {
         setExpanded(false)
     }
     
-    @objc public func setExpanded(_ expanded: Bool) {
+    public func setExpanded(_ expanded: Bool) {
         setExpanded(expanded, notifyDelegate: false)
     }
     
@@ -215,7 +214,7 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
     /// - Parameters:
     ///   - expanded: The expanded state to set
     ///   - notifyDelegate: Whether to notify delegate of the change
-    @objc private func setExpanded(_ expanded: Bool, notifyDelegate: Bool) {
+    private func setExpanded(_ expanded: Bool, notifyDelegate: Bool) {
         guard expanded == false || isExpandable else {
             return 
         }
