@@ -16,10 +16,6 @@ import UIKit
     @objc func setExpanded(_ expanded: Bool)
 }
 
-/// Cell reuse interface for table/collection view integration
-@objc public protocol ReadMoreCellReusable: AnyObject {
-    @objc func prepareForCellReuse()
-}
 
 /// Query interface for ReadMore text range inspection
 @objc public protocol ReadMoreQueryable: AnyObject {
@@ -35,7 +31,7 @@ import UIKit
 /// UILabel with "Read More" functionality for truncated text
 /// Implements segregated interfaces for better maintainability and testability
 @objc @IBDesignable
-public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, ReadMoreCellReusable, ReadMoreQueryable {
+public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, ReadMoreQueryable {
     @objc public weak var delegate: ReadMoreLabelDelegate?
     
     private var state = State()
@@ -186,19 +182,7 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
             setOriginalText(newValue ?? NSAttributedString())
         }
     }
-    
-//    public override func layoutSubviews() {
-//        super.layoutSubviews()
-//        print("layoutSubviews called with preferredMaxLayoutWidth: \(preferredMaxLayoutWidth)")
-//        
-//        // Update layout state based on current expansion state
-//        if isExpanded {
-//            checkAndResetExpandedStateIfNeeded()
-//        } else {
-//            checkAndResetTruncationStateIfNeeded()
-//        }
-//    }
-    
+
     // MARK: - Initialization
     
     public override init(frame: CGRect) {
@@ -222,15 +206,15 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
     }
     
     @objc public func setExpanded(_ expanded: Bool) {
-        setExpanded(expanded, notifyDelegate: true)
+        setExpanded(expanded, notifyDelegate: false)
     }
     
     /// Set expanded state with option to control delegate notification
     /// - Parameters:
     ///   - expanded: The expanded state to set
     ///   - notifyDelegate: Whether to notify delegate of the change
-    @objc public func setExpanded(_ expanded: Bool, notifyDelegate: Bool) {
-        guard expanded == false || isExpandable else { 
+    @objc private func setExpanded(_ expanded: Bool, notifyDelegate: Bool) {
+        guard expanded == false || isExpandable else {
             return 
         }
         
@@ -245,12 +229,6 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
         if notifyDelegate {
             delegate?.readMoreLabel?(self, didChangeExpandedState: isExpanded)
         }
-    }
-    
-    @objc public func prepareForCellReuse() {
-        // 확장 상태는 TableViewController의 expandedStates에서 관리하므로 여기서 강제로 변경하지 않음
-        // Cell 재사용 시 필요한 캐시만 정리
-        state.prepareForCellReuse()
     }
     
     @objc public func findReadMoreTextRanges() -> [NSRange] {
@@ -480,53 +458,6 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
         updateDisplay()
         invalidateDisplayAndLayout()
     }
-    
-//    private func checkAndResetExpandedStateIfNeeded() {
-//        guard let originalText = state.originalText,
-//              numberOfLinesWhenCollapsed > 0,
-//              bounds.width > 0 else {
-//            return
-//        }
-//        
-//        let actualLinesNeeded = calculateActualLinesNeeded(for: originalText, width: bounds.width)
-//        let threshold = max(2, numberOfLinesWhenCollapsed - 1)
-//        
-//        if !isExpanded, actualLinesNeeded <= threshold {
-//            isExpanded = false
-//        } else {
-//            super.attributedText = originalText
-//            setInternalNumberOfLines(0)
-//            state.readMoreTextRange = nil
-//            invalidateIntrinsicContentSize()
-//        }
-//    }
-//    
-//    /// Enhanced line count calculation using optimized TextKit 1
-//    private func calculateActualLinesNeeded(for text: NSAttributedString, width: CGFloat) -> Int {
-//        return text.countLines(
-//            with: width,
-//            textAlignment: textAlignment,
-//            font: font,
-//            textColor: textColor,
-//            lineFragmentPadding: lineFragmentPadding,
-//            lineBreakMode: lineBreakMode
-//        )
-//    }
-    
-//    private func checkAndResetTruncationStateIfNeeded() {
-//        guard let originalText = state.originalText,
-//              numberOfLinesWhenCollapsed > 0,
-//              bounds.width > 0 else {
-//            return
-//        }
-//
-//        switch readMorePosition {
-//        case .end:
-//            displayTruncatedTextAtEnd(originalText, availableWidth: bounds.width)
-//        case .newLine:
-//            displayTruncatedTextAtNewLineBeginning(originalText, availableWidth: bounds.width)
-//        }
-//    }
     
     private func hasReadMoreTextAtLocation(_ location: CGPoint, in attributedText: NSAttributedString) -> Bool {
         guard attributedText.length > 0, let readMoreRange = state.readMoreTextRange else {
@@ -1120,9 +1051,7 @@ extension ReadMoreLabel {
         public static let isReadMore = NSAttributedString.Key("ReadMoreLabel.isReadMore")
     }
     
-    
-    // MARK: - Private Structs (Enhanced State Management)
-    
+    // MARK: - Private Structs
     
     /// Text content and layout state management
     private struct TextContentState {
@@ -1156,12 +1085,11 @@ extension ReadMoreLabel {
         private(set) var internalNumberOfLines: Int = 0
         
         /// Updates number of lines with validation
-        mutating func updateNumberOfLines(_ newValue: Int) -> Bool {
+        mutating func updateNumberOfLines(_ newValue: Int) {
             let sanitizedValue = max(0, newValue)
-            guard sanitizedValue != numberOfLines else { return false }
+            guard sanitizedValue != numberOfLines else { return }
             
             numberOfLines = sanitizedValue
-            return true
         }
         
         /// Updates internal number of lines
@@ -1203,14 +1131,9 @@ extension ReadMoreLabel {
         
         // MARK: - Mutating Methods
         
-        /// Updates the number of lines and resets expansion state if needed
+        /// Updates the number of lines
         mutating func updateNumberOfLines(_ newValue: Int) {
-            let didChange = layoutConfigState.updateNumberOfLines(newValue)
-            // Note: Removed problematic expansion state reset logic
-            // numberOfLines = 0 is used for expanded text display, so don't reset expansion state
-//            if didChange && numberOfLines == 0 && isExpanded {
-//                isExpanded = false
-//            }
+            layoutConfigState.updateNumberOfLines(newValue)
         }
         
         /// Updates the original text and resets related state
@@ -1230,13 +1153,6 @@ extension ReadMoreLabel {
             isExpanded = expanded
             return true
         }
-        
-        /// Resets state for cell reuse
-        mutating func prepareForCellReuse() {
-            // 확장 상태는 TableViewController에서 관리하므로 여기서 리셋하지 않음
-            // 필요한 경우 캐시 정리 로직만 추가
-        }
-        
     }
     
     // MARK: - Internal Enums

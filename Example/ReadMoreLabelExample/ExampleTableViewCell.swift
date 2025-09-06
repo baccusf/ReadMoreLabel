@@ -37,9 +37,8 @@ class ExampleTableViewCell: UITableViewCell {
     override func prepareForReuse() {
         super.prepareForReuse()
         
-        // ReadMoreLabel의 캐시 상태 초기화
+        // ReadMoreLabel은 외부에서 상태 관리하므로 별도 초기화 불필요
         // configure에서 올바른 순서로 확장 상태가 복원됨
-        readMoreLabel.prepareForCellReuse()
     }
     
     private func setupUI() {
@@ -78,7 +77,7 @@ class ExampleTableViewCell: UITableViewCell {
         
         // Set expanded state LAST to preserve it after style changes
         // Cell 재사용 시에는 delegate 호출하지 않음 (불필요한 상태 업데이트 방지)
-        readMoreLabel.setExpanded(isExpanded, notifyDelegate: false)
+        readMoreLabel.setExpanded(isExpanded)
     }
     
     private func applyStyle(_ style: ReadMoreLabel.Style, language: String) {
