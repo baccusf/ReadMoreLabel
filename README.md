@@ -110,8 +110,8 @@ NSLayoutConstraint.activate([
 readMoreLabel.expand()
 readMoreLabel.collapse()
 
-// Or with controlled delegate notification
-readMoreLabel.setExpanded(true, notifyDelegate: true)
+// Set expansion state programmatically
+readMoreLabel.setExpanded(true)
 
 // Check current state
 if readMoreLabel.isExpanded {
@@ -239,45 +239,65 @@ func readMoreLabel(_ label: ReadMoreLabel, didChangeExpandedState isExpanded: Bo
 ### Integration with UITableView/UICollectionView
 
 ```swift
-// Custom delegate for table view integration
-protocol CustomReadMoreLabelDelegate: AnyObject {
-    func readMoreLabel(_ label: ReadMoreLabel, didChangeExpandedState isExpanded: Bool, at indexPath: IndexPath)
-}
-
 // In your table view cell
-class CustomTableViewCell: UITableViewCell {
-    @IBOutlet weak var readMoreLabel: ReadMoreLabel!
-    weak var customDelegate: CustomReadMoreLabelDelegate?
-    var indexPath: IndexPath?
+class ExampleTableViewCell: UITableViewCell {
+    private let readMoreLabel: ReadMoreLabel = {
+        let label = ReadMoreLabel()
+        label.numberOfLines = 3
+        label.font = UIFont.systemFont(ofSize: 16)
+        label.textColor = .label
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
     
-    func configure(with text: String, isExpanded: Bool, delegate: CustomReadMoreLabelDelegate?, indexPath: IndexPath) {
-        self.indexPath = indexPath
-        self.customDelegate = delegate
-        readMoreLabel.delegate = self
+    func configure(with text: String, isExpanded: Bool, delegate: ReadMoreLabelDelegate?) {
+        // Set delegate first
+        readMoreLabel.delegate = delegate
+        
+        // Set text content
         readMoreLabel.text = text
-        // Use notifyDelegate: false during cell configuration to prevent unwanted delegate calls
-        readMoreLabel.setExpanded(isExpanded, notifyDelegate: false)
+        
+        // Set expanded state
+        readMoreLabel.setExpanded(isExpanded)
     }
-}
-
-extension CustomTableViewCell: ReadMoreLabelDelegate {
-    func readMoreLabel(_ label: ReadMoreLabel, didChangeExpandedState isExpanded: Bool) {
-        guard let indexPath = indexPath else { return }
-        customDelegate?.readMoreLabel(label, didChangeExpandedState: isExpanded, at: indexPath)
+    
+    // Cell reuse handling
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        // ReadMoreLabel manages its state externally, no additional cleanup needed
     }
 }
 
 // In your view controller
-func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-    return UITableView.automaticDimension
+class ViewController: UIViewController {
+    @IBOutlet weak var tableView: UITableView!
+    var expandedStates: [Bool] = []  // Track expanded states for each cell
+    
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "ExampleCell", for: indexPath) as! ExampleTableViewCell
+        let isExpanded = expandedStates[indexPath.row]
+        cell.configure(with: sampleTexts[indexPath.row], isExpanded: isExpanded, delegate: self)
+        return cell
+    }
 }
 
-extension ViewController: CustomReadMoreLabelDelegate {
-    func readMoreLabel(_ label: ReadMoreLabel, didChangeExpandedState isExpanded: Bool, at indexPath: IndexPath) {
+extension ViewController: ReadMoreLabelDelegate {
+    func readMoreLabel(_ label: ReadMoreLabel, didChangeExpandedState isExpanded: Bool) {
+        // Convert label's center point to table view coordinate system
+        let labelCenterInTableView = label.convert(label.center, to: tableView)
+        
+        // Find the indexPath for that position
+        guard let indexPath = tableView.indexPathForRow(at: labelCenterInTableView) else {
+            return
+        }
+        
         expandedStates[indexPath.row] = isExpanded
-        // Update table view with animation
-        tableView.beginUpdates()
-        tableView.endUpdates()
+        
+        // Animate layout changes
+        UIView.animate(withDuration: 0.3) {
+            self.tableView.beginUpdates()
+            self.tableView.endUpdates()
+        }
     }
 }
 ```

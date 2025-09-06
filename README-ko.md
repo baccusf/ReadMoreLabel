@@ -106,8 +106,8 @@ NSLayoutConstraint.activate([
 readMoreLabel.expand()
 readMoreLabel.collapse()
 
-// 델리게이트 알림 제어
-readMoreLabel.setExpanded(true, notifyDelegate: true)
+// 프로그래매틱 확장 상태 설정
+readMoreLabel.setExpanded(true)
 
 // 현재 상태 확인
 if readMoreLabel.isExpanded {
@@ -235,45 +235,65 @@ func readMoreLabel(_ label: ReadMoreLabel, didChangeExpandedState isExpanded: Bo
 ### UITableView/UICollectionView와 통합
 
 ```swift
-// 테이블뷰 통합을 위한 커스텀 델리게이트
-protocol CustomReadMoreLabelDelegate: AnyObject {
-    func readMoreLabel(_ label: ReadMoreLabel, didChangeExpandedState isExpanded: Bool, at indexPath: IndexPath)
-}
-
 // 테이블뷰 셀에서
-class CustomTableViewCell: UITableViewCell {
-    @IBOutlet weak var readMoreLabel: ReadMoreLabel!
-    weak var customDelegate: CustomReadMoreLabelDelegate?
-    var indexPath: IndexPath?
+class ExampleTableViewCell: UITableViewCell {
+    private let readMoreLabel: ReadMoreLabel = {
+        let label = ReadMoreLabel()
+        label.numberOfLines = 3
+        label.font = UIFont.systemFont(ofSize: 16)
+        label.textColor = .label
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
     
-    func configure(with text: String, isExpanded: Bool, delegate: CustomReadMoreLabelDelegate?, indexPath: IndexPath) {
-        self.indexPath = indexPath
-        self.customDelegate = delegate
-        readMoreLabel.delegate = self
+    func configure(with text: String, isExpanded: Bool, delegate: ReadMoreLabelDelegate?) {
+        // 델리게이트 먼저 설정
+        readMoreLabel.delegate = delegate
+        
+        // 텍스트 내용 설정
         readMoreLabel.text = text
-        // 셀 설정 중에는 불필요한 델리게이트 호출 방지를 위해 notifyDelegate: false 사용
-        readMoreLabel.setExpanded(isExpanded, notifyDelegate: false)
+        
+        // 확장 상태 설정
+        readMoreLabel.setExpanded(isExpanded)
     }
-}
-
-extension CustomTableViewCell: ReadMoreLabelDelegate {
-    func readMoreLabel(_ label: ReadMoreLabel, didChangeExpandedState isExpanded: Bool) {
-        guard let indexPath = indexPath else { return }
-        customDelegate?.readMoreLabel(label, didChangeExpandedState: isExpanded, at: indexPath)
+    
+    // 셀 재사용 처리
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        // ReadMoreLabel은 외부에서 상태를 관리하므로 추가 정리 불필요
     }
 }
 
 // 뷰 컨트롤러에서
-func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-    return UITableView.automaticDimension
+class ViewController: UIViewController {
+    @IBOutlet weak var tableView: UITableView!
+    var expandedStates: [Bool] = []  // 각 셀의 확장 상태 추적
+    
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "ExampleCell", for: indexPath) as! ExampleTableViewCell
+        let isExpanded = expandedStates[indexPath.row]
+        cell.configure(with: sampleTexts[indexPath.row], isExpanded: isExpanded, delegate: self)
+        return cell
+    }
 }
 
-extension ViewController: CustomReadMoreLabelDelegate {
-    func readMoreLabel(_ label: ReadMoreLabel, didChangeExpandedState isExpanded: Bool, at indexPath: IndexPath) {
+extension ViewController: ReadMoreLabelDelegate {
+    func readMoreLabel(_ label: ReadMoreLabel, didChangeExpandedState isExpanded: Bool) {
+        // label의 중심점을 tableView 좌표계로 변환
+        let labelCenterInTableView = label.convert(label.center, to: tableView)
+        
+        // 해당 위치의 indexPath를 찾음
+        guard let indexPath = tableView.indexPathForRow(at: labelCenterInTableView) else {
+            return
+        }
+        
         expandedStates[indexPath.row] = isExpanded
-        // 애니메이션으로 테이블 뷰 업데이트
-        tableView.beginUpdates()
-        tableView.endUpdates()
+        
+        // 레이아웃 변경 애니메이션
+        UIView.animate(withDuration: 0.3) {
+            self.tableView.beginUpdates()
+            self.tableView.endUpdates()
+        }
     }
 }
 ```
