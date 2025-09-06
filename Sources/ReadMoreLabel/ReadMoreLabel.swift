@@ -3,27 +3,21 @@ import UIKit
 // MARK: - Public Protocols (Interface Segregation Principle)
 
 /// Configuration interface for ReadMore appearance and behavior
-@objc public protocol ReadMoreConfiguration: AnyObject {
+public protocol ReadMoreConfiguration: AnyObject {
     var readMoreText: NSAttributedString { get set }
     var ellipsisText: NSAttributedString { get set }
     var readMorePosition: ReadMoreLabel.Position { get set }
 }
 
 /// Action interface for ReadMore expansion/collapse operations
-@objc public protocol ReadMoreActions: AnyObject {
-    @objc func expand()
-    @objc func collapse()
-    @objc func setExpanded(_ expanded: Bool, animated: Bool)
-}
-
-/// Cell reuse interface for table/collection view integration
-@objc public protocol ReadMoreCellReusable: AnyObject {
-    @objc func prepareForCellReuse()
+public protocol ReadMoreActions: AnyObject {
+    func expand()
+    func collapse()
+    func setExpanded(_ expanded: Bool)
 }
 
 /// Query interface for ReadMore text range inspection
-@objc public protocol ReadMoreQueryable: AnyObject {
-    @objc func findReadMoreTextRanges() -> [NSRange]
+public protocol ReadMoreQueryable: AnyObject {
     var isExpandable: Bool { get }
     var isExpanded: Bool { get set }
 }
@@ -35,7 +29,7 @@ import UIKit
 /// UILabel with "Read More" functionality for truncated text
 /// Implements segregated interfaces for better maintainability and testability
 @objc @IBDesignable
-public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, ReadMoreCellReusable, ReadMoreQueryable {
+public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, ReadMoreQueryable {
     @objc public weak var delegate: ReadMoreLabelDelegate?
     
     private var state = State()
@@ -51,16 +45,18 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
     @objc public var isExpanded: Bool {
         get { return state.isExpanded }
         set { 
+            // Internal state update without delegate notification
+            // Delegate notification is handled by setExpanded methods
             guard state.setExpanded(newValue) else { return }
             updateDisplay()
-            delegate?.readMoreLabel?(self, didChangeExpandedState: state.isExpanded)
+            // Note: delegate notification removed to prevent double calls
+            // Use setExpanded(_:) or setExpanded(_:notifyDelegate:) for delegate notification
         }
     }
     
     @objc public var isExpandable: Bool {
         return state.isExpandable
     }
-    
     
     @objc public var readMoreText: NSAttributedString = NSAttributedString(string: "Read More..") {
         didSet {
@@ -78,7 +74,14 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
     
     @objc public var readMorePosition: Position = .end {
         didSet {
-            guard readMorePosition != oldValue else { return }
+            guard readMorePosition != oldValue else {
+                return
+            }
+            
+            if readMorePosition == .newLine && numberOfLinesWhenCollapsed  > 0 {
+                setInternalNumberOfLines(numberOfLinesWhenCollapsed + 1)
+            }
+            
             handleConfigurationChange()
         }
     }
@@ -86,7 +89,6 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
     private var tapGestureRecognizer: UITapGestureRecognizer?
     
     // MARK: - Constants
-    private static let animationDuration: TimeInterval = 0.3
     private static let defaultSpaceBetweenEllipsisAndReadMore: String = " "
     private static let newLineCharacter: String = "\n"
     
@@ -117,6 +119,16 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
     
     // MARK: - UILabel Overrides
         
+    public override var bounds: CGRect {
+        didSet {
+            guard bounds.size != oldValue.size else {
+                return
+            }
+
+            reapplyTextStylingAndRefreshDisplay()
+        }
+    }
+
     public override var numberOfLines: Int {
         get {
             return numberOfLinesWhenCollapsed
@@ -167,18 +179,7 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
             setOriginalText(newValue ?? NSAttributedString())
         }
     }
-    
-    public override func layoutSubviews() {
-        super.layoutSubviews()
-        
-        // Update layout state based on current expansion state
-        if isExpanded {
-            checkAndResetExpandedStateIfNeeded()
-        } else {
-            checkAndResetTruncationStateIfNeeded()
-        }
-    }
-    
+
     // MARK: - Initialization
     
     public override init(frame: CGRect) {
@@ -193,16 +194,28 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
 
     // MARK: - Public Interface
     
-    @objc public func expand() {
-        setExpanded(true, animated: true)
+    public func expand() {
+        setExpanded(true)
     }
     
-    @objc public func collapse() {
-        setExpanded(false, animated: true)
+    public func collapse() {
+        setExpanded(false)
     }
     
-    @objc public func setExpanded(_ expanded: Bool, animated: Bool) {
-        guard expanded == false || isExpandable else { 
+    public func setExpanded(_ expanded: Bool) {
+        setExpanded(expanded, notifyDelegate: false)
+    }
+    
+    
+    
+    // MARK: - Private Implementation
+    
+    /// Set expanded state with option to control delegate notification
+    /// - Parameters:
+    ///   - expanded: The expanded state to set
+    ///   - notifyDelegate: Whether to notify delegate of the change
+    private func setExpanded(_ expanded: Bool, notifyDelegate: Bool) {
+        guard expanded == false || isExpandable else {
             return 
         }
         
@@ -212,33 +225,12 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
         
         isExpanded = expanded
         updateDisplay()
+        invalidateDisplayAndLayout()
         
-        if animated {
-            UIView.animate(withDuration: Self.animationDuration) {
-                self.invalidateIntrinsicContentSize()
-            }
-        } else {
-            invalidateDisplayAndLayout()
-        }
-        
-        delegate?.readMoreLabel?(self, didChangeExpandedState: isExpanded)
-    }
-    
-    @objc public func prepareForCellReuse() {
-        if isExpanded {
-            setExpanded(false, animated: false)
+        if notifyDelegate {
+            delegate?.readMoreLabel?(self, didChangeExpandedState: isExpanded)
         }
     }
-    
-    @objc public func findReadMoreTextRanges() -> [NSRange] {
-        guard let attributedText = attributedText else {
-            return []
-        }
-        
-        return attributedText.findReadMoreTextRanges()
-    }
-
-    // MARK: - Private Implementation
     
     private func setupLabel() {
         setInternalNumberOfLines(safeLineCount)
@@ -263,11 +255,9 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
     
     /// Single responsibility method for handling configuration changes
     private func handleConfigurationChange() {
-        invalidateDisplayAndLayout()
         updateDisplay()
+        invalidateDisplayAndLayout()
     }
-    
-    
     
     private func applyReadMore(
         originalText: NSAttributedString,
@@ -433,7 +423,8 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
         }
         
         if hasReadMoreTextAtLocation(locationInLabel, in: attributedText) {
-            setExpanded(true, animated: true)
+            // 사용자 터치로 인한 확장이므로 delegate에 알림
+            setExpanded(true, notifyDelegate: true)
         }
     }
     
@@ -447,63 +438,16 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
         if let originalText = state.originalText {
             state.updateOriginalText(originalText.applyingTextAlignment(textAlignment, font: font, textColor: textColor))
         }
-        
-        invalidateDisplayAndLayout()
+
         updateDisplay()
+        invalidateDisplayAndLayout()
     }
     
     private func setOriginalText(_ text: NSAttributedString) {
         state.updateOriginalText(text.applyingTextAlignment(textAlignment, font: font, textColor: textColor))
-        invalidateDisplayAndLayout()
-        updateDisplay()
-    }
-    
-    private func checkAndResetExpandedStateIfNeeded() {
-        guard let originalText = state.originalText,
-              numberOfLinesWhenCollapsed > 0,
-              bounds.width > 0 else {
-            return
-        }
-        
-        let actualLinesNeeded = calculateActualLinesNeeded(for: originalText, width: bounds.width)
-        let threshold = max(2, numberOfLinesWhenCollapsed - 1)
-        
-        if !isExpanded, actualLinesNeeded <= threshold {
-            isExpanded = false
-        } else {
-            super.attributedText = originalText
-            setInternalNumberOfLines(0)
-            state.readMoreTextRange = nil
-            invalidateIntrinsicContentSize()
-        }
-    }
-    
-    /// Enhanced line count calculation using optimized TextKit 1
-    private func calculateActualLinesNeeded(for text: NSAttributedString, width: CGFloat) -> Int {
-        return text.countLines(
-            with: width,
-            textAlignment: textAlignment,
-            font: font,
-            textColor: textColor,
-            lineFragmentPadding: lineFragmentPadding,
-            lineBreakMode: lineBreakMode
-        )
-    }
-    
-    
-    private func checkAndResetTruncationStateIfNeeded() {
-        guard let originalText = state.originalText,
-              numberOfLinesWhenCollapsed > 0,
-              bounds.width > 0 else {
-            return
-        }
 
-        switch readMorePosition {
-        case .end:
-            displayTruncatedTextAtEnd(originalText, availableWidth: bounds.width)
-        case .newLine:
-            displayTruncatedTextAtNewLineBeginning(originalText, availableWidth: bounds.width)
-        }
+        updateDisplay()
+        invalidateDisplayAndLayout()
     }
     
     private func hasReadMoreTextAtLocation(_ location: CGPoint, in attributedText: NSAttributedString) -> Bool {
@@ -1098,9 +1042,7 @@ extension ReadMoreLabel {
         public static let isReadMore = NSAttributedString.Key("ReadMoreLabel.isReadMore")
     }
     
-    
-    // MARK: - Private Structs (Enhanced State Management)
-    
+    // MARK: - Private Structs
     
     /// Text content and layout state management
     private struct TextContentState {
@@ -1134,12 +1076,11 @@ extension ReadMoreLabel {
         private(set) var internalNumberOfLines: Int = 0
         
         /// Updates number of lines with validation
-        mutating func updateNumberOfLines(_ newValue: Int) -> Bool {
+        mutating func updateNumberOfLines(_ newValue: Int) {
             let sanitizedValue = max(0, newValue)
-            guard sanitizedValue != numberOfLines else { return false }
+            guard sanitizedValue != numberOfLines else { return }
             
             numberOfLines = sanitizedValue
-            return true
         }
         
         /// Updates internal number of lines
@@ -1181,14 +1122,9 @@ extension ReadMoreLabel {
         
         // MARK: - Mutating Methods
         
-        /// Updates the number of lines and resets expansion state if needed
+        /// Updates the number of lines
         mutating func updateNumberOfLines(_ newValue: Int) {
-            let didChange = layoutConfigState.updateNumberOfLines(newValue)
-            
-            // Reset expansion state if changing from expandable to non-expandable
-            if didChange && numberOfLines == 0 && isExpanded {
-                isExpanded = false
-            }
+            layoutConfigState.updateNumberOfLines(newValue)
         }
         
         /// Updates the original text and resets related state
@@ -1207,13 +1143,6 @@ extension ReadMoreLabel {
             guard !expanded || isExpandable else { return false }
             isExpanded = expanded
             return true
-        }
-        
-        /// Resets state for cell reuse
-        mutating func prepareForCellReuse() {
-            if isExpanded {
-                isExpanded = false
-            }
         }
     }
     
