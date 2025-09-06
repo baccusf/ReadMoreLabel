@@ -106,8 +106,8 @@ NSLayoutConstraint.activate([
 readMoreLabel.expand()
 readMoreLabel.collapse()
 
-// 애니메이션 제어
-readMoreLabel.setExpanded(true, animated: true)
+// 프로그래매틱 확장 상태 설정
+readMoreLabel.setExpanded(true)
 
 // 현재 상태 확인
 if readMoreLabel.isExpanded {
@@ -134,9 +134,9 @@ readMoreLabel.numberOfLinesWhenCollapsed = 0
 | 프로퍼티 | 타입 | 설명 | 기본값 |
 |----------|------|------|--------|
 | `numberOfLinesWhenCollapsed` | `Int` | 축소 시 표시할 줄 수 (0 = 무제한) | `3` |
-| `readMoreText` | `NSAttributedString` | 스타일링 가능한 "더보기" 텍스트 | `"더보기.."` |
-| `ellipsisText` | `String` | "더보기" 앞의 커스터마이징 가능한 ellipsis 텍스트 | `".."` |
-| `readMorePosition` | `ReadMoreLabel.Position` | "더보기" 텍스트 위치 (`.end`, `.beginningNewLine`) | `.end` |
+| `readMoreText` | `NSAttributedString` | 스타일링 가능한 "더보기" 텍스트 | `"Read More.."` |
+| `ellipsisText` | `NSAttributedString` | "더보기" 앞의 커스터마이징 가능한 ellipsis 텍스트 | `".."` |
+| `readMorePosition` | `ReadMoreLabel.Position` | "더보기" 텍스트 위치 (`.end`, `.newLine`) | `.end` |
 | `isExpanded` | `Bool` | 현재 확장 상태 (읽기 전용) | `false` |
 | `isExpandable` | `Bool` | 텍스트 확장 가능 여부 (읽기 전용) | `계산됨` |
 | `delegate` | `ReadMoreLabelDelegate?` | 확장 이벤트 델리게이트 | `nil` |
@@ -166,13 +166,13 @@ readMoreLabel.readMoreText = NSAttributedString(string: "더보기..")     // �
 readMoreLabel.readMoreText = NSAttributedString(string: "Ver más..")   // 스페인어
 
 // 커스텀 ellipsis와 위치 제어
-readMoreLabel.ellipsisText = "→"              // 점 대신 화살표
-readMoreLabel.ellipsisText = "***"            // 별표
-readMoreLabel.ellipsisText = "✨"             // 이모지
+readMoreLabel.ellipsisText = NSAttributedString(string: "→")              // 점 대신 화살표
+readMoreLabel.ellipsisText = NSAttributedString(string: "***")            // 별표
+readMoreLabel.ellipsisText = NSAttributedString(string: "✨")             // 이모지
 
 // 위치 제어
-readMoreLabel.readMorePosition = .end                    // 마지막 줄: "텍스트.. 더보기.." (기본값)
-readMoreLabel.readMorePosition = .beginningNewLine       // n줄 모두 표시 후: "더보기.."만 표시
+readMoreLabel.readMorePosition = .end         // 마지막 줄: "텍스트.. 더보기.." (기본값)
+readMoreLabel.readMorePosition = .newLine     // 새 줄에 "더보기.." 표시
 ```
 
 ## ⚠️ 중요 사항
@@ -230,21 +230,66 @@ func readMoreLabel(_ label: ReadMoreLabel, didChangeExpandedState isExpanded: Bo
 ### UITableView/UICollectionView와 통합
 
 ```swift
-func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-    return UITableView.automaticDimension
+// 테이블뷰 셀에서
+class ExampleTableViewCell: UITableViewCell {
+    private let readMoreLabel: ReadMoreLabel = {
+        let label = ReadMoreLabel()
+        label.numberOfLines = 3
+        label.font = UIFont.systemFont(ofSize: 16)
+        label.textColor = .label
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
+    
+    func configure(with text: String, isExpanded: Bool, delegate: ReadMoreLabelDelegate?) {
+        // 델리게이트 먼저 설정
+        readMoreLabel.delegate = delegate
+        
+        // 텍스트 내용 설정
+        readMoreLabel.text = text
+        
+        // 확장 상태 설정
+        readMoreLabel.setExpanded(isExpanded)
+    }
+    
+    // 셀 재사용 처리
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        // ReadMoreLabel은 외부에서 상태를 관리하므로 추가 정리 불필요
+    }
 }
 
-func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat {
-    return 100
+// 뷰 컨트롤러에서
+class ViewController: UIViewController {
+    @IBOutlet weak var tableView: UITableView!
+    var expandedStates: [Bool] = []  // 각 셀의 확장 상태 추적
+    
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "ExampleCell", for: indexPath) as! ExampleTableViewCell
+        let isExpanded = expandedStates[indexPath.row]
+        cell.configure(with: sampleTexts[indexPath.row], isExpanded: isExpanded, delegate: self)
+        return cell
+    }
 }
 
-// 셀 설정에서
-cell.readMoreLabel.delegate = self
-
-func readMoreLabel(_ label: ReadMoreLabel, didChangeExpandedState isExpanded: Bool) {
-    // 애니메이션으로 테이블 뷰 업데이트
-    tableView.beginUpdates()
-    tableView.endUpdates()
+extension ViewController: ReadMoreLabelDelegate {
+    func readMoreLabel(_ label: ReadMoreLabel, didChangeExpandedState isExpanded: Bool) {
+        // label의 중심점을 tableView 좌표계로 변환
+        let labelCenterInTableView = label.convert(label.center, to: tableView)
+        
+        // 해당 위치의 indexPath를 찾음
+        guard let indexPath = tableView.indexPathForRow(at: labelCenterInTableView) else {
+            return
+        }
+        
+        expandedStates[indexPath.row] = isExpanded
+        
+        // 레이아웃 변경 애니메이션
+        UIView.animate(withDuration: 0.3) {
+            self.tableView.beginUpdates()
+            self.tableView.endUpdates()
+        }
+    }
 }
 ```
 
