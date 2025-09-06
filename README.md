@@ -67,7 +67,7 @@ class ViewController: UIViewController {
         readMoreLabel.readMoreText = NSAttributedString(string: "Read More..", attributes: attributes)
         
         // Customize ellipsis text and position
-        readMoreLabel.ellipsisText = "→"  // Custom ellipsis
+        readMoreLabel.ellipsisText = NSAttributedString(string: "→")  // Custom ellipsis
         readMoreLabel.readMorePosition = .end  // Position at end (default)
         
         // Set delegate for expansion events
@@ -110,8 +110,8 @@ NSLayoutConstraint.activate([
 readMoreLabel.expand()
 readMoreLabel.collapse()
 
-// Or with animation control
-readMoreLabel.setExpanded(true, animated: true)
+// Set expansion state programmatically
+readMoreLabel.setExpanded(true)
 
 // Check current state
 if readMoreLabel.isExpanded {
@@ -139,7 +139,7 @@ readMoreLabel.numberOfLinesWhenCollapsed = 0
 |----------|------|-------------|---------|
 | `numberOfLinesWhenCollapsed` | `Int` | Number of lines to show when collapsed (0 = unlimited) | `3` |
 | `readMoreText` | `NSAttributedString` | Customizable "Read More" text with styling | `"Read More.."` |
-| `ellipsisText` | `String` | Customizable ellipsis text before "Read More" | `".."` |
+| `ellipsisText` | `NSAttributedString` | Customizable ellipsis text before "Read More" | `".."` |
 | `readMorePosition` | `ReadMoreLabel.Position` | Position of "Read More" text (`.end`, `.newLine`) | `.end` |
 | `isExpanded` | `Bool` | Current expansion state (read-only) | `false` |
 | `isExpandable` | `Bool` | Whether text can be expanded (read-only) | `computed` |
@@ -170,9 +170,9 @@ readMoreLabel.readMoreText = NSAttributedString(string: "더보기..")     // Ko
 readMoreLabel.readMoreText = NSAttributedString(string: "Ver más..")   // Spanish
 
 // Custom ellipsis and positioning
-readMoreLabel.ellipsisText = "→"              // Arrow instead of dots
-readMoreLabel.ellipsisText = "***"            // Asterisks
-readMoreLabel.ellipsisText = "✨"             // Emoji
+readMoreLabel.ellipsisText = NSAttributedString(string: "→")              // Arrow instead of dots
+readMoreLabel.ellipsisText = NSAttributedString(string: "***")            // Asterisks
+readMoreLabel.ellipsisText = NSAttributedString(string: "✨")             // Emoji
 
 // Position control  
 readMoreLabel.readMorePosition = .end         // Last line: "text.. Read More.." (default)
@@ -234,21 +234,66 @@ func readMoreLabel(_ label: ReadMoreLabel, didChangeExpandedState isExpanded: Bo
 ### Integration with UITableView/UICollectionView
 
 ```swift
-func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-    return UITableView.automaticDimension
+// In your table view cell
+class ExampleTableViewCell: UITableViewCell {
+    private let readMoreLabel: ReadMoreLabel = {
+        let label = ReadMoreLabel()
+        label.numberOfLines = 3
+        label.font = UIFont.systemFont(ofSize: 16)
+        label.textColor = .label
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
+    
+    func configure(with text: String, isExpanded: Bool, delegate: ReadMoreLabelDelegate?) {
+        // Set delegate first
+        readMoreLabel.delegate = delegate
+        
+        // Set text content
+        readMoreLabel.text = text
+        
+        // Set expanded state
+        readMoreLabel.setExpanded(isExpanded)
+    }
+    
+    // Cell reuse handling
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        // ReadMoreLabel manages its state externally, no additional cleanup needed
+    }
 }
 
-func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat {
-    return 100
+// In your view controller
+class ViewController: UIViewController {
+    @IBOutlet weak var tableView: UITableView!
+    var expandedStates: [Bool] = []  // Track expanded states for each cell
+    
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "ExampleCell", for: indexPath) as! ExampleTableViewCell
+        let isExpanded = expandedStates[indexPath.row]
+        cell.configure(with: sampleTexts[indexPath.row], isExpanded: isExpanded, delegate: self)
+        return cell
+    }
 }
 
-// In your cell configuration
-cell.readMoreLabel.delegate = self
-
-func readMoreLabel(_ label: ReadMoreLabel, didChangeExpandedState isExpanded: Bool) {
-    // Update table view with animation
-    tableView.beginUpdates()
-    tableView.endUpdates()
+extension ViewController: ReadMoreLabelDelegate {
+    func readMoreLabel(_ label: ReadMoreLabel, didChangeExpandedState isExpanded: Bool) {
+        // Convert label's center point to table view coordinate system
+        let labelCenterInTableView = label.convert(label.center, to: tableView)
+        
+        // Find the indexPath for that position
+        guard let indexPath = tableView.indexPathForRow(at: labelCenterInTableView) else {
+            return
+        }
+        
+        expandedStates[indexPath.row] = isExpanded
+        
+        // Animate layout changes
+        UIView.animate(withDuration: 0.3) {
+            self.tableView.beginUpdates()
+            self.tableView.endUpdates()
+        }
+    }
 }
 ```
 
