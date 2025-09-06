@@ -228,10 +228,8 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
     /// Set expanded state with option to control delegate notification
     /// - Parameters:
     ///   - expanded: The expanded state to set
-    ///   - notifyDelegate: Whether to notify delegate of the change (default: true)
-    public func setExpanded(_ expanded: Bool, notifyDelegate: Bool) {
-        print("🔥 [LABEL] setExpanded(\(expanded), notifyDelegate: \(notifyDelegate)) - 현재 isExpanded: \(isExpanded)")
-        
+    ///   - notifyDelegate: Whether to notify delegate of the change
+    @objc public func setExpanded(_ expanded: Bool, notifyDelegate: Bool) {
         guard expanded == false || isExpandable else { 
             return 
         }
@@ -245,10 +243,7 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
         invalidateDisplayAndLayout()
         
         if notifyDelegate {
-            print("🔥 [LABEL] delegate 호출: didChangeExpandedState(\(isExpanded))")
             delegate?.readMoreLabel?(self, didChangeExpandedState: isExpanded)
-        } else {
-            print("🔥 [LABEL] delegate 호출 생략 (Cell 재사용)")
         }
     }
     

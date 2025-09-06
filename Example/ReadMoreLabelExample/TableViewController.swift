@@ -149,11 +149,7 @@ class TableViewController: UIViewController {
         )
     ]
     
-    private var expandedStates: [Bool] = [] {
-        didSet {
-            print("🎯 [DIDSET] expandedStates 전체: \(expandedStates)")
-        }
-    }
+    private var expandedStates: [Bool] = []
     private var isAnimationEnabled: Bool = true
     
     override func viewDidLoad() {
@@ -303,7 +299,6 @@ extension TableViewController: ReadMoreLabelDelegate {
         
         // 확장 상태 업데이트
         expandedStates[indexPath.row] = isExpanded
-        print("🎯 [DELEGATE] isExpanded: \(isExpanded) at row: \(indexPath.row)")
         
         // 테이블 뷰 업데이트 (높이 변경 반영)
         if isAnimationEnabled {
