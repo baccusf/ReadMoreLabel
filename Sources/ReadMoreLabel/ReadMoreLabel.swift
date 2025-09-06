@@ -35,54 +35,54 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
     private var state = State()
 
     private var numberOfLinesWhenCollapsed: Int {
-        get { self.state.numberOfLines }
+        get { state.numberOfLines }
         set {
-            self.state.updateNumberOfLines(newValue)
-            self.invalidateDisplayAndLayout()
+            state.updateNumberOfLines(newValue)
+            invalidateDisplayAndLayout()
         }
     }
 
     @objc public var isExpanded: Bool {
-        get { self.state.isExpanded }
+        get { state.isExpanded }
         set {
             // Internal state update without delegate notification
             // Delegate notification is handled by setExpanded methods
-            guard self.state.setExpanded(newValue) else { return }
-            self.updateDisplay()
+            guard state.setExpanded(newValue) else { return }
+            updateDisplay()
             // Note: delegate notification removed to prevent double calls
             // Use setExpanded(_:) or setExpanded(_:notifyDelegate:) for delegate notification
         }
     }
 
     @objc public var isExpandable: Bool {
-        self.state.isExpandable
+        state.isExpandable
     }
 
     @objc public var readMoreText: NSAttributedString = .init(string: "Read More..") {
         didSet {
-            guard self.readMoreText != oldValue else { return }
-            self.handleConfigurationChange()
+            guard readMoreText != oldValue else { return }
+            handleConfigurationChange()
         }
     }
 
     @objc public var ellipsisText: NSAttributedString = .init(string: "..") {
         didSet {
-            guard self.ellipsisText != oldValue else { return }
-            self.handleConfigurationChange()
+            guard ellipsisText != oldValue else { return }
+            handleConfigurationChange()
         }
     }
 
     @objc public var readMorePosition: Position = .end {
         didSet {
-            guard self.readMorePosition != oldValue else {
+            guard readMorePosition != oldValue else {
                 return
             }
 
-            if self.readMorePosition == .newLine, self.numberOfLinesWhenCollapsed > 0 {
-                self.setInternalNumberOfLines(self.numberOfLinesWhenCollapsed + 1)
+            if readMorePosition == .newLine, numberOfLinesWhenCollapsed > 0 {
+                setInternalNumberOfLines(numberOfLinesWhenCollapsed + 1)
             }
 
-            self.handleConfigurationChange()
+            handleConfigurationChange()
         }
     }
 
@@ -101,16 +101,16 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
 
     private var defaultTextAttributes: [NSAttributedString.Key: Any] {
         var attributes: [NSAttributedString.Key: Any] = [:]
-        attributes[.font] = self.font
-        attributes[.foregroundColor] = self.textColor
+        attributes[.font] = font
+        attributes[.foregroundColor] = textColor
 
         let paragraphStyle = NSMutableParagraphStyle()
         paragraphStyle.lineSpacing = 0
         paragraphStyle.lineHeightMultiple = 0
         paragraphStyle.paragraphSpacing = 0
         paragraphStyle.paragraphSpacingBefore = 0
-        paragraphStyle.lineBreakMode = self.lineBreakMode
-        paragraphStyle.alignment = self.textAlignment
+        paragraphStyle.lineBreakMode = lineBreakMode
+        paragraphStyle.alignment = textAlignment
         paragraphStyle.usesDefaultHyphenation = false
 
         attributes[.paragraphStyle] = paragraphStyle
@@ -122,20 +122,20 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
 
     override public var bounds: CGRect {
         didSet {
-            guard self.bounds.size != oldValue.size else {
+            guard bounds.size != oldValue.size else {
                 return
             }
 
-            self.reapplyTextStylingAndRefreshDisplay()
+            reapplyTextStylingAndRefreshDisplay()
         }
     }
 
     override public var numberOfLines: Int {
         get {
-            self.numberOfLinesWhenCollapsed
+            numberOfLinesWhenCollapsed
         }
         set {
-            self.numberOfLinesWhenCollapsed = newValue
+            numberOfLinesWhenCollapsed = newValue
         }
     }
 
@@ -147,28 +147,28 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
 
     override public var font: UIFont! {
         didSet {
-            guard self.font != oldValue else { return }
-            self.reapplyTextStylingAndRefreshDisplay()
+            guard font != oldValue else { return }
+            reapplyTextStylingAndRefreshDisplay()
         }
     }
 
     override public var textColor: UIColor! {
         didSet {
-            guard self.textColor != oldValue else { return }
-            self.reapplyTextStylingAndRefreshDisplay()
+            guard textColor != oldValue else { return }
+            reapplyTextStylingAndRefreshDisplay()
         }
     }
 
     override public var textAlignment: NSTextAlignment {
         didSet {
-            guard self.textAlignment != oldValue else { return }
-            self.reapplyTextStylingAndRefreshDisplay()
+            guard textAlignment != oldValue else { return }
+            reapplyTextStylingAndRefreshDisplay()
         }
     }
 
     override public var text: String? {
         didSet {
-            self.setOriginalText(NSAttributedString(string: self.text ?? ""))
+            setOriginalText(NSAttributedString(string: text ?? ""))
         }
     }
 
@@ -177,7 +177,7 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
             super.attributedText
         }
         set {
-            self.setOriginalText(newValue ?? NSAttributedString())
+            setOriginalText(newValue ?? NSAttributedString())
         }
     }
 
@@ -185,26 +185,26 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
 
     override public init(frame: CGRect) {
         super.init(frame: frame)
-        self.setupLabel()
+        setupLabel()
     }
 
     public required init?(coder: NSCoder) {
         super.init(coder: coder)
-        self.setupLabel()
+        setupLabel()
     }
 
     // MARK: - Public Interface
 
     public func expand() {
-        self.setExpanded(true)
+        setExpanded(true)
     }
 
     public func collapse() {
-        self.setExpanded(false)
+        setExpanded(false)
     }
 
     public func setExpanded(_ expanded: Bool) {
-        self.setExpanded(expanded, notifyDelegate: false)
+        setExpanded(expanded, notifyDelegate: false)
     }
 
     // MARK: - Private Implementation
@@ -214,28 +214,28 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
     ///   - expanded: The expanded state to set
     ///   - notifyDelegate: Whether to notify delegate of the change
     private func setExpanded(_ expanded: Bool, notifyDelegate: Bool) {
-        guard expanded == false || self.isExpandable else {
+        guard expanded == false || isExpandable else {
             return
         }
 
-        guard expanded != self.isExpanded else {
+        guard expanded != isExpanded else {
             return
         }
 
-        self.isExpanded = expanded
-        self.updateDisplay()
-        self.invalidateDisplayAndLayout()
+        isExpanded = expanded
+        updateDisplay()
+        invalidateDisplayAndLayout()
 
         if notifyDelegate {
-            self.delegate?.readMoreLabel?(self, didChangeExpandedState: self.isExpanded)
+            delegate?.readMoreLabel?(self, didChangeExpandedState: isExpanded)
         }
     }
 
     private func setupLabel() {
-        self.setInternalNumberOfLines(self.safeLineCount)
-        self.lineBreakMode = .byWordWrapping
+        setInternalNumberOfLines(safeLineCount)
+        lineBreakMode = .byWordWrapping
         isUserInteractionEnabled = true
-        self.setupTapGesture()
+        setupTapGesture()
     }
 
     private func setupTapGesture() {
@@ -244,18 +244,18 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
             removeGestureRecognizer(existingGesture)
         }
 
-        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(self.handleTapGesture(_:)))
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleTapGesture(_:)))
         tapGesture.cancelsTouchesInView = false
         tapGesture.delaysTouchesBegan = false
         tapGesture.delaysTouchesEnded = false
-        self.tapGestureRecognizer = tapGesture
+        tapGestureRecognizer = tapGesture
         addGestureRecognizer(tapGesture)
     }
 
     /// Single responsibility method for handling configuration changes
     private func handleConfigurationChange() {
-        self.updateDisplay()
-        self.invalidateDisplayAndLayout()
+        updateDisplay()
+        invalidateDisplayAndLayout()
     }
 
     private func applyReadMore(
@@ -264,18 +264,18 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
         containerWidth: CGFloat,
         suffix: NSAttributedString
     ) -> TextTruncationResult {
-        originalText.applyingTextAlignment(self.textAlignment, font: self.font, textColor: self.textColor)
+        originalText.applyingTextAlignment(textAlignment, font: font, textColor: textColor)
             .applyingReadMoreTruncation(
                 numberOfLines: numberOfLines,
                 containerWidth: containerWidth,
                 suffix: suffix,
-                lineFragmentPadding: self.lineFragmentPadding,
-                lineBreakMode: self.lineBreakMode
+                lineFragmentPadding: lineFragmentPadding,
+                lineBreakMode: lineBreakMode
             )
     }
 
     private func setInternalNumberOfLines(_ lines: Int) {
-        self.state.internalNumberOfLines = lines
+        state.internalNumberOfLines = lines
         super.numberOfLines = lines
     }
 
@@ -283,7 +283,7 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
 
     /// Helper to get safe line count for display
     private var safeLineCount: Int {
-        self.numberOfLinesWhenCollapsed == 0 ? 0 : self.numberOfLinesWhenCollapsed
+        numberOfLinesWhenCollapsed == 0 ? 0 : numberOfLinesWhenCollapsed
     }
 
     private func updateDisplay() {
@@ -291,12 +291,12 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
             return
         }
 
-        if self.shouldDisplayExpandedText() {
-            self.handleExpandedState(displayState.attributedText)
+        if shouldDisplayExpandedText() {
+            handleExpandedState(displayState.attributedText)
             return
         }
 
-        self.displayTruncatedText(
+        displayTruncatedText(
             displayState.attributedText,
             availableWidth: displayState.availableWidth
         )
@@ -305,7 +305,7 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
     /// Validates and returns display state, or nil if invalid (optimized)
     private func validateDisplayState() -> (attributedText: NSAttributedString, availableWidth: CGFloat)? {
         // Performance optimization: early bounds check
-        let availableWidth = self.bounds.width
+        let availableWidth = bounds.width
         guard availableWidth > 0,
               let attributedTextToDisplay = state.originalText,
               attributedTextToDisplay.length > 0 else
@@ -319,46 +319,46 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
     /// Checks if text should be displayed in expanded form (optimized)
     private func shouldDisplayExpandedText() -> Bool {
         // Performance optimization: check cheaper condition first
-        self.isExpanded || self.numberOfLinesWhenCollapsed == 0
+        isExpanded || numberOfLinesWhenCollapsed == 0
     }
 
     /// Handles expanded text display
     private func handleExpandedState(_ attributedText: NSAttributedString) {
         super.attributedText = attributedText
-        self.setInternalNumberOfLines(0)
-        self.state.readMoreTextRange = nil
+        setInternalNumberOfLines(0)
+        state.readMoreTextRange = nil
         invalidateIntrinsicContentSize()
     }
 
     /// Displays truncated text based on readMorePosition
     private func displayTruncatedText(_ attributedText: NSAttributedString, availableWidth: CGFloat) {
-        switch self.readMorePosition {
+        switch readMorePosition {
         case .end:
-            self.displayTruncatedTextAtEnd(attributedText, availableWidth: availableWidth)
+            displayTruncatedTextAtEnd(attributedText, availableWidth: availableWidth)
         case .newLine:
-            self.displayTruncatedTextAtNewLineBeginning(attributedText, availableWidth: availableWidth)
+            displayTruncatedTextAtNewLineBeginning(attributedText, availableWidth: availableWidth)
         }
     }
 
     private func displayTruncatedTextAtEnd(_ attributedText: NSAttributedString, availableWidth: CGFloat) {
-        guard attributedText.length > 0, availableWidth > 0, self.numberOfLinesWhenCollapsed > 0 else {
+        guard attributedText.length > 0, availableWidth > 0, numberOfLinesWhenCollapsed > 0 else {
             super.attributedText = attributedText
-            self.setInternalNumberOfLines(self.safeLineCount)
-            self.state.readMoreTextRange = nil
+            setInternalNumberOfLines(safeLineCount)
+            state.readMoreTextRange = nil
             return
         }
 
         let suffix = attributedText.creatingReadMoreSuffix(
-            ellipsisText: self.ellipsisText,
-            readMoreText: self.readMoreText,
+            ellipsisText: ellipsisText,
+            readMoreText: readMoreText,
             spaceBetween: Self.defaultSpaceBetweenEllipsisAndReadMore,
             attributeKey: AttributeKey.isReadMore,
-            defaultAttributes: self.defaultTextAttributes
+            defaultAttributes: defaultTextAttributes
         )
 
-        let result = self.applyReadMore(
+        let result = applyReadMore(
             originalText: attributedText,
-            numberOfLines: self.numberOfLinesWhenCollapsed,
+            numberOfLines: numberOfLinesWhenCollapsed,
             containerWidth: availableWidth,
             suffix: suffix
         )
@@ -367,35 +367,35 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
            let (finalText, readMoreRange) = result.textAndRange
         {
             super.attributedText = finalText
-            self.setInternalNumberOfLines(self.numberOfLinesWhenCollapsed)
-            self.state.readMoreTextRange = readMoreRange
+            setInternalNumberOfLines(numberOfLinesWhenCollapsed)
+            state.readMoreTextRange = readMoreRange
         } else {
             super.attributedText = attributedText
-            self.setInternalNumberOfLines(self.safeLineCount)
-            self.state.readMoreTextRange = nil
+            setInternalNumberOfLines(safeLineCount)
+            state.readMoreTextRange = nil
         }
     }
 
     private func displayTruncatedTextAtNewLineBeginning(_ attributedText: NSAttributedString, availableWidth: CGFloat) {
-        guard attributedText.length > 0, availableWidth > 0, self.numberOfLinesWhenCollapsed > 0 else {
+        guard attributedText.length > 0, availableWidth > 0, numberOfLinesWhenCollapsed > 0 else {
             super.attributedText = attributedText
-            self.setInternalNumberOfLines(self.safeLineCount)
-            self.state.readMoreTextRange = nil
+            setInternalNumberOfLines(safeLineCount)
+            state.readMoreTextRange = nil
             return
         }
 
         let result = attributedText.applyingReadMoreForNewLine(
-            numberOfLines: self.numberOfLinesWhenCollapsed,
+            numberOfLines: numberOfLinesWhenCollapsed,
             containerWidth: availableWidth,
-            textAlignment: self.textAlignment,
-            font: self.font,
-            textColor: self.textColor,
-            lineFragmentPadding: self.lineFragmentPadding,
-            lineBreakMode: self.lineBreakMode,
-            readMoreText: self.readMoreText,
+            textAlignment: textAlignment,
+            font: font,
+            textColor: textColor,
+            lineFragmentPadding: lineFragmentPadding,
+            lineBreakMode: lineBreakMode,
+            readMoreText: readMoreText,
             newLineCharacter: Self.newLineCharacter,
             attributeKey: AttributeKey.isReadMore,
-            defaultAttributes: self.defaultTextAttributes
+            defaultAttributes: defaultTextAttributes
         )
 
         if result.needsTruncation,
@@ -403,30 +403,30 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
         {
             // Always show numberOfLines + 1 lines in newLine position
             super.attributedText = finalText
-            self.setInternalNumberOfLines(self.numberOfLinesWhenCollapsed + 1)
-            self.state.readMoreTextRange = readMoreRange
+            setInternalNumberOfLines(numberOfLinesWhenCollapsed + 1)
+            state.readMoreTextRange = readMoreRange
 
         } else {
             super.attributedText = attributedText
-            self.setInternalNumberOfLines(self.safeLineCount)
-            self.state.readMoreTextRange = nil
+            setInternalNumberOfLines(safeLineCount)
+            state.readMoreTextRange = nil
         }
     }
 
     @objc private func handleTapGesture(_ gesture: UITapGestureRecognizer) {
-        guard self.isExpandable, !self.isExpanded, let attributedText else {
+        guard isExpandable, !isExpanded, let attributedText else {
             return
         }
 
         let locationInLabel = gesture.location(in: self)
 
-        guard attributedText.length > 0, self.bounds.width > 0 else {
+        guard attributedText.length > 0, bounds.width > 0 else {
             return
         }
 
-        if self.hasReadMoreTextAtLocation(locationInLabel, in: attributedText) {
+        if hasReadMoreTextAtLocation(locationInLabel, in: attributedText) {
             // 사용자 터치로 인한 확장이므로 delegate에 알림
-            self.setExpanded(true, notifyDelegate: true)
+            setExpanded(true, notifyDelegate: true)
         }
     }
 
@@ -438,26 +438,26 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
     /// Reapplies current text styling (alignment, font, color) and refreshes display
     private func reapplyTextStylingAndRefreshDisplay() {
         if let originalText = state.originalText {
-            self.state.updateOriginalText(originalText.applyingTextAlignment(
-                self.textAlignment,
-                font: self.font,
-                textColor: self.textColor
+            state.updateOriginalText(originalText.applyingTextAlignment(
+                textAlignment,
+                font: font,
+                textColor: textColor
             ))
         }
 
-        self.updateDisplay()
-        self.invalidateDisplayAndLayout()
+        updateDisplay()
+        invalidateDisplayAndLayout()
     }
 
     private func setOriginalText(_ text: NSAttributedString) {
-        self.state.updateOriginalText(text.applyingTextAlignment(
-            self.textAlignment,
-            font: self.font,
-            textColor: self.textColor
+        state.updateOriginalText(text.applyingTextAlignment(
+            textAlignment,
+            font: font,
+            textColor: textColor
         ))
 
-        self.updateDisplay()
-        self.invalidateDisplayAndLayout()
+        updateDisplay()
+        invalidateDisplayAndLayout()
     }
 
     private func hasReadMoreTextAtLocation(_ location: CGPoint, in attributedText: NSAttributedString) -> Bool {
@@ -469,10 +469,10 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
         return attributedText.hitTestReadMoreText(
             at: location,
             in: readMoreRange,
-            containerWidth: self.bounds.width,
-            lineFragmentPadding: self.lineFragmentPadding,
-            lineBreakMode: self.lineBreakMode,
-            readMorePosition: self.readMorePosition,
+            containerWidth: bounds.width,
+            lineFragmentPadding: lineFragmentPadding,
+            lineBreakMode: lineBreakMode,
+            readMorePosition: readMorePosition,
             newLineCharacter: Self.newLineCharacter
         )
     }
@@ -483,17 +483,17 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
 private extension NSLayoutManager {
     /// Enhanced TextKit 1 truncation location finder with precision
     func findTruncateLocation(withWidth targetWidth: CGFloat, in glyphRange: NSRange) -> Int {
-        let characterRange = self.characterRange(forGlyphRange: glyphRange, actualGlyphRange: nil)
+        let characterRange = characterRange(forGlyphRange: glyphRange, actualGlyphRange: nil)
 
         // Enhanced hit testing with improved precision
-        let lineRect = self.lineFragmentRect(forGlyphAt: glyphRange.location, effectiveRange: nil)
+        let lineRect = lineFragmentRect(forGlyphAt: glyphRange.location, effectiveRange: nil)
 
         // Accurate character boundary detection
         let targetPoint = CGPoint(x: lineRect.origin.x + targetWidth, y: lineRect.midY)
 
-        let characterIndex = self.characterIndex(
+        let characterIndex = characterIndex(
             for: targetPoint,
-            in: self.textContainers[0],
+            in: textContainers[0],
             fractionOfDistanceBetweenInsertionPoints: nil
         )
 
@@ -512,7 +512,7 @@ private extension NSLayoutManager {
     func calculateSizeWithMaxLines(_ maxLines: Int, in textContainer: NSTextContainer) -> CGSize {
         guard maxLines > 0 else {
             // No line limit - return full used rect
-            let usedRect = self.usedRect(for: textContainer)
+            let usedRect = usedRect(for: textContainer)
             return CGSize(width: ceil(usedRect.width), height: ceil(usedRect.height))
         }
 
@@ -520,7 +520,7 @@ private extension NSLayoutManager {
         var totalHeight: CGFloat = 0
         var maxWidth: CGFloat = 0
 
-        self.enumerateLineFragments(forGlyphRange: NSRange(location: 0, length: self.numberOfGlyphs)) {
+        enumerateLineFragments(forGlyphRange: NSRange(location: 0, length: numberOfGlyphs)) {
             rect, usedRect, _, _, stop in
             if rect.height > 0 {
                 lineCount += 1
@@ -597,7 +597,7 @@ private extension NSAttributedString {
         lineBreakMode: NSLineBreakMode = .byWordWrapping
     ) -> CGFloat {
         // Create TextKit 1 stack using unified builder for reliable width measurement
-        let (textStorage, layoutManager, textContainer) = self.creatingTextKitStack(
+        let (textStorage, layoutManager, textContainer) = creatingTextKitStack(
             containerWidth: containerWidth,
             lineFragmentPadding: lineFragmentPadding,
             lineBreakMode: lineBreakMode
@@ -671,7 +671,7 @@ private extension NSAttributedString {
         lineFragmentPadding: CGFloat = 0,
         lineBreakMode: NSLineBreakMode = .byWordWrapping
     ) -> Int {
-        let alignedText = self.applyingTextAlignment(textAlignment, font: font, textColor: textColor)
+        let alignedText = applyingTextAlignment(textAlignment, font: font, textColor: textColor)
 
         // Create TextKit 1 stack using unified builder
         let (textStorage, layoutManager, textContainer) = alignedText.creatingTextKitStack(
@@ -733,7 +733,7 @@ private extension NSAttributedString {
         readMorePosition: ReadMoreLabel.Position,
         newLineCharacter: String
     ) -> Bool {
-        let (textStorage, layoutManager, textContainer) = self.creatingTextKitStack(
+        let (textStorage, layoutManager, textContainer) = creatingTextKitStack(
             containerWidth: containerWidth,
             lineFragmentPadding: lineFragmentPadding,
             lineBreakMode: lineBreakMode
@@ -804,7 +804,7 @@ private extension NSAttributedString {
         lineFragmentPadding: CGFloat = 0,
         lineBreakMode: NSLineBreakMode = .byWordWrapping
     ) -> ReadMoreLabel.TextTruncationResult {
-        let (textStorage, layoutManager, textContainer) = self.creatingTextKitStack(
+        let (textStorage, layoutManager, textContainer) = creatingTextKitStack(
             containerWidth: containerWidth,
             lineFragmentPadding: lineFragmentPadding,
             lineBreakMode: lineBreakMode
@@ -889,7 +889,7 @@ private extension NSAttributedString {
         attributeKey: NSAttributedString.Key,
         defaultAttributes: [NSAttributedString.Key: Any]
     ) -> NSAttributedString {
-        let lastAttributes = self.lastTextAttributes(defaultAttributes: defaultAttributes)
+        let lastAttributes = lastTextAttributes(defaultAttributes: defaultAttributes)
 
         let suffix = NSMutableAttributedString()
 
@@ -935,7 +935,7 @@ private extension NSAttributedString {
         attributeKey: NSAttributedString.Key,
         defaultAttributes: [NSAttributedString.Key: Any]
     ) -> ReadMoreLabel.TextTruncationResult {
-        let alignedText = self.applyingTextAlignment(textAlignment, font: font, textColor: textColor)
+        let alignedText = applyingTextAlignment(textAlignment, font: font, textColor: textColor)
         let (textStorage, layoutManager, textContainer) = alignedText.creatingTextKitStack(
             containerWidth: containerWidth,
             lineFragmentPadding: lineFragmentPadding,
@@ -977,7 +977,7 @@ private extension NSAttributedString {
         let characterRange = layoutManager.characterRange(forGlyphRange: lastLineRange, actualGlyphRange: nil)
 
         // Generate read more text and calculate size
-        let lastAttributes = self.lastTextAttributes(defaultAttributes: defaultAttributes)
+        let lastAttributes = lastTextAttributes(defaultAttributes: defaultAttributes)
         let readMoreWithNewLine = NSMutableAttributedString(string: newLineCharacter, attributes: lastAttributes)
         let readMoreWithOriginalAttributes = readMoreText.createMutableWithAttributes(lastAttributes)
         readMoreWithNewLine.append(readMoreWithOriginalAttributes)
@@ -1068,15 +1068,15 @@ extension ReadMoreLabel {
         /// Updates original text and clears related state
         mutating func updateOriginalText(_ newText: NSAttributedString?) {
             // Performance optimization: avoid unnecessary changes
-            guard self.originalText != newText else { return }
+            guard originalText != newText else { return }
 
-            self.originalText = newText
-            self.readMoreTextRange = nil
+            originalText = newText
+            readMoreTextRange = nil
         }
 
         /// Updates ReadMore text range
         mutating func updateReadMoreTextRange(_ range: NSRange?) {
-            self.readMoreTextRange = range
+            readMoreTextRange = range
         }
 
         /// Checks if content is expandable
@@ -1094,14 +1094,14 @@ extension ReadMoreLabel {
         /// Updates number of lines with validation
         mutating func updateNumberOfLines(_ newValue: Int) {
             let sanitizedValue = max(0, newValue)
-            guard sanitizedValue != self.numberOfLines else { return }
+            guard sanitizedValue != numberOfLines else { return }
 
-            self.numberOfLines = sanitizedValue
+            numberOfLines = sanitizedValue
         }
 
         /// Updates internal number of lines
         mutating func updateInternalNumberOfLines(_ lines: Int) {
-            self.internalNumberOfLines = lines
+            internalNumberOfLines = lines
         }
     }
 
@@ -1113,47 +1113,47 @@ extension ReadMoreLabel {
 
         // MARK: - Computed Properties
 
-        var numberOfLines: Int { self.layoutConfigState.numberOfLines }
+        var numberOfLines: Int { layoutConfigState.numberOfLines }
 
-        var originalText: NSAttributedString? { self.textContentState.originalText }
+        var originalText: NSAttributedString? { textContentState.originalText }
 
         var readMoreTextRange: NSRange? {
-            get { self.textContentState.readMoreTextRange }
-            set { self.textContentState.updateReadMoreTextRange(newValue) }
+            get { textContentState.readMoreTextRange }
+            set { textContentState.updateReadMoreTextRange(newValue) }
         }
 
         var internalNumberOfLines: Int {
-            get { self.layoutConfigState.internalNumberOfLines }
-            set { self.layoutConfigState.updateInternalNumberOfLines(newValue) }
+            get { layoutConfigState.internalNumberOfLines }
+            set { layoutConfigState.updateInternalNumberOfLines(newValue) }
         }
 
         var isExpandable: Bool {
-            guard self.numberOfLines > 0 else { return false }
-            return self.textContentState.isExpandable
+            guard numberOfLines > 0 else { return false }
+            return textContentState.isExpandable
         }
 
         // MARK: - Mutating Methods
 
         /// Updates the number of lines
         mutating func updateNumberOfLines(_ newValue: Int) {
-            self.layoutConfigState.updateNumberOfLines(newValue)
+            layoutConfigState.updateNumberOfLines(newValue)
         }
 
         /// Updates the original text and resets related state
         mutating func updateOriginalText(_ newText: NSAttributedString?) {
-            self.textContentState.updateOriginalText(newText)
+            textContentState.updateOriginalText(newText)
 
             // Reset expansion state if no text
-            if newText == nil, self.isExpanded {
-                self.isExpanded = false
+            if newText == nil, isExpanded {
+                isExpanded = false
             }
         }
 
         /// Sets the expansion state with validation
         mutating func setExpanded(_ expanded: Bool) -> Bool {
-            guard expanded != self.isExpanded else { return false }
-            guard !expanded || self.isExpandable else { return false }
-            self.isExpanded = expanded
+            guard expanded != isExpanded else { return false }
+            guard !expanded || isExpandable else { return false }
+            isExpanded = expanded
             return true
         }
     }

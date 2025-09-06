@@ -17,8 +17,8 @@ class LabelViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        self.setupUI()
-        self.setupLabels()
+        setupUI()
+        setupLabels()
     }
 
     private func setupUI() {
@@ -26,20 +26,20 @@ class LabelViewController: UIViewController {
         title = "Animation Examples"
 
         // Setup scroll view
-        self.scrollView.translatesAutoresizingMaskIntoConstraints = false
-        self.contentView.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        contentView.translatesAutoresizingMaskIntoConstraints = false
 
-        view.addSubview(self.scrollView)
-        self.scrollView.addSubview(self.contentView)
+        view.addSubview(scrollView)
+        scrollView.addSubview(contentView)
 
         // Setup controls
-        self.setupControls()
+        setupControls()
 
         // Setup labels
-        self.setupReadMoreLabels()
+        setupReadMoreLabels()
 
         // Layout
-        self.setupConstraints()
+        setupConstraints()
     }
 
     private func setupControls() {
@@ -58,33 +58,33 @@ class LabelViewController: UIViewController {
         animationLabel.text = "Enable Animation:"
         animationLabel.font = UIFont.systemFont(ofSize: 16, weight: .medium)
 
-        self.animationToggleSwitch.isOn = true
+        animationToggleSwitch.isOn = true
 
         animationStack.addArrangedSubview(animationLabel)
-        animationStack.addArrangedSubview(self.animationToggleSwitch)
+        animationStack.addArrangedSubview(animationToggleSwitch)
 
         // Expand/Collapse button
-        self.expandCollapseButton.setTitle("Expand All", for: .normal)
-        self.expandCollapseButton.titleLabel?.font = UIFont.systemFont(ofSize: 16, weight: .medium)
-        self.expandCollapseButton.backgroundColor = .systemBlue
-        self.expandCollapseButton.setTitleColor(.white, for: .normal)
-        self.expandCollapseButton.layer.cornerRadius = 8
-        self.expandCollapseButton.addTarget(
+        expandCollapseButton.setTitle("Expand All", for: .normal)
+        expandCollapseButton.titleLabel?.font = UIFont.systemFont(ofSize: 16, weight: .medium)
+        expandCollapseButton.backgroundColor = .systemBlue
+        expandCollapseButton.setTitleColor(.white, for: .normal)
+        expandCollapseButton.layer.cornerRadius = 8
+        expandCollapseButton.addTarget(
             self,
-            action: #selector(self.expandCollapseButtonTapped),
+            action: #selector(expandCollapseButtonTapped),
             for: .touchUpInside
         )
 
         controlsStackView.addArrangedSubview(animationStack)
-        controlsStackView.addArrangedSubview(self.expandCollapseButton)
+        controlsStackView.addArrangedSubview(expandCollapseButton)
 
-        self.contentView.addSubview(controlsStackView)
+        contentView.addSubview(controlsStackView)
 
         NSLayoutConstraint.activate([
-            controlsStackView.topAnchor.constraint(equalTo: self.contentView.topAnchor, constant: 20),
-            controlsStackView.leadingAnchor.constraint(equalTo: self.contentView.leadingAnchor, constant: 16),
-            controlsStackView.trailingAnchor.constraint(equalTo: self.contentView.trailingAnchor, constant: -16),
-            self.expandCollapseButton.heightAnchor.constraint(equalToConstant: 44),
+            controlsStackView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 20),
+            controlsStackView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
+            controlsStackView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
+            expandCollapseButton.heightAnchor.constraint(equalToConstant: 44),
         ])
     }
 
@@ -97,28 +97,28 @@ class LabelViewController: UIViewController {
             label.font = UIFont.systemFont(ofSize: 16)
             label.textColor = .label
             label.delegate = self
-            self.contentView.addSubview(label)
+            contentView.addSubview(label)
         }
     }
 
     private func setupLabels() {
         // English
-        self.englishLabel.text = "🇺🇸 This is a long English text that demonstrates the ReadMoreLabel functionality. When you tap the 'Read More' button, the text will expand to show the full content with smooth animation. The library supports multiple languages and provides a clean way to handle text truncation in your iOS applications. You can customize the appearance, animation, and behavior according to your needs."
-        self.englishLabel.readMoreText = NSAttributedString(
+        englishLabel.text = "🇺🇸 This is a long English text that demonstrates the ReadMoreLabel functionality. When you tap the 'Read More' button, the text will expand to show the full content with smooth animation. The library supports multiple languages and provides a clean way to handle text truncation in your iOS applications. You can customize the appearance, animation, and behavior according to your needs."
+        englishLabel.readMoreText = NSAttributedString(
             string: "Read More",
             attributes: [.foregroundColor: UIColor.systemBlue]
         )
 
         // Korean
-        self.koreanLabel.text = "🇰🇷 이것은 ReadMoreLabel 기능을 보여주는 긴 한국어 텍스트입니다. '더보기' 버튼을 탭하면 부드러운 애니메이션과 함께 전체 텍스트가 확장됩니다. 이 라이브러리는 다국어를 지원하며 iOS 애플리케이션에서 텍스트 자르기를 깔끔하게 처리하는 방법을 제공합니다. 필요에 따라 모양, 애니메이션 및 동작을 사용자 정의할 수 있습니다."
-        self.koreanLabel.readMoreText = NSAttributedString(
+        koreanLabel.text = "🇰🇷 이것은 ReadMoreLabel 기능을 보여주는 긴 한국어 텍스트입니다. '더보기' 버튼을 탭하면 부드러운 애니메이션과 함께 전체 텍스트가 확장됩니다. 이 라이브러리는 다국어를 지원하며 iOS 애플리케이션에서 텍스트 자르기를 깔끔하게 처리하는 방법을 제공합니다. 필요에 따라 모양, 애니메이션 및 동작을 사용자 정의할 수 있습니다."
+        koreanLabel.readMoreText = NSAttributedString(
             string: "더보기",
             attributes: [.foregroundColor: UIColor.systemBlue]
         )
 
         // Japanese
-        self.japaneseLabel.text = "🇯🇵 これはReadMoreLabelの機能を示す長い日本語のテキストです。「続きを読む」ボタンをタップすると、スムーズなアニメーションとともにテキスト全体が展開されます。このライブラリは多言語をサポートし、iOSアプリケーションでテキストの切り詰めをきれいに処理する方法を提供します。必要に応じて、外観、アニメーション、動作をカスタマイズできます。"
-        self.japaneseLabel.readMoreText = NSAttributedString(
+        japaneseLabel.text = "🇯🇵 これはReadMoreLabelの機能を示す長い日本語のテキストです。「続きを読む」ボタンをタップすると、スムーズなアニメーションとともにテキスト全体が展開されます。このライブラリは多言語をサポートし、iOSアプリケーションでテキストの切り詰めをきれいに処理する方法を提供します。必要に応じて、外観、アニメーション、動作をカスタマイズできます。"
+        japaneseLabel.readMoreText = NSAttributedString(
             string: "続きを読む",
             attributes: [.foregroundColor: UIColor.systemBlue]
         )
@@ -130,33 +130,33 @@ class LabelViewController: UIViewController {
 
         NSLayoutConstraint.activate([
             // Scroll view constraints
-            self.scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            self.scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            self.scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            self.scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
 
             // Content view constraints
-            self.contentView.topAnchor.constraint(equalTo: self.scrollView.topAnchor),
-            self.contentView.leadingAnchor.constraint(equalTo: self.scrollView.leadingAnchor),
-            self.contentView.trailingAnchor.constraint(equalTo: self.scrollView.trailingAnchor),
-            self.contentView.bottomAnchor.constraint(equalTo: self.scrollView.bottomAnchor),
-            self.contentView.widthAnchor.constraint(equalTo: self.scrollView.widthAnchor),
+            contentView.topAnchor.constraint(equalTo: scrollView.topAnchor),
+            contentView.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor),
+            contentView.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor),
+            contentView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
+            contentView.widthAnchor.constraint(equalTo: scrollView.widthAnchor),
 
             // English label
-            self.englishLabel.topAnchor.constraint(equalTo: controlsStackView.bottomAnchor, constant: 30),
-            self.englishLabel.leadingAnchor.constraint(equalTo: self.contentView.leadingAnchor, constant: 16),
-            self.englishLabel.trailingAnchor.constraint(equalTo: self.contentView.trailingAnchor, constant: -16),
+            englishLabel.topAnchor.constraint(equalTo: controlsStackView.bottomAnchor, constant: 30),
+            englishLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
+            englishLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
 
             // Korean label
-            self.koreanLabel.topAnchor.constraint(equalTo: self.englishLabel.bottomAnchor, constant: 30),
-            self.koreanLabel.leadingAnchor.constraint(equalTo: self.contentView.leadingAnchor, constant: 16),
-            self.koreanLabel.trailingAnchor.constraint(equalTo: self.contentView.trailingAnchor, constant: -16),
+            koreanLabel.topAnchor.constraint(equalTo: englishLabel.bottomAnchor, constant: 30),
+            koreanLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
+            koreanLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
 
             // Japanese label
-            self.japaneseLabel.topAnchor.constraint(equalTo: self.koreanLabel.bottomAnchor, constant: 30),
-            self.japaneseLabel.leadingAnchor.constraint(equalTo: self.contentView.leadingAnchor, constant: 16),
-            self.japaneseLabel.trailingAnchor.constraint(equalTo: self.contentView.trailingAnchor, constant: -16),
-            self.japaneseLabel.bottomAnchor.constraint(equalTo: self.contentView.bottomAnchor, constant: -30),
+            japaneseLabel.topAnchor.constraint(equalTo: koreanLabel.bottomAnchor, constant: 30),
+            japaneseLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
+            japaneseLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
+            japaneseLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -30),
         ])
     }
 
@@ -192,7 +192,7 @@ class LabelViewController: UIViewController {
                     label.collapse()
                 }
             }
-            self.expandCollapseButton.setTitle("Expand All", for: .normal)
+            expandCollapseButton.setTitle("Expand All", for: .normal)
         } else {
             // Expand all
             for label in allLabels {
@@ -200,7 +200,7 @@ class LabelViewController: UIViewController {
                     label.expand()
                 }
             }
-            self.expandCollapseButton.setTitle("Collapse All", for: .normal)
+            expandCollapseButton.setTitle("Collapse All", for: .normal)
         }
 
         // 모든 변경 후 레이아웃 애니메이션 적용
@@ -211,7 +211,7 @@ class LabelViewController: UIViewController {
         let allLabels = [englishLabel, koreanLabel, japaneseLabel]
         let hasExpandedLabels = allLabels.contains { $0.isExpanded }
 
-        self.expandCollapseButton.setTitle(hasExpandedLabels ? "Collapse All" : "Expand All", for: .normal)
+        expandCollapseButton.setTitle(hasExpandedLabels ? "Collapse All" : "Expand All", for: .normal)
     }
 }
 
@@ -220,10 +220,10 @@ class LabelViewController: UIViewController {
 @available(iOS 16.0, *)
 extension LabelViewController: ReadMoreLabelDelegate {
     func readMoreLabel(_ label: ReadMoreLabel, didChangeExpandedState isExpanded: Bool) {
-        self.updateExpandCollapseButtonTitle()
+        updateExpandCollapseButtonTitle()
 
         // ScrollView에서 레이아웃 애니메이션 적용
-        if self.animationToggleSwitch.isOn {
+        if animationToggleSwitch.isOn {
             UIView.animate(
                 withDuration: 0.3,
                 delay: 0,
@@ -236,7 +236,7 @@ extension LabelViewController: ReadMoreLabelDelegate {
                 completion: nil
             )
         } else {
-            self.view.layoutIfNeeded()
+            view.layoutIfNeeded()
         }
     }
 }

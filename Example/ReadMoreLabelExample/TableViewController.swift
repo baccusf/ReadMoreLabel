@@ -154,10 +154,10 @@ class TableViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        self.expandedStates = Array(repeating: false, count: self.sampleData.count)
+        expandedStates = Array(repeating: false, count: sampleData.count)
 
-        self.setupUI()
-        self.setupTableView()
+        setupUI()
+        setupTableView()
     }
 
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
@@ -173,34 +173,34 @@ class TableViewController: UIViewController {
         title = "ReadMoreLabel Examples"
         view.backgroundColor = .systemBackground
 
-        self.tableView.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(self.tableView)
+        tableView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(tableView)
 
         NSLayoutConstraint.activate([
-            self.tableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            self.tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            self.tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            self.tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            tableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
         ])
 
         // Add header view
-        let headerView = self.createHeaderView()
-        self.tableView.tableHeaderView = headerView
+        let headerView = createHeaderView()
+        tableView.tableHeaderView = headerView
     }
 
     private func setupTableView() {
-        self.tableView.delegate = self
-        self.tableView.dataSource = self
+        tableView.delegate = self
+        tableView.dataSource = self
         if #available(iOS 16.0, *) {
             tableView.register(ExampleTableViewCell.self, forCellReuseIdentifier: "ExampleCell")
         }
-        self.tableView.rowHeight = UITableView.automaticDimension
-        self.tableView.estimatedRowHeight = 120 // Increased to allow for extra spacing
-        self.tableView.separatorStyle = .singleLine
+        tableView.rowHeight = UITableView.automaticDimension
+        tableView.estimatedRowHeight = 120 // Increased to allow for extra spacing
+        tableView.separatorStyle = .singleLine
 
         // HeaderView와 첫 셀 간격 추가 보장
-        self.tableView.sectionHeaderHeight = 0
-        self.tableView.sectionFooterHeight = 0
+        tableView.sectionHeaderHeight = 0
+        tableView.sectionFooterHeight = 0
     }
 
     private func createHeaderView() -> UIView {
@@ -223,7 +223,7 @@ class TableViewController: UIViewController {
         // 애니메이션 스위치 생성
         let animationSwitch = UISwitch()
         animationSwitch.isOn = true
-        animationSwitch.addTarget(self, action: #selector(self.animationSwitchChanged(_:)), for: .valueChanged)
+        animationSwitch.addTarget(self, action: #selector(animationSwitchChanged(_:)), for: .valueChanged)
 
         // 스택뷰에 요소들 추가
         stackView.addArrangedSubview(animationLabel)
@@ -239,14 +239,14 @@ class TableViewController: UIViewController {
             stackView.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
         ])
 
-        headerView.frame = CGRect(x: 0, y: 0, width: self.tableView.bounds.width, height: 63)
+        headerView.frame = CGRect(x: 0, y: 0, width: tableView.bounds.width, height: 63)
         headerView.autoresizingMask = [.flexibleWidth]
 
         return headerView
     }
 
     @objc private func animationSwitchChanged(_ sender: UISwitch) {
-        self.isAnimationEnabled = sender.isOn
+        isAnimationEnabled = sender.isOn
     }
 }
 
@@ -254,14 +254,14 @@ class TableViewController: UIViewController {
 
 extension TableViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        self.sampleData.count
+        sampleData.count
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "ExampleCell", for: indexPath) as! ExampleTableViewCell
         cell.configure(
-            with: self.sampleData[indexPath.row],
-            isExpanded: self.expandedStates[indexPath.row],
+            with: sampleData[indexPath.row],
+            isExpanded: expandedStates[indexPath.row],
             delegate: self
         )
 
@@ -283,7 +283,7 @@ extension TableViewController: UITableViewDelegate {
 extension TableViewController: ReadMoreLabelDelegate {
     func readMoreLabel(_ label: ReadMoreLabel, didChangeExpandedState isExpanded: Bool) {
         // label의 중심점을 tableView 좌표계로 변환
-        let labelCenterInTableView = label.convert(label.center, to: self.tableView)
+        let labelCenterInTableView = label.convert(label.center, to: tableView)
 
         // 해당 위치의 indexPath를 찾음
         guard let indexPath = tableView.indexPathForRow(at: labelCenterInTableView) else {
@@ -291,10 +291,10 @@ extension TableViewController: ReadMoreLabelDelegate {
         }
 
         // 확장 상태 업데이트
-        self.expandedStates[indexPath.row] = isExpanded
+        expandedStates[indexPath.row] = isExpanded
 
         // 테이블 뷰 업데이트 (높이 변경 반영)
-        if self.isAnimationEnabled {
+        if isAnimationEnabled {
             UIView.animate(withDuration: 0.3) {
                 self.tableView.beginUpdates()
                 self.tableView.endUpdates()

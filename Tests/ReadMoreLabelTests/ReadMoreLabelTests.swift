@@ -6,72 +6,72 @@ final class ReadMoreLabelTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        self.label = ReadMoreLabel(frame: CGRect(x: 0, y: 0, width: 300, height: 100))
+        label = ReadMoreLabel(frame: CGRect(x: 0, y: 0, width: 300, height: 100))
     }
 
     override func tearDown() {
-        self.label = nil
+        label = nil
         super.tearDown()
     }
 
     func testInitialState() {
-        XCTAssertEqual(self.label.numberOfLines, 3)
-        XCTAssertFalse(self.label.isExpanded)
-        XCTAssertEqual(self.label.readMoreText.string, "더보기..")
+        XCTAssertEqual(label.numberOfLines, 3)
+        XCTAssertFalse(label.isExpanded)
+        XCTAssertEqual(label.readMoreText.string, "더보기..")
     }
 
     func testExpandableWithShortText() {
-        self.label.text = "Short text"
-        XCTAssertFalse(self.label.isExpandable)
+        label.text = "Short text"
+        XCTAssertFalse(label.isExpandable)
     }
 
     func testExpandableWithLongText() {
-        self.label.text = String(
+        label.text = String(
             repeating: "This is a very long text that should exceed the number of lines. ",
             count: 10
         )
-        self.label.setNeedsLayout()
-        self.label.layoutIfNeeded()
+        label.setNeedsLayout()
+        label.layoutIfNeeded()
 
         // Note: This test might be environment dependent based on font and layout
         // In a real scenario, you might want to mock the text measurement
     }
 
     func testExpandCollapse() {
-        self.label.text = String(
+        label.text = String(
             repeating: "This is a very long text that should exceed the number of lines. ",
             count: 10
         )
 
         // Initially collapsed
-        XCTAssertFalse(self.label.isExpanded)
+        XCTAssertFalse(label.isExpanded)
 
         // Expand
-        self.label.setExpanded(true, animated: false)
-        XCTAssertTrue(self.label.isExpanded)
+        label.setExpanded(true, animated: false)
+        XCTAssertTrue(label.isExpanded)
 
         // Collapse
-        self.label.setExpanded(false, animated: false)
-        XCTAssertFalse(self.label.isExpanded)
+        label.setExpanded(false, animated: false)
+        XCTAssertFalse(label.isExpanded)
     }
 
     func testCustomReadMoreText() {
         let customText = NSAttributedString(string: "Read more...")
-        self.label.readMoreText = customText
-        XCTAssertEqual(self.label.readMoreText.string, "Read more...")
+        label.readMoreText = customText
+        XCTAssertEqual(label.readMoreText.string, "Read more...")
     }
 
     func testNumberOfLinesWhenCollapsedChange() {
-        self.label.numberOfLines = 5
-        XCTAssertEqual(self.label.numberOfLines, 5)
+        label.numberOfLines = 5
+        XCTAssertEqual(label.numberOfLines, 5)
     }
 
     func testDelegateCallback() {
         let mockDelegate = MockReadMoreLabelDelegate()
-        self.label.delegate = mockDelegate
-        self.label.text = String(repeating: "Long text ", count: 50)
+        label.delegate = mockDelegate
+        label.text = String(repeating: "Long text ", count: 50)
 
-        self.label.setExpanded(true, animated: false)
+        label.setExpanded(true, animated: false)
 
         XCTAssertTrue(mockDelegate.didChangeExpandedStateCalled)
         XCTAssertTrue(mockDelegate.lastExpandedState)
@@ -85,7 +85,7 @@ class MockReadMoreLabelDelegate: ReadMoreLabelDelegate {
     var lastExpandedState = false
 
     func readMoreLabel(_ label: ReadMoreLabel, didChangeExpandedState isExpanded: Bool) {
-        self.didChangeExpandedStateCalled = true
-        self.lastExpandedState = isExpanded
+        didChangeExpandedStateCalled = true
+        lastExpandedState = isExpanded
     }
 }

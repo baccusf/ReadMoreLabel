@@ -23,12 +23,12 @@ class ExampleTableViewCell: UITableViewCell {
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
-        self.setupUI()
+        setupUI()
     }
 
     required init?(coder: NSCoder) {
         super.init(coder: coder)
-        self.setupUI()
+        setupUI()
     }
 
     // UITableViewCell 재활용 시 상태 초기화
@@ -41,22 +41,22 @@ class ExampleTableViewCell: UITableViewCell {
 
     private func setupUI() {
         selectionStyle = .none // Disable cell selection to prevent tap interference
-        self.readMoreLabel.translatesAutoresizingMaskIntoConstraints = false
-        contentView.addSubview(self.readMoreLabel)
+        readMoreLabel.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(readMoreLabel)
         clipsToBounds = true
 
         // Content Priority 설정 - intrinsicContentSize를 존중하도록
-        self.readMoreLabel.setContentHuggingPriority(UILayoutPriority(1000), for: .vertical)
-        self.readMoreLabel.setContentCompressionResistancePriority(UILayoutPriority(1000), for: .vertical)
+        readMoreLabel.setContentHuggingPriority(UILayoutPriority(1000), for: .vertical)
+        readMoreLabel.setContentCompressionResistancePriority(UILayoutPriority(1000), for: .vertical)
 
         NSLayoutConstraint.activate([
-            self.readMoreLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 0),
-            self.readMoreLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 0),
-            self.readMoreLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: 0),
+            readMoreLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 0),
+            readMoreLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 0),
+            readMoreLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: 0),
         ])
 
         // bottom constraint를 더 낮은 우선순위로 설정
-        let bottomConstraint = self.readMoreLabel.bottomAnchor.constraint(
+        let bottomConstraint = readMoreLabel.bottomAnchor.constraint(
             equalTo: contentView.bottomAnchor,
             constant: 0
         )
@@ -68,33 +68,33 @@ class ExampleTableViewCell: UITableViewCell {
                    delegate: ReadMoreLabelDelegate?)
     {
         // Set delegate first
-        self.readMoreLabel.delegate = delegate
+        readMoreLabel.delegate = delegate
 
         // Set text and position first
-        self.readMoreLabel.text = sampleData.text
-        self.readMoreLabel.readMorePosition = sampleData.position
+        readMoreLabel.text = sampleData.text
+        readMoreLabel.readMorePosition = sampleData.position
 
         // Apply different styles and language-specific settings BEFORE setting expanded state
         // This prevents font changes from overriding the expanded state
-        self.applyStyle(sampleData.style, language: sampleData.language)
+        applyStyle(sampleData.style, language: sampleData.language)
 
         // Set expanded state LAST to preserve it after style changes
         // Cell 재사용 시에는 delegate 호출하지 않음 (불필요한 상태 업데이트 방지)
-        self.readMoreLabel.setExpanded(isExpanded)
+        readMoreLabel.setExpanded(isExpanded)
     }
 
     private func applyStyle(_ style: ReadMoreLabel.Style, language: String) {
         // Get language-specific read more text
-        let readMoreTexts = self.getReadMoreTexts(for: language, style: style)
+        let readMoreTexts = getReadMoreTexts(for: language, style: style)
 
         // Apply ellipsis
-        self.readMoreLabel.ellipsisText = NSAttributedString(string: readMoreTexts.ellipsis)
+        readMoreLabel.ellipsisText = NSAttributedString(string: readMoreTexts.ellipsis)
 
         // Apply style-specific attributes
         switch style {
         case .basic:
-            self.readMoreLabel.font = UIFont.systemFont(ofSize: 16)
-            self.readMoreLabel.readMoreText = NSAttributedString(
+            readMoreLabel.font = UIFont.systemFont(ofSize: 16)
+            readMoreLabel.readMoreText = NSAttributedString(
                 string: readMoreTexts.text,
                 attributes: [
                     .foregroundColor: UIColor.systemBlue,
@@ -103,8 +103,8 @@ class ExampleTableViewCell: UITableViewCell {
             )
 
         case .colorful:
-            self.readMoreLabel.font = UIFont.systemFont(ofSize: 16)
-            self.readMoreLabel.readMoreText = NSAttributedString(
+            readMoreLabel.font = UIFont.systemFont(ofSize: 16)
+            readMoreLabel.readMoreText = NSAttributedString(
                 string: readMoreTexts.text,
                 attributes: [
                     .foregroundColor: UIColor.systemPurple,
@@ -114,8 +114,8 @@ class ExampleTableViewCell: UITableViewCell {
             )
 
         case .emoji:
-            self.readMoreLabel.font = UIFont.systemFont(ofSize: 16)
-            self.readMoreLabel.readMoreText = NSAttributedString(
+            readMoreLabel.font = UIFont.systemFont(ofSize: 16)
+            readMoreLabel.readMoreText = NSAttributedString(
                 string: readMoreTexts.text,
                 attributes: [
                     .foregroundColor: UIColor.systemOrange,
@@ -124,8 +124,8 @@ class ExampleTableViewCell: UITableViewCell {
             )
 
         case .gradient:
-            self.readMoreLabel.font = UIFont.systemFont(ofSize: 16)
-            self.readMoreLabel.readMoreText = NSAttributedString(
+            readMoreLabel.font = UIFont.systemFont(ofSize: 16)
+            readMoreLabel.readMoreText = NSAttributedString(
                 string: readMoreTexts.text,
                 attributes: [
                     .foregroundColor: UIColor.systemTeal,
@@ -136,8 +136,8 @@ class ExampleTableViewCell: UITableViewCell {
             )
 
         case .bold:
-            self.readMoreLabel.font = UIFont.systemFont(ofSize: 16)
-            self.readMoreLabel.readMoreText = NSAttributedString(
+            readMoreLabel.font = UIFont.systemFont(ofSize: 16)
+            readMoreLabel.readMoreText = NSAttributedString(
                 string: readMoreTexts.text,
                 attributes: [
                     .foregroundColor: UIColor.systemRed,
@@ -147,8 +147,8 @@ class ExampleTableViewCell: UITableViewCell {
             )
 
         case .mobile:
-            self.readMoreLabel.font = UIFont.systemFont(ofSize: 16)
-            self.readMoreLabel.readMoreText = NSAttributedString(
+            readMoreLabel.font = UIFont.systemFont(ofSize: 16)
+            readMoreLabel.readMoreText = NSAttributedString(
                 string: readMoreTexts.text,
                 attributes: [
                     .foregroundColor: UIColor.systemIndigo,
@@ -158,8 +158,8 @@ class ExampleTableViewCell: UITableViewCell {
             )
 
         case .fontSizeSmall:
-            self.readMoreLabel.font = UIFont.systemFont(ofSize: 12)
-            self.readMoreLabel.readMoreText = NSAttributedString(
+            readMoreLabel.font = UIFont.systemFont(ofSize: 12)
+            readMoreLabel.readMoreText = NSAttributedString(
                 string: readMoreTexts.text,
                 attributes: [
                     .foregroundColor: UIColor.systemBlue,
@@ -168,8 +168,8 @@ class ExampleTableViewCell: UITableViewCell {
             )
 
         case .fontSizeMedium:
-            self.readMoreLabel.font = UIFont.systemFont(ofSize: 18)
-            self.readMoreLabel.readMoreText = NSAttributedString(
+            readMoreLabel.font = UIFont.systemFont(ofSize: 18)
+            readMoreLabel.readMoreText = NSAttributedString(
                 string: readMoreTexts.text,
                 attributes: [
                     .foregroundColor: UIColor.systemGreen,
@@ -178,8 +178,8 @@ class ExampleTableViewCell: UITableViewCell {
             )
 
         case .fontSizeLarge:
-            self.readMoreLabel.font = UIFont.systemFont(ofSize: 24)
-            self.readMoreLabel.readMoreText = NSAttributedString(
+            readMoreLabel.font = UIFont.systemFont(ofSize: 24)
+            readMoreLabel.readMoreText = NSAttributedString(
                 string: readMoreTexts.text,
                 attributes: [
                     .foregroundColor: UIColor.systemOrange,
@@ -188,8 +188,8 @@ class ExampleTableViewCell: UITableViewCell {
             )
 
         case .fontSizeXLarge:
-            self.readMoreLabel.font = UIFont.systemFont(ofSize: 32)
-            self.readMoreLabel.readMoreText = NSAttributedString(
+            readMoreLabel.font = UIFont.systemFont(ofSize: 32)
+            readMoreLabel.readMoreText = NSAttributedString(
                 string: readMoreTexts.text,
                 attributes: [
                     .foregroundColor: UIColor.systemRed,
@@ -271,10 +271,10 @@ class ExampleTableViewCell: UITableViewCell {
             ("🎯 もっと見る (32pt)", "....")
         // Font size styles fallback to English for other languages
         case (_, .fontSizeSmall), (_, .fontSizeMedium), (_, .fontSizeLarge), (_, .fontSizeXLarge):
-            self.getReadMoreTexts(for: "en", style: style)
+            getReadMoreTexts(for: "en", style: style)
         // Default fallback to English
         default:
-            self.getReadMoreTexts(for: "en", style: style)
+            getReadMoreTexts(for: "en", style: style)
         }
     }
 }
