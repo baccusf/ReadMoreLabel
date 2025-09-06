@@ -35,7 +35,9 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
     private var state = State()
 
     private var numberOfLinesWhenCollapsed: Int {
-        get { state.numberOfLines }
+        get {
+            state.numberOfLines
+        }
         set {
             state.updateNumberOfLines(newValue)
             invalidateDisplayAndLayout()
@@ -43,7 +45,9 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
     }
 
     @objc public var isExpanded: Bool {
-        get { state.isExpanded }
+        get {
+            state.isExpanded
+        }
         set {
             // Internal state update without delegate notification
             // Delegate notification is handled by setExpanded methods
