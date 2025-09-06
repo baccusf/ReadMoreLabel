@@ -202,10 +202,6 @@ class TableViewController: UIViewController {
         // HeaderView와 첫 셀 간격 추가 보장
         tableView.sectionHeaderHeight = 0
         tableView.sectionFooterHeight = 0
-        
-//        UIView.performWithoutAnimation {
-//            tableView.performBatchUpdates(nil)
-//        }
     }
     
     private func createHeaderView() -> UIView {
@@ -244,7 +240,6 @@ class TableViewController: UIViewController {
             stackView.centerYAnchor.constraint(equalTo: headerView.centerYAnchor)
         ])
         
-        print(tableView.bounds.width)
         headerView.frame = CGRect(x: 0, y: 0, width: tableView.bounds.width, height: 63)
         headerView.autoresizingMask = [.flexibleWidth]
         

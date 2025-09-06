@@ -27,14 +27,14 @@ A powerful and flexible UILabel subclass that provides "Read More" functionality
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/yourusername/ReadMoreLabel.git", from: "1.0.0")
+    .package(url: "https://github.com/baccusf/ReadMoreLabel.git", from: "0.1.0")
 ]
 ```
 
 ### CocoaPods
 
 ```ruby
-pod 'ReadMoreLabel'
+pod 'ReadMoreLabel', '~> 0.1.0'
 ```
 
 ### Manual Installation
@@ -190,24 +190,6 @@ ReadMoreLabel overrides certain UILabel properties to ensure proper functionalit
 
 Attempting to set these properties directly will show debug warnings and be ignored.
 
-### Naming Conflicts
-
-If you encounter naming conflicts with other libraries that also have a `ReadMoreLabel` class, you can resolve them using Swift's module namespace system:
-
-```swift
-// Method 1: Use full module name
-import ReadMoreLabel
-let label = ReadMoreLabel.ReadMoreLabel()
-
-// Method 2: Create a typealias
-import ReadMoreLabel
-typealias BFReadMoreLabel = ReadMoreLabel.ReadMoreLabel
-let label = BFReadMoreLabel()
-
-// Method 3: Selective import (Swift 5.2+)
-import ReadMoreLabel.ReadMoreLabel
-let label = ReadMoreLabel()
-```
 
 ### Best Practices
 
@@ -215,7 +197,6 @@ let label = ReadMoreLabel()
 2. **Performance**: For large amounts of text, consider setting `numberOfLinesWhenCollapsed = 0` initially and enabling truncation when needed
 3. **Accessibility**: The component automatically supports VoiceOver and Dynamic Type
 4. **Thread Safety**: Always update properties on the main thread
-5. **Naming Conflicts**: Use module namespaces or typealiases to resolve class name conflicts
 
 ## 🔧 Advanced Usage
 

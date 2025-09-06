@@ -27,14 +27,14 @@
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/yourusername/ReadMoreLabel.git", from: "0.1.0")
+    .package(url: "https://github.com/baccusf/ReadMoreLabel.git", from: "0.1.0")
 ]
 ```
 
 ### CocoaPods
 
 ```ruby
-pod 'ReadMoreLabel'
+pod 'ReadMoreLabel', '~> 0.1.0'
 ```
 
 ### 手動インストール

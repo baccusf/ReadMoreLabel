@@ -16,8 +16,6 @@ class LabelViewController: UIViewController {
     private let animationToggleSwitch = UISwitch()
     private let expandCollapseButton = UIButton(type: .system)
     
-    // Track expanded state
-    private var currentlyExpandedLabels: Set<ReadMoreLabel> = []
     
     override func viewDidLoad() {
         super.viewDidLoad()
