@@ -1,0 +1,42 @@
+# ReadMoreLabel 프로젝트용 SwiftFormat 설정
+
+# Swift 버전
+--swiftversion 5.9
+
+# 기본 포맷팅
+--indent 4
+--maxwidth 120
+
+# 불필요한 요소 제거
+--stripunusedargs closure-only
+
+# 제외할 디렉토리
+--exclude .build,.swiftpm,Pods,Carthage,DerivedData,Scripts
+
+# self 키워드 처리
+--self remove
+
+# import 정렬
+--importgrouping alphabetized
+
+# 연산자 공백 처리
+--operatorfunc spaced
+
+# 제어문 스타일
+--guardelse same-line
+--elseposition same-line
+
+# 괄호 스타일
+--closingparen balanced
+
+# 빈 줄 처리
+--emptybraces spaced
+
+# 후행 쉼표 처리
+--commas always
+
+# 비활성화할 룰
+--disable redundantGet
+
+# 활성화할 룰
+--enable wrapConditionalBodies

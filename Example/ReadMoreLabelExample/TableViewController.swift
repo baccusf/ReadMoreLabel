@@ -1,10 +1,9 @@
-import UIKit
 import ReadMoreLabel
+import UIKit
 
 class TableViewController: UIViewController {
-    
     private let tableView = UITableView()
-    
+
     private let sampleData = [
         SampleData(
             text: "✨ English emoji example with beginningNewLine position! 🚀 This ReadMoreLabel uses emoji bullets and styled text to create a more visually appealing user experience. The 'Read More' button appears on a completely new line after all allowed lines are displayed. Perfect for social media apps and news readers.",
@@ -31,7 +30,7 @@ class TableViewController: UIViewController {
             position: .end,
             language: "en"
         ),
-        
+
         // Korean Examples
         SampleData(
             text: "이것은 긴 한국어 텍스트로 newLine 위치를 보여주는 예제입니다. ReadMoreLabel은 iOS 앱에서 텍스트 자르기를 처리하는 깔끔하고 직관적인 방법을 제공합니다. 사용자는 '더보기..' 버튼을 탭하여 부드러운 애니메이션과 함께 전체 내용을 볼 수 있습니다. 모든 허용된 줄이 표시된 후 완전히 새로운 줄에 더보기 버튼이 나타납니다.",
@@ -69,7 +68,7 @@ class TableViewController: UIViewController {
             position: .end,
             language: "ja"
         ),
-        
+
         // Font Size Testing Examples
         SampleData(
             text: "📝 Small Font Size Test (12pt): This example demonstrates how ReadMoreLabel handles different font sizes. The 'Read More' text uses a smaller 12pt font while maintaining proper text truncation and positioning. This is useful for compact UI designs, footnotes, or when you need to display more content in limited space. The smaller font should still be readable and accessible.",
@@ -95,7 +94,7 @@ class TableViewController: UIViewController {
             position: .newLine,
             language: "en"
         ),
-        
+
         // Korean Font Size Examples
         SampleData(
             text: "📝 한국어 소형 폰트 테스트 (12pt): 이 예제는 ReadMoreLabel이 작은 폰트 크기를 어떻게 처리하는지 보여줍니다. 12pt 폰트를 사용하여 제한된 공간에서도 '더보기' 텍스트가 올바르게 표시되는지 확인할 수 있습니다. 작은 폰트 크기에서도 가독성을 유지하면서 텍스트 자르기 기능이 정상적으로 작동합니다.",
@@ -121,7 +120,7 @@ class TableViewController: UIViewController {
             position: .newLine,
             language: "ko"
         ),
-        
+
         // Japanese Font Size Examples
         SampleData(
             text: "📝 日本語小フォントテスト（12pt）: この例では、ReadMoreLabelが小さなフォントサイズをどのように処理するかを示します。12ptフォントを使用して、限られたスペースでも「続きを読む」テキストが正しく表示されることを確認できます。小さなフォントサイズでも読みやすさを維持しながら、テキスト切り詰め機能が正常に動作します。",
@@ -146,15 +145,15 @@ class TableViewController: UIViewController {
             style: .fontSizeXLarge,
             position: .newLine,
             language: "ja"
-        )
+        ),
     ]
-    
+
     private var expandedStates: [Bool] = []
     private var isAnimationEnabled: Bool = true
-    
+
     override func viewDidLoad() {
         super.viewDidLoad()
-        
+
         expandedStates = Array(repeating: false, count: sampleData.count)
 
         setupUI()
@@ -163,32 +162,32 @@ class TableViewController: UIViewController {
 
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
         super.viewWillTransition(to: size, with: coordinator)
-        
-        coordinator.animate(alongsideTransition: { context in
+
+        coordinator.animate(alongsideTransition: { _ in
             self.tableView.beginUpdates()
             self.tableView.endUpdates()
         })
     }
-    
+
     private func setupUI() {
         title = "ReadMoreLabel Examples"
         view.backgroundColor = .systemBackground
-        
+
         tableView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(tableView)
-        
+
         NSLayoutConstraint.activate([
             tableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+            tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
         ])
-        
+
         // Add header view
         let headerView = createHeaderView()
         tableView.tableHeaderView = headerView
     }
-    
+
     private func setupTableView() {
         tableView.delegate = self
         tableView.dataSource = self
@@ -196,56 +195,56 @@ class TableViewController: UIViewController {
             tableView.register(ExampleTableViewCell.self, forCellReuseIdentifier: "ExampleCell")
         }
         tableView.rowHeight = UITableView.automaticDimension
-        tableView.estimatedRowHeight = 120  // Increased to allow for extra spacing
+        tableView.estimatedRowHeight = 120 // Increased to allow for extra spacing
         tableView.separatorStyle = .singleLine
-        
+
         // HeaderView와 첫 셀 간격 추가 보장
         tableView.sectionHeaderHeight = 0
         tableView.sectionFooterHeight = 0
     }
-    
+
     private func createHeaderView() -> UIView {
         let headerView = UIView()
         headerView.backgroundColor = .systemBackground
-        
+
         // 애니메이션 스위치가 포함된 UIStackView 생성
         let stackView = UIStackView()
         stackView.axis = .horizontal
         stackView.alignment = .center
         stackView.distribution = .equalSpacing
         stackView.translatesAutoresizingMaskIntoConstraints = false
-        
+
         // 애니메이션 라벨 생성
         let animationLabel = UILabel()
         animationLabel.text = "Enable Animation:"
         animationLabel.font = UIFont.systemFont(ofSize: 16, weight: .medium)
         animationLabel.textColor = .label
-        
+
         // 애니메이션 스위치 생성
         let animationSwitch = UISwitch()
         animationSwitch.isOn = true
         animationSwitch.addTarget(self, action: #selector(animationSwitchChanged(_:)), for: .valueChanged)
-        
+
         // 스택뷰에 요소들 추가
         stackView.addArrangedSubview(animationLabel)
         stackView.addArrangedSubview(animationSwitch)
-        
+
         // headerView에 스택뷰 추가
         headerView.addSubview(stackView)
-        
+
         // 스택뷰 양쪽 정렬 제약조건
         NSLayoutConstraint.activate([
             stackView.leadingAnchor.constraint(equalTo: headerView.leadingAnchor, constant: 16),
             stackView.trailingAnchor.constraint(equalTo: headerView.trailingAnchor, constant: -16),
-            stackView.centerYAnchor.constraint(equalTo: headerView.centerYAnchor)
+            stackView.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
         ])
-        
+
         headerView.frame = CGRect(x: 0, y: 0, width: tableView.bounds.width, height: 63)
         headerView.autoresizingMask = [.flexibleWidth]
-        
+
         return headerView
     }
-    
+
     @objc private func animationSwitchChanged(_ sender: UISwitch) {
         isAnimationEnabled = sender.isOn
     }
@@ -255,9 +254,9 @@ class TableViewController: UIViewController {
 
 extension TableViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return sampleData.count
+        sampleData.count
     }
-    
+
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "ExampleCell", for: indexPath) as! ExampleTableViewCell
         cell.configure(
@@ -276,7 +275,6 @@ extension TableViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
     }
-    
 }
 
 // MARK: - ReadMoreLabelDelegate
@@ -286,15 +284,15 @@ extension TableViewController: ReadMoreLabelDelegate {
     func readMoreLabel(_ label: ReadMoreLabel, didChangeExpandedState isExpanded: Bool) {
         // label의 중심점을 tableView 좌표계로 변환
         let labelCenterInTableView = label.convert(label.center, to: tableView)
-        
+
         // 해당 위치의 indexPath를 찾음
         guard let indexPath = tableView.indexPathForRow(at: labelCenterInTableView) else {
             return
         }
-        
+
         // 확장 상태 업데이트
         expandedStates[indexPath.row] = isExpanded
-        
+
         // 테이블 뷰 업데이트 (높이 변경 반영)
         if isAnimationEnabled {
             UIView.animate(withDuration: 0.3) {
@@ -310,7 +308,6 @@ extension TableViewController: ReadMoreLabelDelegate {
     }
 }
 
-
 extension TableViewController {
     // MARK: - Sample Data Models
 
@@ -323,6 +320,7 @@ extension TableViewController {
 }
 
 // MARK: - ReadMoreLabel Style Extension
+
 extension ReadMoreLabel {
     enum Style {
         case basic
@@ -331,9 +329,9 @@ extension ReadMoreLabel {
         case gradient
         case bold
         case mobile
-        case fontSizeSmall   // 12pt font
-        case fontSizeMedium  // 18pt font
-        case fontSizeLarge   // 24pt font
-        case fontSizeXLarge  // 32pt font
+        case fontSizeSmall // 12pt font
+        case fontSizeMedium // 18pt font
+        case fontSizeLarge // 24pt font
+        case fontSizeXLarge // 32pt font
     }
 }
