@@ -71,7 +71,10 @@ extension TableViewController: UITableViewDataSource {
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "TableViewCell", for: indexPath) as! TableViewCell
+        guard let cell = tableView.dequeueReusableCell(withIdentifier: "TableViewCell", for: indexPath) as? TableViewCell else {
+            return UITableViewCell()
+        }
+        
         cell.configure(
             with: viewModel.sampleData[indexPath.row],
             isExpanded: viewModel.expandedStates[indexPath.row],
