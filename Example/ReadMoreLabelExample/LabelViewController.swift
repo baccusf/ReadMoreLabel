@@ -10,6 +10,7 @@ class LabelViewController: UIViewController {
     private let englishLabel = ReadMoreLabel()
     private let koreanLabel = ReadMoreLabel()
     private let japaneseLabel = ReadMoreLabel()
+    private let arabicLabel = ReadMoreLabel() // RTL 테스트용 아랍어 레이블
 
     // Control buttons
     private let animationToggleSwitch = UISwitch()
@@ -89,7 +90,7 @@ class LabelViewController: UIViewController {
     }
 
     private func setupReadMoreLabels() {
-        let labels = [englishLabel, koreanLabel, japaneseLabel]
+        let labels = [englishLabel, koreanLabel, japaneseLabel, arabicLabel]
 
         for label in labels {
             label.translatesAutoresizingMaskIntoConstraints = false
@@ -99,6 +100,10 @@ class LabelViewController: UIViewController {
             label.delegate = self
             contentView.addSubview(label)
         }
+        
+        // RTL 설정: Force Right-to-Left semantic content attribute
+        arabicLabel.semanticContentAttribute = .forceRightToLeft
+        arabicLabel.textAlignment = .right
     }
 
     private func setupLabels() {
@@ -120,6 +125,13 @@ class LabelViewController: UIViewController {
         japaneseLabel.text = "🇯🇵 これはReadMoreLabelの機能を示す長い日本語のテキストです。「続きを読む」ボタンをタップすると、スムーズなアニメーションとともにテキスト全体が展開されます。このライブラリは多言語をサポートし、iOSアプリケーションでテキストの切り詰めをきれいに処理する方法を提供します。必要に応じて、外観、アニメーション、動作をカスタマイズできます。"
         japaneseLabel.readMoreText = NSAttributedString(
             string: "続きを読む",
+            attributes: [.foregroundColor: UIColor.systemBlue]
+        )
+        
+        // Arabic (RTL)
+        arabicLabel.text = "🇸🇦 هذا نص طويل باللغة العربية يوضح وظائف ReadMoreLabel. عندما تنقر على زر \"اقرأ المزيد\"، سيتوسع النص لإظهار المحتوى الكامل مع رسوم متحركة سلسة. تدعم هذه المكتبة لغات متعددة وتوفر طريقة نظيفة للتعامل مع اقتطاع النص في تطبيقات iOS الخاصة بك. يمكنك تخصيص المظهر والرسوم المتحركة والسلوك وفقًا لاحتياجاتك. النص العربي يُكتب من اليمين إلى اليسار."
+        arabicLabel.readMoreText = NSAttributedString(
+            string: "اقرأ المزيد",
             attributes: [.foregroundColor: UIColor.systemBlue]
         )
     }
@@ -158,12 +170,17 @@ class LabelViewController: UIViewController {
             japaneseLabel.topAnchor.constraint(equalTo: koreanLabel.bottomAnchor, constant: 30),
             japaneseLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
             japaneseLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
-            japaneseLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -30),
+            
+            // Arabic label (RTL)
+            arabicLabel.topAnchor.constraint(equalTo: japaneseLabel.bottomAnchor, constant: 30),
+            arabicLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
+            arabicLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
+            arabicLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -30),
         ])
     }
 
     @objc private func expandCollapseButtonTapped() {
-        let allLabels = [englishLabel, koreanLabel, japaneseLabel]
+        let allLabels = [englishLabel, koreanLabel, japaneseLabel, arabicLabel]
 
         // Check if any label is expanded
         let hasExpandedLabels = allLabels.contains { $0.isExpanded }
@@ -210,7 +227,7 @@ class LabelViewController: UIViewController {
     }
 
     private func updateExpandCollapseButtonTitle() {
-        let allLabels = [englishLabel, koreanLabel, japaneseLabel]
+        let allLabels = [englishLabel, koreanLabel, japaneseLabel, arabicLabel]
         let hasExpandedLabels = allLabels.contains { $0.isExpanded }
 
         expandCollapseButton.setTitle(hasExpandedLabels ? "Collapse All" : "Expand All", for: .normal)

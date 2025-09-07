@@ -108,6 +108,13 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
     private var lineFragmentPadding: CGFloat {
         0.0
     }
+    
+    /// RTL(Right-to-Left) 환경 감지
+    private var isRTL: Bool {
+        return semanticContentAttribute == .forceRightToLeft || 
+               (semanticContentAttribute == .unspecified && 
+                effectiveUserInterfaceLayoutDirection == .rightToLeft)
+    }
 
     private var defaultTextAttributes: [NSAttributedString.Key: Any] {
         var attributes: [NSAttributedString.Key: Any] = [:]
@@ -289,7 +296,8 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
                 containerWidth: containerWidth,
                 suffix: suffix,
                 lineFragmentPadding: lineFragmentPadding,
-                lineBreakMode: lineBreakMode
+                lineBreakMode: lineBreakMode,
+                isRTL: isRTL
             )
     }
 
@@ -372,7 +380,8 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
             readMoreText: readMoreText,
             spaceBetween: Self.defaultSpaceBetweenEllipsisAndReadMore,
             attributeKey: AttributeKey.isReadMore,
-            defaultAttributes: defaultTextAttributes
+            defaultAttributes: defaultTextAttributes,
+            isRTL: isRTL
         )
 
         let result = applyReadMore(
@@ -500,15 +509,22 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
 // MARK: - NSLayoutManager Extensions
 
 private extension NSLayoutManager {
-    /// Enhanced TextKit 1 truncation location finder with precision
-    func findTruncateLocation(withWidth targetWidth: CGFloat, in glyphRange: NSRange) -> Int {
+    /// Enhanced TextKit 1 truncation location finder with RTL support
+    func findTruncateLocation(withWidth targetWidth: CGFloat, in glyphRange: NSRange, isRTL: Bool = false) -> Int {
         let characterRange = characterRange(forGlyphRange: glyphRange, actualGlyphRange: nil)
 
         // Enhanced hit testing with improved precision
         let lineRect = lineFragmentRect(forGlyphAt: glyphRange.location, effectiveRange: nil)
 
-        // Accurate character boundary detection
-        let targetPoint = CGPoint(x: lineRect.origin.x + targetWidth, y: lineRect.midY)
+        // RTL-aware character boundary detection
+        let targetPoint: CGPoint
+        if isRTL {
+            // RTL: 오른쪽에서 왼쪽으로 targetWidth만큼 이동
+            targetPoint = CGPoint(x: lineRect.maxX - targetWidth, y: lineRect.midY)
+        } else {
+            // LTR: 왼쪽에서 오른쪽으로 targetWidth만큼 이동 (기존 방식)
+            targetPoint = CGPoint(x: lineRect.origin.x + targetWidth, y: lineRect.midY)
+        }
 
         let characterIndex = characterIndex(
             for: targetPoint,
@@ -823,7 +839,8 @@ private extension NSAttributedString {
         containerWidth: CGFloat,
         suffix: NSAttributedString,
         lineFragmentPadding: CGFloat = 0,
-        lineBreakMode: NSLineBreakMode = .byWordWrapping
+        lineBreakMode: NSLineBreakMode = .byWordWrapping,
+        isRTL: Bool = false
     ) -> ReadMoreLabel.TextTruncationResult {
         let (textStorage, layoutManager, textContainer) = creatingTextKitStack(
             containerWidth: containerWidth,
@@ -883,7 +900,7 @@ private extension NSAttributedString {
 
         // Enhanced truncation with improved precision
         let availableWidth = max(0, containerWidth - suffixWidth)
-        let truncateCharacterIndex = layoutManager.findTruncateLocation(withWidth: availableWidth, in: lastLineRange)
+        let truncateCharacterIndex = layoutManager.findTruncateLocation(withWidth: availableWidth, in: lastLineRange, isRTL: isRTL)
 
         let truncatedText = attributedSubstring(from: NSRange(location: 0, length: truncateCharacterIndex))
         let cleanedTruncatedText = truncatedText.removingTrailingNewlineIfNeeded()
@@ -908,24 +925,39 @@ private extension NSAttributedString {
         readMoreText: NSAttributedString,
         spaceBetween: String,
         attributeKey: NSAttributedString.Key,
-        defaultAttributes: [NSAttributedString.Key: Any]
+        defaultAttributes: [NSAttributedString.Key: Any],
+        isRTL: Bool = false
     ) -> NSAttributedString {
         let lastAttributes = lastTextAttributes(defaultAttributes: defaultAttributes)
 
         let suffix = NSMutableAttributedString()
-
         let ellipsisWithLastAttributes = ellipsisText.createMutableWithAttributes(lastAttributes)
-
-        suffix.append(ellipsisWithLastAttributes)
-        suffix.append(NSAttributedString(string: spaceBetween, attributes: lastAttributes))
-        let readMoreStartLocation = suffix.length
-
         let readMoreWithOriginalAttributes = readMoreText.createMutableWithAttributes(lastAttributes)
 
-        suffix.append(readMoreWithOriginalAttributes)
-        let readMoreRange = NSRange(location: readMoreStartLocation, length: readMoreWithOriginalAttributes.length)
-        suffix.addAttribute(attributeKey, value: true, range: readMoreRange)
+        let readMoreStartLocation: Int
+        let readMoreRange: NSRange
 
+        if isRTL {
+            // RTL: ALM + ellipsis + NBSP + Read More 순서
+            // ALM으로 방향성 제어, NBSP로 Read More와 ellipsis 연결
+            suffix.append(NSAttributedString(string: "\u{061C}", attributes: lastAttributes)) // ALM
+            suffix.append(ellipsisWithLastAttributes) // ".."
+            suffix.append(NSAttributedString(string: "\u{00A0}", attributes: lastAttributes)) // NBSP
+            
+            readMoreStartLocation = suffix.length
+            suffix.append(readMoreWithOriginalAttributes) // "اقرأ المزيد"
+            
+            readMoreRange = NSRange(location: readMoreStartLocation, length: readMoreWithOriginalAttributes.length)
+        } else {
+            // LTR: ellipsis 먼저, 그 다음 "Read More" (기존 방식)
+            suffix.append(ellipsisWithLastAttributes)
+            suffix.append(NSAttributedString(string: spaceBetween, attributes: lastAttributes))
+            readMoreStartLocation = suffix.length
+            suffix.append(readMoreWithOriginalAttributes)
+            readMoreRange = NSRange(location: readMoreStartLocation, length: readMoreWithOriginalAttributes.length)
+        }
+
+        suffix.addAttribute(attributeKey, value: true, range: readMoreRange)
         return suffix
     }
 
