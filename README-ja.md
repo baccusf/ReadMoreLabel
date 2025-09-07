@@ -234,7 +234,7 @@ func readMoreLabel(_ label: ReadMoreLabel, didChangeExpandedState isExpanded: Bo
 class ExampleTableViewCell: UITableViewCell {
     private let readMoreLabel: ReadMoreLabel = {
         let label = ReadMoreLabel()
-        label.numberOfLinesWhenCollapsed = 3
+        label.numberOfLines = 3
         label.font = UIFont.systemFont(ofSize: 16)
         label.textColor = .label
         label.translatesAutoresizingMaskIntoConstraints = false
