@@ -14,6 +14,7 @@ A powerful and flexible UILabel subclass that provides "Read More" functionality
 - **Natural Text Flow**: Customizable ellipsis text before "Read More" for seamless visual connection (`text.. Read More..`)
 - **Flexible Positioning**: Choose whether "Read More" appears at the end or beginning of truncated content
 - **Character-Level Precision**: Fine-tunes truncation at both word and character levels for optimal space utilization
+- **RTL Language Support**: Full support for Right-to-Left languages (Arabic, Hebrew) with proper BiDi text handling
 - **Smooth Animations**: Built-in expand/collapse animations with delegate callbacks
 - **Customizable Appearance**: Support for NSAttributedString styling on "Read More" text
 - **Flexible Configuration**: Disable "Read More" functionality by setting `numberOfLinesWhenCollapsed = 0`
@@ -168,6 +169,7 @@ readMoreLabel.readMoreText = NSAttributedString(string: "Show More →", attribu
 readMoreLabel.readMoreText = NSAttributedString(string: "続きを読む..")  // Japanese
 readMoreLabel.readMoreText = NSAttributedString(string: "더보기..")     // Korean
 readMoreLabel.readMoreText = NSAttributedString(string: "Ver más..")   // Spanish
+readMoreLabel.readMoreText = NSAttributedString(string: "اقرأ المزيد")  // Arabic
 
 // Custom ellipsis and positioning
 readMoreLabel.ellipsisText = NSAttributedString(string: "→")              // Arrow instead of dots
@@ -177,6 +179,57 @@ readMoreLabel.ellipsisText = NSAttributedString(string: "✨")             // Em
 // Position control  
 readMoreLabel.readMorePosition = .end         // Last line: "text.. Read More.." (default)
 readMoreLabel.readMorePosition = .newLine     // New line after truncated text: "Read More.." only
+```
+
+## 🌐 RTL Language Support
+
+ReadMoreLabel provides comprehensive support for Right-to-Left languages such as Arabic and Hebrew:
+
+### RTL Configuration
+
+```swift
+// Arabic RTL setup
+let arabicLabel = ReadMoreLabel()
+arabicLabel.semanticContentAttribute = .forceRightToLeft
+arabicLabel.textAlignment = .right
+arabicLabel.numberOfLines = 3
+arabicLabel.text = "هذا نص طويل باللغة العربية يوضح وظائف ReadMoreLabel..."
+arabicLabel.readMoreText = NSAttributedString(
+    string: "اقرأ المزيد",
+    attributes: [.foregroundColor: UIColor.systemBlue]
+)
+
+// Hebrew RTL setup
+let hebrewLabel = ReadMoreLabel()
+hebrewLabel.semanticContentAttribute = .forceRightToLeft  
+hebrewLabel.textAlignment = .right
+hebrewLabel.text = "זה טקסט ארוך בעברית המדגים את הפונקציות של ReadMoreLabel..."
+hebrewLabel.readMoreText = NSAttributedString(string: "קרא עוד")
+```
+
+### RTL Features
+
+- **Automatic RTL Detection**: Detects RTL context from `semanticContentAttribute` and `effectiveUserInterfaceLayoutDirection`
+- **RTL-Aware Text Truncation**: Properly calculates truncation positions for RTL text layout
+- **BiDi Text Handling**: Supports bidirectional text with proper Unicode directional markers
+- **RTL Suffix Ordering**: Natural RTL suffix composition (ellipsis + "Read More" in correct order)
+- **Touch Area Preservation**: Maintains accurate touch detection in RTL layouts
+
+### Implementation Details
+
+```swift
+// RTL detection logic (internal)
+private var isRTL: Bool {
+    return semanticContentAttribute == .forceRightToLeft || 
+           (semanticContentAttribute == .unspecified && effectiveUserInterfaceLayoutDirection == .rightToLeft)
+}
+
+// RTL-aware truncation coordinates
+if isRTL {
+    targetPoint = CGPoint(x: lineRect.maxX - targetWidth, y: lineRect.midY)
+} else {
+    targetPoint = CGPoint(x: lineRect.origin.x + targetWidth, y: lineRect.midY)
+}
 ```
 
 ## ⚠️ Important Notes

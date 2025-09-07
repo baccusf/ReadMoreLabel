@@ -14,6 +14,7 @@
 - **자연스러운 텍스트 연결**: 커스터마이징 가능한 ellipsis 텍스트로 매끄러운 시각적 연결 (`텍스트.. 더보기..`)
 - **유연한 위치 제어**: "더보기"가 잘린 콘텐츠의 끝이나 시작 부분에 나타나도록 선택 가능
 - **문자 단위 정밀도**: 단어와 문자 레벨에서 잘림 위치를 미세 조정하여 공간 활용 최적화
+- **RTL 언어 지원**: 아랍어, 히브리어 등 오른쪽에서 왼쪽으로 쓰는 언어 완벽 지원 및 BiDi 텍스트 처리
 - **부드러운 애니메이션**: 내장된 확장/축소 애니메이션과 델리게이트 콜백
 - **커스터마이징 가능한 외관**: "더보기" 텍스트에 NSAttributedString 스타일링 지원
 - **유연한 설정**: `numberOfLinesWhenCollapsed = 0`으로 "더보기" 기능 비활성화 가능
@@ -164,6 +165,7 @@ readMoreLabel.readMoreText = NSAttributedString(string: "더 보기 →", attrib
 readMoreLabel.readMoreText = NSAttributedString(string: "続きを読む..")  // 일본어
 readMoreLabel.readMoreText = NSAttributedString(string: "더보기..")     // 한국어
 readMoreLabel.readMoreText = NSAttributedString(string: "Ver más..")   // 스페인어
+readMoreLabel.readMoreText = NSAttributedString(string: "اقرأ المزيد")  // 아랍어
 
 // 커스텀 ellipsis와 위치 제어
 readMoreLabel.ellipsisText = NSAttributedString(string: "→")              // 점 대신 화살표
@@ -173,6 +175,57 @@ readMoreLabel.ellipsisText = NSAttributedString(string: "✨")             // �
 // 위치 제어
 readMoreLabel.readMorePosition = .end         // 마지막 줄: "텍스트.. 더보기.." (기본값)
 readMoreLabel.readMorePosition = .newLine     // 새 줄에 "더보기.." 표시
+```
+
+## 🌐 RTL 언어 지원
+
+ReadMoreLabel은 아랍어 및 히브리어와 같은 오른쪽에서 왼쪽으로 쓰는 언어를 포괄적으로 지원합니다:
+
+### RTL 설정
+
+```swift
+// 아랍어 RTL 설정
+let arabicLabel = ReadMoreLabel()
+arabicLabel.semanticContentAttribute = .forceRightToLeft
+arabicLabel.textAlignment = .right
+arabicLabel.numberOfLines = 3
+arabicLabel.text = "هذا نص طويل باللغة العربية يوضح وظائف ReadMoreLabel..."
+arabicLabel.readMoreText = NSAttributedString(
+    string: "اقرأ المزيد",
+    attributes: [.foregroundColor: UIColor.systemBlue]
+)
+
+// 히브리어 RTL 설정
+let hebrewLabel = ReadMoreLabel()
+hebrewLabel.semanticContentAttribute = .forceRightToLeft  
+hebrewLabel.textAlignment = .right
+hebrewLabel.text = "זה טקסט ארוך בעברית המדגים את הפונקציות של ReadMoreLabel..."
+hebrewLabel.readMoreText = NSAttributedString(string: "קרא עוד")
+```
+
+### RTL 기능
+
+- **자동 RTL 감지**: `semanticContentAttribute`와 `effectiveUserInterfaceLayoutDirection`에서 RTL 컨텍스트 자동 감지
+- **RTL 인식 텍스트 자르기**: RTL 텍스트 레이아웃에 맞는 정확한 자르기 위치 계산
+- **BiDi 텍스트 처리**: 적절한 유니코드 방향 마커를 통한 양방향 텍스트 지원
+- **RTL 접미사 순서**: 자연스러운 RTL 접미사 구성 (ellipsis + "더보기" 올바른 순서)
+- **터치 영역 보존**: RTL 레이아웃에서 정확한 터치 감지 유지
+
+### 구현 세부사항
+
+```swift
+// RTL 감지 로직 (내부)
+private var isRTL: Bool {
+    return semanticContentAttribute == .forceRightToLeft || 
+           (semanticContentAttribute == .unspecified && effectiveUserInterfaceLayoutDirection == .rightToLeft)
+}
+
+// RTL 인식 자르기 좌표
+if isRTL {
+    targetPoint = CGPoint(x: lineRect.maxX - targetWidth, y: lineRect.midY)
+} else {
+    targetPoint = CGPoint(x: lineRect.origin.x + targetWidth, y: lineRect.midY)
+}
 ```
 
 ## ⚠️ 중요 사항
