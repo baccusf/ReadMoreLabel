@@ -3,6 +3,16 @@ import UIKit
 
 @available(iOS 16.0, *)
 class LabelViewController: UIViewController {
+    // MARK: - Properties
+    
+    private let viewModel = LabelViewModel()
+    
+    // Top controls (outside scroll view)
+    private let topControlsContainer = UIView()
+    private let animationToggleSwitch = UISwitch()
+    private let expandCollapseButton = UIButton(type: .system)
+    
+    // ScrollView and content
     private let scrollView = UIScrollView()
     private let contentView = UIView()
 
@@ -11,29 +21,22 @@ class LabelViewController: UIViewController {
     private let koreanLabel = ReadMoreLabel()
     private let japaneseLabel = ReadMoreLabel()
 
-    // Control buttons
-    private let animationToggleSwitch = UISwitch()
-    private let expandCollapseButton = UIButton(type: .system)
-
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
         setupLabels()
+        bindViewModel()
     }
 
     private func setupUI() {
         view.backgroundColor = .systemBackground
         title = "Animation Examples"
 
+        // Setup top controls container
+        setupTopControls()
+        
         // Setup scroll view
-        scrollView.translatesAutoresizingMaskIntoConstraints = false
-        contentView.translatesAutoresizingMaskIntoConstraints = false
-
-        view.addSubview(scrollView)
-        scrollView.addSubview(contentView)
-
-        // Setup controls
-        setupControls()
+        setupScrollView()
 
         // Setup labels
         setupReadMoreLabels()
@@ -42,7 +45,10 @@ class LabelViewController: UIViewController {
         setupConstraints()
     }
 
-    private func setupControls() {
+    private func setupTopControls() {
+        topControlsContainer.backgroundColor = .systemBackground
+        topControlsContainer.translatesAutoresizingMaskIntoConstraints = false
+        
         let controlsStackView = UIStackView()
         controlsStackView.axis = .vertical
         controlsStackView.spacing = 16
@@ -58,7 +64,8 @@ class LabelViewController: UIViewController {
         animationLabel.text = "Enable Animation:"
         animationLabel.font = UIFont.systemFont(ofSize: 16, weight: .medium)
 
-        animationToggleSwitch.isOn = true
+        animationToggleSwitch.isOn = viewModel.isAnimationEnabled
+        animationToggleSwitch.addTarget(self, action: #selector(animationToggleChanged), for: .valueChanged)
 
         animationStack.addArrangedSubview(animationLabel)
         animationStack.addArrangedSubview(animationToggleSwitch)
@@ -77,15 +84,25 @@ class LabelViewController: UIViewController {
 
         controlsStackView.addArrangedSubview(animationStack)
         controlsStackView.addArrangedSubview(expandCollapseButton)
-
-        contentView.addSubview(controlsStackView)
+        
+        topControlsContainer.addSubview(controlsStackView)
+        view.addSubview(topControlsContainer)
 
         NSLayoutConstraint.activate([
-            controlsStackView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 20),
-            controlsStackView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            controlsStackView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
+            controlsStackView.topAnchor.constraint(equalTo: topControlsContainer.topAnchor, constant: 20),
+            controlsStackView.leadingAnchor.constraint(equalTo: topControlsContainer.leadingAnchor, constant: 16),
+            controlsStackView.trailingAnchor.constraint(equalTo: topControlsContainer.trailingAnchor, constant: -16),
+            controlsStackView.bottomAnchor.constraint(equalTo: topControlsContainer.bottomAnchor, constant: -20),
             expandCollapseButton.heightAnchor.constraint(equalToConstant: 44),
         ])
+    }
+    
+    private func setupScrollView() {
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        contentView.translatesAutoresizingMaskIntoConstraints = false
+
+        view.addSubview(scrollView)
+        scrollView.addSubview(contentView)
     }
 
     private func setupReadMoreLabels() {
@@ -102,37 +119,25 @@ class LabelViewController: UIViewController {
     }
 
     private func setupLabels() {
-        // English
-        englishLabel.text = "🇺🇸 This is a long English text that demonstrates the ReadMoreLabel functionality. When you tap the 'Read More' button, the text will expand to show the full content with smooth animation. The library supports multiple languages and provides a clean way to handle text truncation in your iOS applications. You can customize the appearance, animation, and behavior according to your needs."
-        englishLabel.readMoreText = NSAttributedString(
-            string: "Read More",
-            attributes: [.foregroundColor: UIColor.systemBlue]
-        )
-
-        // Korean
-        koreanLabel.text = "🇰🇷 이것은 ReadMoreLabel 기능을 보여주는 긴 한국어 텍스트입니다. '더보기' 버튼을 탭하면 부드러운 애니메이션과 함께 전체 텍스트가 확장됩니다. 이 라이브러리는 다국어를 지원하며 iOS 애플리케이션에서 텍스트 자르기를 깔끔하게 처리하는 방법을 제공합니다. 필요에 따라 모양, 애니메이션 및 동작을 사용자 정의할 수 있습니다."
-        koreanLabel.readMoreText = NSAttributedString(
-            string: "더보기",
-            attributes: [.foregroundColor: UIColor.systemBlue]
-        )
-
-        // Japanese
-        japaneseLabel.text = "🇯🇵 これはReadMoreLabelの機能を示す長い日本語のテキストです。「続きを読む」ボタンをタップすると、スムーズなアニメーションとともにテキスト全体が展開されます。このライブラリは多言語をサポートし、iOSアプリケーションでテキストの切り詰めをきれいに処理する方法を提供します。必要に応じて、外観、アニメーション、動作をカスタマイズできます。"
-        japaneseLabel.readMoreText = NSAttributedString(
-            string: "続きを読む",
-            attributes: [.foregroundColor: UIColor.systemBlue]
-        )
+        // Configure labels with ViewModel data
+        let labels = [englishLabel, koreanLabel, japaneseLabel]
+        for (index, label) in labels.enumerated() {
+            let labelData = viewModel.labelData[index]
+            label.text = labelData.text
+            label.readMoreText = labelData.readMoreText
+            label.setExpanded(labelData.isExpanded)
+        }
     }
 
     private func setupConstraints() {
-        // Find the controls stack view
-        guard let controlsStackView = contentView.subviews.first(where: { $0 is UIStackView }) as? UIStackView else {
-            return
-        }
-
         NSLayoutConstraint.activate([
-            // Scroll view constraints
-            scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            // Top controls container constraints
+            topControlsContainer.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            topControlsContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            topControlsContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            
+            // Scroll view constraints (below top controls)
+            scrollView.topAnchor.constraint(equalTo: topControlsContainer.bottomAnchor),
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
@@ -145,7 +150,7 @@ class LabelViewController: UIViewController {
             contentView.widthAnchor.constraint(equalTo: scrollView.widthAnchor),
 
             // English label
-            englishLabel.topAnchor.constraint(equalTo: controlsStackView.bottomAnchor, constant: 30),
+            englishLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 20),
             englishLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
             englishLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
 
@@ -165,12 +170,11 @@ class LabelViewController: UIViewController {
     @objc private func expandCollapseButtonTapped() {
         let allLabels = [englishLabel, koreanLabel, japaneseLabel]
 
-        // Check if any label is expanded
-        let hasExpandedLabels = allLabels.contains { $0.isExpanded }
+        // Check if any label is expanded through ViewModel
+        let hasExpandedLabels = viewModel.hasAnyExpandedLabels()
 
-        // 애니메이션 설정에 따라 레이아웃 애니메이션 적용
         let animateLayout = {
-            if self.animationToggleSwitch.isOn {
+            if self.viewModel.isAnimationEnabled {
                 UIView.animate(
                     withDuration: 0.3,
                     delay: 0,
@@ -188,7 +192,8 @@ class LabelViewController: UIViewController {
         }
 
         if hasExpandedLabels {
-            // Collapse all
+            // Collapse all through ViewModel
+            viewModel.collapseAll()
             for label in allLabels {
                 if label.isExpanded {
                     label.collapse()
@@ -196,7 +201,8 @@ class LabelViewController: UIViewController {
             }
             expandCollapseButton.setTitle("Expand All", for: .normal)
         } else {
-            // Expand all
+            // Expand all through ViewModel
+            viewModel.expandAll()
             for label in allLabels {
                 if !label.isExpanded, label.isExpandable {
                     label.expand()
@@ -205,15 +211,21 @@ class LabelViewController: UIViewController {
             expandCollapseButton.setTitle("Collapse All", for: .normal)
         }
 
-        // 모든 변경 후 레이아웃 애니메이션 적용
         animateLayout()
     }
 
     private func updateExpandCollapseButtonTitle() {
-        let allLabels = [englishLabel, koreanLabel, japaneseLabel]
-        let hasExpandedLabels = allLabels.contains { $0.isExpanded }
-
+        let hasExpandedLabels = viewModel.hasAnyExpandedLabels()
         expandCollapseButton.setTitle(hasExpandedLabels ? "Collapse All" : "Expand All", for: .normal)
+    }
+    
+    private func bindViewModel() {
+        // ViewModel의 변경사항을 감지하여 UI 업데이트
+        // 실제 프로젝트에서는 Combine 또는 다른 reactive framework를 사용할 수 있습니다.
+    }
+    
+    @objc private func animationToggleChanged(_ sender: UISwitch) {
+        viewModel.toggleAnimation(sender.isOn)
     }
 }
 
@@ -222,10 +234,17 @@ class LabelViewController: UIViewController {
 @available(iOS 16.0, *)
 extension LabelViewController: ReadMoreLabelDelegate {
     func readMoreLabel(_ label: ReadMoreLabel, didChangeExpandedState isExpanded: Bool) {
+        // Update ViewModel state
+        let allLabels = [englishLabel, koreanLabel, japaneseLabel]
+        if let index = allLabels.firstIndex(of: label) {
+            let labelData = viewModel.labelData[index]
+            viewModel.updateExpandedState(for: labelData.id, isExpanded: isExpanded)
+        }
+        
         updateExpandCollapseButtonTitle()
 
         // ScrollView에서 레이아웃 애니메이션 적용
-        if animationToggleSwitch.isOn {
+        if viewModel.isAnimationEnabled {
             UIView.animate(
                 withDuration: 0.3,
                 delay: 0,

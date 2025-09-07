@@ -10,7 +10,10 @@ import UIKit
 
 @available(iOS 16.0, *)
 class ExampleTableViewCell: UITableViewCell {
+    // MARK: - Properties
+    
     weak var delegate: ReadMoreLabelDelegate?
+    private let styleProvider = TableViewModel.StyleProvider()
 
     private let readMoreLabel: ReadMoreLabel = {
         let label = ReadMoreLabel()
@@ -64,7 +67,7 @@ class ExampleTableViewCell: UITableViewCell {
         bottomConstraint.isActive = true
     }
 
-    func configure(with sampleData: TableViewController.SampleData, isExpanded: Bool,
+    func configure(with sampleData: TableViewModel.ReadMoreSampleData, isExpanded: Bool,
                    delegate: ReadMoreLabelDelegate?)
     {
         // Set delegate first
@@ -74,207 +77,13 @@ class ExampleTableViewCell: UITableViewCell {
         readMoreLabel.text = sampleData.text
         readMoreLabel.readMorePosition = sampleData.position
 
-        // Apply different styles and language-specific settings BEFORE setting expanded state
+        // Apply different styles using StyleProvider BEFORE setting expanded state
         // This prevents font changes from overriding the expanded state
-        applyStyle(sampleData.style, language: sampleData.language)
+        styleProvider.applyStyle(sampleData.style, to: readMoreLabel, with: sampleData)
 
         // Set expanded state LAST to preserve it after style changes
         // Cell 재사용 시에는 delegate 호출하지 않음 (불필요한 상태 업데이트 방지)
         readMoreLabel.setExpanded(isExpanded)
     }
 
-    private func applyStyle(_ style: ReadMoreLabel.Style, language: String) {
-        // Get language-specific read more text
-        let readMoreTexts = getReadMoreTexts(for: language, style: style)
-
-        // Apply ellipsis
-        readMoreLabel.ellipsisText = NSAttributedString(string: readMoreTexts.ellipsis)
-
-        // Apply style-specific attributes
-        switch style {
-        case .basic:
-            readMoreLabel.font = UIFont.systemFont(ofSize: 16)
-            readMoreLabel.readMoreText = NSAttributedString(
-                string: readMoreTexts.text,
-                attributes: [
-                    .foregroundColor: UIColor.systemBlue,
-                    .font: UIFont.systemFont(ofSize: 16, weight: .medium),
-                ]
-            )
-
-        case .colorful:
-            readMoreLabel.font = UIFont.systemFont(ofSize: 16)
-            readMoreLabel.readMoreText = NSAttributedString(
-                string: readMoreTexts.text,
-                attributes: [
-                    .foregroundColor: UIColor.systemPurple,
-                    .font: UIFont.systemFont(ofSize: 16, weight: .semibold),
-                    .underlineStyle: NSUnderlineStyle.single.rawValue,
-                ]
-            )
-
-        case .emoji:
-            readMoreLabel.font = UIFont.systemFont(ofSize: 16)
-            readMoreLabel.readMoreText = NSAttributedString(
-                string: readMoreTexts.text,
-                attributes: [
-                    .foregroundColor: UIColor.systemOrange,
-                    .font: UIFont.systemFont(ofSize: 15, weight: .bold),
-                ]
-            )
-
-        case .gradient:
-            readMoreLabel.font = UIFont.systemFont(ofSize: 16)
-            readMoreLabel.readMoreText = NSAttributedString(
-                string: readMoreTexts.text,
-                attributes: [
-                    .foregroundColor: UIColor.systemTeal,
-                    .font: UIFont.italicSystemFont(ofSize: 16),
-                    .underlineStyle: NSUnderlineStyle.single.rawValue,
-                    .underlineColor: UIColor.systemTeal,
-                ]
-            )
-
-        case .bold:
-            readMoreLabel.font = UIFont.systemFont(ofSize: 16)
-            readMoreLabel.readMoreText = NSAttributedString(
-                string: readMoreTexts.text,
-                attributes: [
-                    .foregroundColor: UIColor.systemRed,
-                    .font: UIFont.systemFont(ofSize: 16, weight: .black),
-                    .underlineStyle: NSUnderlineStyle.thick.rawValue,
-                ]
-            )
-
-        case .mobile:
-            readMoreLabel.font = UIFont.systemFont(ofSize: 16)
-            readMoreLabel.readMoreText = NSAttributedString(
-                string: readMoreTexts.text,
-                attributes: [
-                    .foregroundColor: UIColor.systemIndigo,
-                    .font: UIFont.systemFont(ofSize: 15, weight: .medium),
-                    .backgroundColor: UIColor.systemIndigo.withAlphaComponent(0.1),
-                ]
-            )
-
-        case .fontSizeSmall:
-            readMoreLabel.font = UIFont.systemFont(ofSize: 12)
-            readMoreLabel.readMoreText = NSAttributedString(
-                string: readMoreTexts.text,
-                attributes: [
-                    .foregroundColor: UIColor.systemBlue,
-                    .font: UIFont.systemFont(ofSize: 12, weight: .medium),
-                ]
-            )
-
-        case .fontSizeMedium:
-            readMoreLabel.font = UIFont.systemFont(ofSize: 18)
-            readMoreLabel.readMoreText = NSAttributedString(
-                string: readMoreTexts.text,
-                attributes: [
-                    .foregroundColor: UIColor.systemGreen,
-                    .font: UIFont.systemFont(ofSize: 18, weight: .semibold),
-                ]
-            )
-
-        case .fontSizeLarge:
-            readMoreLabel.font = UIFont.systemFont(ofSize: 24)
-            readMoreLabel.readMoreText = NSAttributedString(
-                string: readMoreTexts.text,
-                attributes: [
-                    .foregroundColor: UIColor.systemOrange,
-                    .font: UIFont.systemFont(ofSize: 24, weight: .bold),
-                ]
-            )
-
-        case .fontSizeXLarge:
-            readMoreLabel.font = UIFont.systemFont(ofSize: 32)
-            readMoreLabel.readMoreText = NSAttributedString(
-                string: readMoreTexts.text,
-                attributes: [
-                    .foregroundColor: UIColor.systemRed,
-                    .font: UIFont.systemFont(ofSize: 32, weight: .heavy),
-                ]
-            )
-        }
-    }
-
-    private func getReadMoreTexts(for language: String,
-                                  style: ReadMoreLabel.Style) -> (text: String, ellipsis: String)
-    {
-        switch (language, style) {
-        // English
-        case ("en", .basic):
-            ("More..", "..")
-        case ("en", .colorful):
-            ("🎨 Read More", "***")
-        case ("en", .emoji):
-            ("✨ More Magic", "...")
-        case ("en", .gradient):
-            ("Continue Reading →", "~")
-        case ("en", .bold):
-            ("🔥 SEE MORE", "!!!")
-        case ("en", .mobile):
-            ("📱 Tap to Expand", "...")
-        // Korean
-        case ("ko", .basic):
-            ("더보기..", "..")
-        case ("ko", .colorful):
-            ("🎨 더 읽기", "***")
-        case ("ko", .emoji):
-            ("✨ 더보기 매직", "...")
-        case ("ko", .gradient):
-            ("계속 읽기 →", "~")
-        case ("ko", .bold):
-            ("🔥 더보기", "!!!")
-        case ("ko", .mobile):
-            ("📱 탭하여 확장", "...")
-        // Japanese
-        case ("ja", .basic):
-            ("続きを読む..", "..")
-        case ("ja", .colorful):
-            ("🎨 もっと読む", "***")
-        case ("ja", .emoji):
-            ("✨ もっと見る", "...")
-        case ("ja", .gradient):
-            ("続きを読む →", "~")
-        case ("ja", .bold):
-            ("🔥 もっと見る", "!!!")
-        case ("ja", .mobile):
-            ("📱 タップして展開", "...")
-        // Font Size Testing - English
-        case ("en", .fontSizeSmall):
-            ("📝 Read More (12pt)", ".")
-        case ("en", .fontSizeMedium):
-            ("📚 Read More (18pt)", "..")
-        case ("en", .fontSizeLarge):
-            ("📖 Read More (24pt)", "...")
-        case ("en", .fontSizeXLarge):
-            ("🎯 Read More (32pt)", "....")
-        // Font Size Testing - Korean
-        case ("ko", .fontSizeSmall):
-            ("📝 더보기 (12pt)", ".")
-        case ("ko", .fontSizeMedium):
-            ("📚 더보기 (18pt)", "..")
-        case ("ko", .fontSizeLarge):
-            ("📖 더보기 (24pt)", "...")
-        case ("ko", .fontSizeXLarge):
-            ("🎯 더보기 (32pt)", "....")
-        // Font Size Testing - Japanese
-        case ("ja", .fontSizeSmall):
-            ("📝 もっと見る (12pt)", ".")
-        case ("ja", .fontSizeMedium):
-            ("📚 もっと見る (18pt)", "..")
-        case ("ja", .fontSizeLarge):
-            ("📖 もっと見る (24pt)", "...")
-        case ("ja", .fontSizeXLarge):
-            ("🎯 もっと見る (32pt)", "....")
-        // Font size styles fallback to English for other languages
-        case (_, .fontSizeSmall), (_, .fontSizeMedium), (_, .fontSizeLarge), (_, .fontSizeXLarge):
-            getReadMoreTexts(for: "en", style: style)
-        // Default fallback to English
-        default:
-            getReadMoreTexts(for: "en", style: style)
-        }
-    }
 }
