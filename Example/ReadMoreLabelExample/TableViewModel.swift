@@ -47,12 +47,6 @@ class TableViewModel: ObservableObject {
     
     private func loadSampleData() {
         sampleData = [
-            ReadMoreSampleData(
-                text: "✨ English emoji example with beginningNewLine position! 🚀 This ReadMoreLabel uses emoji bullets and styled text to create a more visually appealing user experience. The 'Read More' button appears on a completely new line after all allowed lines are displayed. Perfect for social media apps and news readers.",
-                style: .emoji,
-                position: .newLine,
-                language: "en"
-            ),
             // English Examples
             ReadMoreSampleData(
                 text: "This is a longer English text that demonstrates the basic 'More..' functionality at the newLine position. ReadMoreLabel provides a clean and intuitive way to handle text truncation in your iOS applications. Users can tap the 'More..' button to reveal the complete content with smooth animations.",
@@ -67,7 +61,7 @@ class TableViewModel: ObservableObject {
                 language: "en"
             ),
             ReadMoreSampleData(
-                text: "✨ English emoji example with beginningNewLine position! 🚀 This ReadMoreLabel uses emoji bullets and styled text to create a more visually appealing user experience. The 'Read More' button appears on a completely new line after all allowed lines are displayed. Perfect for social media apps and news readers. 📱💻🎨 This extended text ensures that even on iPhone 16's wide screen (393pt), the content will definitely require more than 3 lines to display properly, triggering the ReadMore functionality as expected. 🌟✨🔥",
+                text: "✨ English emoji example with end position! 🚀 This ReadMoreLabel uses emoji bullets and styled text to create a more visually appealing user experience. Perfect for social media apps and news readers. 📱💻🎨 This extended text ensures that even on iPhone 16's wide screen (393pt), the content will definitely require more than 3 lines to display properly, triggering the ReadMore functionality as expected. 🌟✨🔥",
                 style: .emoji,
                 position: .end,
                 language: "en"
@@ -81,13 +75,7 @@ class TableViewModel: ObservableObject {
                 language: "ko"
             ),
             ReadMoreSampleData(
-                text: "🚀🔥💯 이모지가 포함된 텍스트 예제입니다! 🎉✨🌟 ReadMoreLabel은 복잡한 유니코드 문자도 정확하게 처리할 수 있습니다. 😊📱💻 다양한 이모지와 함께 텍스트가 올바르게 잘리는지 확인해보세요! 🎯🚀⭐ 이진 탐색 알고리즘을 사용하여 효율적으로 처리됩니다. 🔍💡🎨",
-                style: .mobile,
-                position: .end,
-                language: "ko"
-            ),
-            ReadMoreSampleData(
-                text: "🚀🔥💯 이모지가 포함된 텍스트 예제입니다! 🎉✨🌟 ReadMoreLabel은 복잡한 유니코드 문자도 정확하게 처리할 수 있습니다. \n😊📱💻 다양한 이모지와 함께 텍스트가 올바르게 잘리는지 확인해보세요! 🎯🚀⭐ 이진 탐색 알고리즘을 사용하여 효율적으로 처리됩니다. 🔍💡🎨",
+                text: "🚀🔥💯 이모지가 포함된 텍스트 예제입니다! 🎉✨🌟 ReadMoreLabel은 복잡한 유니코드 문자도 정확하게 처리할 수 있습니다. 😊📱💻 다양한 이모지와 함께 텍스트가 올바르게 잘리는지 확인해보세요! 🎯🚀⭐ TextKit 1을 사용하여 효율적으로 처리됩니다. 🔍💡🎨",
                 style: .mobile,
                 position: .end,
                 language: "ko"

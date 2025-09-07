@@ -29,7 +29,6 @@ class LabelViewController: UIViewController {
         super.viewDidLoad()
         setupUI()
         setupLabels()
-        bindViewModel()
     }
 
     private func setupUI() {
@@ -184,24 +183,6 @@ class LabelViewController: UIViewController {
         // Check if any label is expanded through ViewModel
         let hasExpandedLabels = viewModel.hasAnyExpandedLabels()
 
-        let animateLayout = {
-            if self.viewModel.isAnimationEnabled {
-                UIView.animate(
-                    withDuration: 0.3,
-                    delay: 0,
-                    usingSpringWithDamping: 0.8,
-                    initialSpringVelocity: 0.5,
-                    options: [.curveEaseInOut],
-                    animations: {
-                        self.view.layoutIfNeeded()
-                    },
-                    completion: nil
-                )
-            } else {
-                self.view.layoutIfNeeded()
-            }
-        }
-
         if hasExpandedLabels {
             // Collapse all through ViewModel
             viewModel.collapseAll()
@@ -222,7 +203,7 @@ class LabelViewController: UIViewController {
             expandCollapseButton.setTitle("Collapse All", for: .normal)
         }
 
-        animateLayout()
+        performLayoutAnimation()
     }
 
     private func updateExpandCollapseButtonTitle() {
@@ -230,9 +211,22 @@ class LabelViewController: UIViewController {
         expandCollapseButton.setTitle(hasExpandedLabels ? "Collapse All" : "Expand All", for: .normal)
     }
     
-    private func bindViewModel() {
-        // ViewModel의 변경사항을 감지하여 UI 업데이트
-        // 실제 프로젝트에서는 Combine 또는 다른 reactive framework를 사용할 수 있습니다.
+    private func performLayoutAnimation() {
+        if viewModel.isAnimationEnabled {
+            UIView.animate(
+                withDuration: 0.3,
+                delay: 0,
+                usingSpringWithDamping: 0.8,
+                initialSpringVelocity: 0.5,
+                options: [.curveEaseInOut],
+                animations: {
+                    self.view.layoutIfNeeded()
+                },
+                completion: nil
+            )
+        } else {
+            view.layoutIfNeeded()
+        }
     }
     
     @objc private func animationToggleChanged(_ sender: UISwitch) {
@@ -253,22 +247,6 @@ extension LabelViewController: ReadMoreLabelDelegate {
         }
         
         updateExpandCollapseButtonTitle()
-
-        // ScrollView에서 레이아웃 애니메이션 적용
-        if viewModel.isAnimationEnabled {
-            UIView.animate(
-                withDuration: 0.3,
-                delay: 0,
-                usingSpringWithDamping: 0.8,
-                initialSpringVelocity: 0.5,
-                options: [.curveEaseInOut],
-                animations: {
-                    self.view.layoutIfNeeded()
-                },
-                completion: nil
-            )
-        } else {
-            view.layoutIfNeeded()
-        }
+        performLayoutAnimation()
     }
 }

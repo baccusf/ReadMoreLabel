@@ -19,8 +19,7 @@ class TableViewController: UIViewController {
         super.viewWillTransition(to: size, with: coordinator)
 
         coordinator.animate(alongsideTransition: { _ in
-            self.tableView.beginUpdates()
-            self.tableView.endUpdates()
+            self.refreshTableLayout()
         })
     }
 
@@ -142,15 +141,24 @@ extension TableViewController: ReadMoreLabelDelegate {
         viewModel.updateExpandedState(at: indexPath.row, isExpanded: isExpanded)
 
         // 테이블 뷰 업데이트 (높이 변경 반영)
+        performTableLayoutUpdate()
+    }
+    
+    // MARK: - Private Helpers
+    
+    private func refreshTableLayout() {
+        tableView.beginUpdates()
+        tableView.endUpdates()
+    }
+    
+    private func performTableLayoutUpdate() {
         if viewModel.isAnimationEnabled {
             UIView.animate(withDuration: 0.3) {
-                self.tableView.beginUpdates()
-                self.tableView.endUpdates()
+                self.refreshTableLayout()
             }
         } else {
             UIView.performWithoutAnimation {
-                self.tableView.beginUpdates()
-                self.tableView.endUpdates()
+                self.refreshTableLayout()
             }
         }
     }
