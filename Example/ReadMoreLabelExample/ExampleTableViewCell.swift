@@ -77,6 +77,15 @@ class ExampleTableViewCell: UITableViewCell {
         // Apply different styles and language-specific settings BEFORE setting expanded state
         // This prevents font changes from overriding the expanded state
         applyStyle(sampleData.style, language: sampleData.language)
+        
+        // Apply RTL settings for Arabic language
+        if sampleData.language == "ar" {
+            readMoreLabel.semanticContentAttribute = .forceRightToLeft
+            readMoreLabel.textAlignment = .right
+        } else {
+            readMoreLabel.semanticContentAttribute = .unspecified
+            readMoreLabel.textAlignment = .left
+        }
 
         // Set expanded state LAST to preserve it after style changes
         // Cell 재사용 시에는 delegate 호출하지 않음 (불필요한 상태 업데이트 방지)
@@ -242,6 +251,21 @@ class ExampleTableViewCell: UITableViewCell {
             ("🔥 もっと見る", "!!!")
         case ("ja", .mobile):
             ("📱 タップして展開", "...")
+        // Arabic RTL
+        case ("ar", .basic):
+            ("اقرأ المزيد", "..")
+        case ("ar", .colorful):
+            ("🎨 اقرأ المزيد", "***")
+        case ("ar", .emoji):
+            ("✨ المزيد", "...")
+        case ("ar", .gradient):
+            ("→ متابعة القراءة", "~")
+        case ("ar", .bold):
+            ("🔥 المزيد", "!!!")
+        case ("ar", .mobile):
+            ("📱 اضغط للتوسع", "...")
+        case ("ar", .fontSizeLarge):
+            ("📱 اقرأ المزيد (24pt)", "..")
         // Font Size Testing - English
         case ("en", .fontSizeSmall):
             ("📝 Read More (12pt)", ".")
