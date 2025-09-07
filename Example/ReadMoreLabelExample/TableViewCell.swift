@@ -77,6 +77,15 @@ class TableViewCell: UITableViewCell {
         readMoreLabel.text = sampleData.text
         readMoreLabel.readMorePosition = sampleData.position
 
+        // RTL support for Arabic language
+        if sampleData.language == "ar" {
+            readMoreLabel.textAlignment = .right
+            readMoreLabel.semanticContentAttribute = .forceRightToLeft
+        } else {
+            readMoreLabel.textAlignment = .natural
+            readMoreLabel.semanticContentAttribute = .unspecified
+        }
+
         // Apply different styles using StyleProvider BEFORE setting expanded state
         // This prevents font changes from overriding the expanded state
         styleProvider.applyStyle(sampleData.style, to: readMoreLabel, with: sampleData)

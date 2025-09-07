@@ -217,6 +217,20 @@ class TableViewModel: ObservableObject {
                 style: .fontSizeXLarge,
                 position: .end,
                 language: "ja"
+            ),
+            
+            // Arabic Examples with RTL support
+            ReadMoreSampleData(
+                text: "🇸🇦 هذا نص عربي طويل يوضح وظائف ReadMoreLabel في الوضع RTL. عندما تضغط على زر 'اقرأ المزيد'، سيتوسع النص لإظهار المحتوى الكامل مع حركة سلسة. تدعم هذه المكتبة لغات متعددة وتوفر طريقة نظيفة للتعامل مع اقتطاع النص في تطبيقات iOS.",
+                style: .basic,
+                position: .end,
+                language: "ar"
+            ),
+            ReadMoreSampleData(
+                text: "🎨 نص عربي ملون مع تصميم جذاب يظهر كيفية عمل ReadMoreLabel مع النصوص العربية. يدعم التطبيق اللغة العربية بالكامل مع دعم اتجاه الكتابة من اليمين إلى اليسار وجميع الميزات المتقدمة للمكتبة.",
+                style: .colorful,
+                position: .end,
+                language: "ar"
             )
         ]
         
@@ -304,6 +318,19 @@ extension TableViewModel {
                 return ("🔥 もっと見る", "!!!")
             case ("ja", .mobile):
                 return ("📱 タップして展開", "...")
+                // Arabic
+            case ("ar", .basic):
+                return ("اقرأ المزيد..", "..")
+            case ("ar", .colorful):
+                return ("🎨 اقرأ المزيد", "***")
+            case ("ar", .emoji):
+                return ("✨ المزيد", "...")
+            case ("ar", .gradient):
+                return ("← تابع القراءة", "~")
+            case ("ar", .bold):
+                return ("🔥 المزيد", "!!!")
+            case ("ar", .mobile):
+                return ("📱 اضغط للتوسيع", "...")
                 // Font Size Testing - English
             case ("en", .fontSizeSmall):
                 return ("📝 Read More (12pt)", ".")
@@ -331,6 +358,15 @@ extension TableViewModel {
                 return ("📖 もっと見る (24pt)", "...")
             case ("ja", .fontSizeXLarge):
                 return ("🎯 もっと見る (32pt)", "....")
+                // Font Size Testing - Arabic
+            case ("ar", .fontSizeSmall):
+                return ("📝 اقرأ المزيد (12pt)", ".")
+            case ("ar", .fontSizeMedium):
+                return ("📚 اقرأ المزيد (18pt)", "..")
+            case ("ar", .fontSizeLarge):
+                return ("📖 اقرأ المزيد (24pt)", "...")
+            case ("ar", .fontSizeXLarge):
+                return ("🎯 اقرأ المزيد (32pt)", "....")
                 // Font size styles fallback to English for other languages
             case (_, .fontSizeSmall), (_, .fontSizeMedium), (_, .fontSizeLarge), (_, .fontSizeXLarge):
                 return getReadMoreTexts(for: "en", style: style)

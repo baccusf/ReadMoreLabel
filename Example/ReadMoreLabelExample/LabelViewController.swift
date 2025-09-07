@@ -20,6 +20,7 @@ class LabelViewController: UIViewController {
     private let englishLabel = ReadMoreLabel()
     private let koreanLabel = ReadMoreLabel()
     private let japaneseLabel = ReadMoreLabel()
+    private let arabicLabel = ReadMoreLabel()
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -106,7 +107,7 @@ class LabelViewController: UIViewController {
     }
 
     private func setupReadMoreLabels() {
-        let labels = [englishLabel, koreanLabel, japaneseLabel]
+        let labels = [englishLabel, koreanLabel, japaneseLabel, arabicLabel]
 
         for label in labels {
             label.translatesAutoresizingMaskIntoConstraints = false
@@ -116,11 +117,15 @@ class LabelViewController: UIViewController {
             label.delegate = self
             contentView.addSubview(label)
         }
+        
+        // RTL 설정 for Arabic
+        arabicLabel.textAlignment = .right
+        arabicLabel.semanticContentAttribute = .forceRightToLeft
     }
 
     private func setupLabels() {
         // Configure labels with ViewModel data
-        let labels = [englishLabel, koreanLabel, japaneseLabel]
+        let labels = [englishLabel, koreanLabel, japaneseLabel, arabicLabel]
         for (index, label) in labels.enumerated() {
             let labelData = viewModel.labelData[index]
             label.text = labelData.text
@@ -163,12 +168,17 @@ class LabelViewController: UIViewController {
             japaneseLabel.topAnchor.constraint(equalTo: koreanLabel.bottomAnchor, constant: 30),
             japaneseLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
             japaneseLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
-            japaneseLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -30),
+
+            // Arabic label
+            arabicLabel.topAnchor.constraint(equalTo: japaneseLabel.bottomAnchor, constant: 30),
+            arabicLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
+            arabicLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
+            arabicLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -30),
         ])
     }
 
     @objc private func expandCollapseButtonTapped() {
-        let allLabels = [englishLabel, koreanLabel, japaneseLabel]
+        let allLabels = [englishLabel, koreanLabel, japaneseLabel, arabicLabel]
 
         // Check if any label is expanded through ViewModel
         let hasExpandedLabels = viewModel.hasAnyExpandedLabels()
@@ -235,7 +245,7 @@ class LabelViewController: UIViewController {
 extension LabelViewController: ReadMoreLabelDelegate {
     func readMoreLabel(_ label: ReadMoreLabel, didChangeExpandedState isExpanded: Bool) {
         // Update ViewModel state
-        let allLabels = [englishLabel, koreanLabel, japaneseLabel]
+        let allLabels = [englishLabel, koreanLabel, japaneseLabel, arabicLabel]
         if let index = allLabels.firstIndex(of: label) {
             let labelData = viewModel.labelData[index]
             viewModel.updateExpandedState(for: labelData.id, isExpanded: isExpanded)
