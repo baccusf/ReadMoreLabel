@@ -6,7 +6,19 @@
 
 エレガントなテキストの切り取りと展開機能を提供する、パワフルで柔軟なUILabelサブクラスです。
 
-[한국어](README-ko.md) | **日本語** | [English](README.md)
+[한국어](README-ko.md) | [English](README.md) | [العربية](README-ar.md) | **日本語**
+
+## 🎬 デモ
+
+![ReadMoreLabel デモ](screenshots/ReadMoreLabel_Demo.mp4)
+
+## 📱 スクリーンショット
+
+### アニメーション例
+<img src="screenshots/01_animation_examples.png" width="300" alt="アニメーション例"> <img src="screenshots/02_animation_examples_rtl.png" width="300" alt="RTL対応アニメーション例">
+
+### テーブルビュー例
+<img src="screenshots/03_table_view_examples.png" width="300" alt="テーブルビュー例"> <img src="screenshots/04_table_view_with_rtl.png" width="300" alt="RTL対応テーブルビュー">
 
 ## ✨ 主な機能
 
@@ -14,6 +26,7 @@
 - **自然なテキスト連結**: カスタマイズ可能なellipsisテキストでシームレスな視覚的連結（`テキスト.. 続きを読む..`）
 - **柔軟な位置制御**: 「続きを読む」が切り取られたコンテンツの末尾または先頭に表示されるよう選択可能
 - **文字レベルの精度**: 単語と文字レベルでの切り取り位置の微調整により、スペースの利用を最適化
+- **RTL言語サポート**: アラビア語、ヘブライ語など右から左に書く言語の完全サポートとBiDiテキスト処理
 - **滑らかなアニメーション**: 内蔵の展開/折りたたみアニメーションとデリゲートコールバック
 - **カスタマイズ可能な外観**: 「続きを読む」テキストに対するNSAttributedStringスタイリングをサポート
 - **柔軟な設定**: `numberOfLinesWhenCollapsed = 0`で「続きを読む」機能の無効化が可能
@@ -164,6 +177,7 @@ readMoreLabel.readMoreText = NSAttributedString(string: "もっと見る →", a
 readMoreLabel.readMoreText = NSAttributedString(string: "続きを読む..")  // 日本語
 readMoreLabel.readMoreText = NSAttributedString(string: "더보기..")     // 韓国語
 readMoreLabel.readMoreText = NSAttributedString(string: "Ver más..")   // スペイン語
+readMoreLabel.readMoreText = NSAttributedString(string: "اقرأ المزيد")  // アラビア語
 
 // カスタムellipsisと位置制御
 readMoreLabel.ellipsisText = NSAttributedString(string: "→")              // ドットの代わりに矢印
@@ -174,6 +188,41 @@ readMoreLabel.ellipsisText = NSAttributedString(string: "✨")             // �
 readMoreLabel.readMorePosition = .end         // 最後の行: "テキスト.. 続きを読む.." (デフォルト)
 readMoreLabel.readMorePosition = .newLine     // 新しい行に「続きを読む..」のみ表示
 ```
+
+## 🌐 RTL言語サポート
+
+ReadMoreLabelはアラビア語やヘブライ語などの右から左に書く言語を包括的にサポートします：
+
+### RTL設定
+
+```swift
+// アラビア語RTL設定
+let arabicLabel = ReadMoreLabel()
+arabicLabel.semanticContentAttribute = .forceRightToLeft
+arabicLabel.textAlignment = .right
+arabicLabel.numberOfLines = 3
+arabicLabel.text = "هذا نص طويل باللغة العربية يوضح وظائف ReadMoreLabel..."
+arabicLabel.readMoreText = NSAttributedString(
+    string: "اقرأ المزيد",
+    attributes: [.foregroundColor: UIColor.systemBlue]
+)
+
+// ヘブライ語RTL設定
+let hebrewLabel = ReadMoreLabel()
+hebrewLabel.semanticContentAttribute = .forceRightToLeft  
+hebrewLabel.textAlignment = .right
+hebrewLabel.text = "זה טקסט ארוך בעברית המדגים את הפונקציות של ReadMoreLabel..."
+hebrewLabel.readMoreText = NSAttributedString(string: "קרא עוד")
+```
+
+### RTL機能
+
+- **自動RTL検出**: `semanticContentAttribute`と`effectiveUserInterfaceLayoutDirection`からRTLコンテキストを自動検出
+- **RTL対応テキスト切り取り**: RTLテキストレイアウトに適した正確な切り取り位置の計算
+- **BiDiテキスト処理**: 適切なUnicode方向マーカーによる双方向テキストサポート
+- **RTLサフィックス順序**: 自然なRTLサフィックス構成（ellipsis + "続きを読む" の正しい順序）
+- **タッチエリア保持**: RTLレイアウトでの正確なタッチ検出の維持
+
 
 ## ⚠️ 重要事項
 
@@ -252,11 +301,6 @@ class ExampleTableViewCell: UITableViewCell {
         readMoreLabel.setExpanded(isExpanded)
     }
     
-    // セル再利用処理
-    override func prepareForReuse() {
-        super.prepareForReuse()
-        // ReadMoreLabelは外部で状態管理されるため追加のクリーンアップ不要
-    }
 }
 
 // ビューコントローラーで
@@ -345,7 +389,6 @@ ReadMoreLabelは**Git Flow**ワークフローに従います。以下のガイ�
 8. `develop`ブランチをターゲットにPull Requestを開く
 9. PRテンプレートを完全に記入してください
 
-詳細な開発ガイドラインとGit Flowワークフローについては[CLAUDE.md](CLAUDE.md)を参照してください。
 
 ## 📞 サポート
 
