@@ -211,22 +211,6 @@ hebrewLabel.readMoreText = NSAttributedString(string: "קרא עוד")
 - **RTL 접미사 순서**: 자연스러운 RTL 접미사 구성 (ellipsis + "더보기" 올바른 순서)
 - **터치 영역 보존**: RTL 레이아웃에서 정확한 터치 감지 유지
 
-### 구현 세부사항
-
-```swift
-// RTL 감지 로직 (내부)
-private var isRTL: Bool {
-    return semanticContentAttribute == .forceRightToLeft || 
-           (semanticContentAttribute == .unspecified && effectiveUserInterfaceLayoutDirection == .rightToLeft)
-}
-
-// RTL 인식 자르기 좌표
-if isRTL {
-    targetPoint = CGPoint(x: lineRect.maxX - targetWidth, y: lineRect.midY)
-} else {
-    targetPoint = CGPoint(x: lineRect.origin.x + targetWidth, y: lineRect.midY)
-}
-```
 
 ## ⚠️ 중요 사항
 

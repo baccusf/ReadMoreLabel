@@ -215,22 +215,6 @@ hebrewLabel.readMoreText = NSAttributedString(string: "קרא עוד")
 - **RTL Suffix Ordering**: Natural RTL suffix composition (ellipsis + "Read More" in correct order)
 - **Touch Area Preservation**: Maintains accurate touch detection in RTL layouts
 
-### Implementation Details
-
-```swift
-// RTL detection logic (internal)
-private var isRTL: Bool {
-    return semanticContentAttribute == .forceRightToLeft || 
-           (semanticContentAttribute == .unspecified && effectiveUserInterfaceLayoutDirection == .rightToLeft)
-}
-
-// RTL-aware truncation coordinates
-if isRTL {
-    targetPoint = CGPoint(x: lineRect.maxX - targetWidth, y: lineRect.midY)
-} else {
-    targetPoint = CGPoint(x: lineRect.origin.x + targetWidth, y: lineRect.midY)
-}
-```
 
 ## ⚠️ Important Notes
 

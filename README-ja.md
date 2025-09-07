@@ -211,22 +211,6 @@ hebrewLabel.readMoreText = NSAttributedString(string: "קרא עוד")
 - **RTLサフィックス順序**: 自然なRTLサフィックス構成（ellipsis + "続きを読む" の正しい順序）
 - **タッチエリア保持**: RTLレイアウトでの正確なタッチ検出の維持
 
-### 実装詳細
-
-```swift
-// RTL検出ロジック（内部）
-private var isRTL: Bool {
-    return semanticContentAttribute == .forceRightToLeft || 
-           (semanticContentAttribute == .unspecified && effectiveUserInterfaceLayoutDirection == .rightToLeft)
-}
-
-// RTL対応切り取り座標
-if isRTL {
-    targetPoint = CGPoint(x: lineRect.maxX - targetWidth, y: lineRect.midY)
-} else {
-    targetPoint = CGPoint(x: lineRect.origin.x + targetWidth, y: lineRect.midY)
-}
-```
 
 ## ⚠️ 重要事項
 
