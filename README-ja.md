@@ -6,7 +6,7 @@
 
 エレガントなテキストの切り取りと展開機能を提供する、パワフルで柔軟なUILabelサブクラスです。
 
-[한국어](README-ko.md) | **日本語** | [English](README.md)
+[한국어](README-ko.md) | [English](README.md) | [العربية](README-ar.md) | **日本語**
 
 ## ✨ 主な機能
 

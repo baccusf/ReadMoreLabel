@@ -6,7 +6,7 @@
 
 A powerful and flexible UILabel subclass that provides "Read More" functionality with elegant text truncation and expansion capabilities.
 
-[한국어](README-ko.md) | [日本語](README-ja.md) | **English**
+[한국어](README-ko.md) | [日本語](README-ja.md) | [العربية](README-ar.md) | **English**
 
 ## ✨ Features
 

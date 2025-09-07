@@ -6,7 +6,7 @@
 
 우아한 텍스트 자르기와 확장 기능을 제공하는 강력하고 유연한 UILabel 서브클래스입니다.
 
-**한국어** | [日本語](README-ja.md) | [English](README.md)
+[English](README.md) | [日本語](README-ja.md) | [العربية](README-ar.md) | **한국어**
 
 ## ✨ 주요 기능
 
