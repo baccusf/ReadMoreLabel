@@ -197,6 +197,88 @@ class TableViewModel: ObservableObject {
                 style: .mobile,
                 position: .end,
                 language: "ar"
+            ),
+
+            // Font Size Testing Examples (12개) - 각 언어별 3개씩
+            
+            // English Font Size Examples (3개)
+            ReadMoreSampleData(
+                text: "📚 Font Size Medium (18pt): This text demonstrates ReadMoreLabel with a balanced medium font size that provides excellent readability and content density. Perfect for most standard text content in modern mobile applications with optimal user experience across devices.",
+                style: .fontSizeMedium,
+                position: .end,
+                language: "en"
+            ),
+            ReadMoreSampleData(
+                text: "📖 Font Size Large (25pt): This text showcases ReadMoreLabel with a large font size that ensures excellent readability for users with visual impairments or when accessibility features are enabled. The larger font provides enhanced visibility for improved user accessibility.",
+                style: .fontSizeLarge,
+                position: .newLine,
+                language: "en"
+            ),
+            ReadMoreSampleData(
+                text: "🎯 Font Size Extra Large (32pt): This demonstrates ReadMoreLabel functionality with an extra large font size, ideal for headlines and announcements that require maximum readability and visual impact.",
+                style: .fontSizeXLarge,
+                position: .end,
+                language: "en"
+            ),
+
+            // Korean Font Size Examples (3개)
+            ReadMoreSampleData(
+                text: "📚 폰트 크기 중간 (18pt): 이 텍스트는 가독성과 콘텐츠 밀도 사이의 완벽한 균형을 제공하는 중간 폰트 크기로 ReadMoreLabel을 보여줍니다. 최신 모바일 애플리케이션의 대부분 표준 텍스트 콘텐츠에 완벽하며 모든 기기에서 최적의 사용자 경험을 제공합니다.",
+                style: .fontSizeMedium,
+                position: .newLine,
+                language: "ko"
+            ),
+            ReadMoreSampleData(
+                text: "📖 폰트 크기 큼 (25pt): 이 텍스트는 시각 장애가 있는 사용자나 시스템에서 접근성 기능이 활성화된 경우 뛰어난 가독성을 보장하는 큰 폰트 크기로 ReadMoreLabel을 보여줍니다. 더 큰 폰트는 향상된 사용자 접근성을 위한 뛰어난 가시성을 제공합니다.",
+                style: .fontSizeLarge,
+                position: .end,
+                language: "ko"
+            ),
+            ReadMoreSampleData(
+                text: "🎯 폰트 크기 매우 큼 (32pt): 이것은 헤드라인과 공지사항에서 최대 가독성과 시각적 임팩트가 필요한 경우 이상적인 매우 큰 폰트 크기로 ReadMoreLabel 기능을 보여줍니다.",
+                style: .fontSizeXLarge,
+                position: .newLine,
+                language: "ko"
+            ),
+
+            // Japanese Font Size Examples (3개)
+            ReadMoreSampleData(
+                text: "📚 フォントサイズ中 (18pt): このテキストは可読性とコンテンツ密度の完璧なバランスを提供する中サイズのフォントでReadMoreLabelを紹介します。現代のモバイルアプリケーションの大部分の標準テキストコンテンツに最適で、すべてのデバイスで最適なユーザーエクスペリエンスを提供します。",
+                style: .fontSizeMedium,
+                position: .end,
+                language: "ja"
+            ),
+            ReadMoreSampleData(
+                text: "📖 フォントサイズ大 (25pt): このテキストは視覚障害のあるユーザーやシステムでアクセシビリティ機能が有効になっている場合に優れた可読性を保証する大きなフォントサイズでReadMoreLabelを示します。より大きなフォントは向上したユーザーアクセシビリティのための優れた視認性を提供します。",
+                style: .fontSizeLarge,
+                position: .newLine,
+                language: "ja"
+            ),
+            ReadMoreSampleData(
+                text: "🎯 フォントサイズ特大 (32pt): これは見出しやお知らせで最大限の可読性と視覚的インパクトが必要な場合に理想的な特大フォントサイズでReadMoreLabel機能を示します。",
+                style: .fontSizeXLarge,
+                position: .end,
+                language: "ja"
+            ),
+
+            // Arabic Font Size Examples (3개)
+            ReadMoreSampleData(
+                text: "📚 حجم الخط المتوسط (18pt): يُظهر هذا النص ReadMoreLabel بحجم خط متوسط يوفر توازناً ممتازاً بين قابلية القراءة وكثافة المحتوى. مثالي لمعظم محتوى النص القياسي في تطبيقات الهاتف المحمول الحديثة مع دعم كامل للغة العربية ويوفر تجربة مستخدم مثلى عبر جميع الأجهزة.",
+                style: .fontSizeMedium,
+                position: .newLine,
+                language: "ar"
+            ),
+            ReadMoreSampleData(
+                text: "📖 حجم الخط الكبير (25pt): يُظهر هذا النص ReadMoreLabel بحجم خط كبير يضمن قابلية قراءة ممتازة للمستخدمين ذوي الإعاقات البصرية أو عند تفعيل ميزات إمكانية الوصول في النظام. يوفر الخط الأكبر رؤية محسنة لإمكانية وصول محسنة للمستخدم مع دعم RTL كامل.",
+                style: .fontSizeLarge,
+                position: .end,
+                language: "ar"
+            ),
+            ReadMoreSampleData(
+                text: "🎯 حجم الخط الكبير جداً (32pt): يُظهر هذا وظيفة ReadMoreLabel بحجم خط كبير جداً، مثالي للعناوين والإعلانات التي تتطلب أقصى قابلية للقراءة وتأثير بصري قوي.",
+                style: .fontSizeXLarge,
+                position: .newLine,
+                language: "ar"
             )
         ]
         
@@ -225,12 +307,15 @@ extension TableViewModel {
     // MARK: - ReadMoreLabel Style Extension
 
     enum Style {
-        case basic      // 16pt font - 기본 스타일
-        case colorful   // 16pt font - 컬러풀 스타일
-        case emoji      // 15pt font - 이모지 스타일
-        case gradient   // 16pt font - 그라데이션 스타일
-        case bold       // 16pt font - 볼드 스타일
-        case mobile     // 15pt font - 모바일 스타일
+        case basic          // 16pt font - 기본 스타일
+        case colorful       // 16pt font - 컬러풀 스타일
+        case emoji          // 15pt font - 이모지 스타일
+        case gradient       // 16pt font - 그라데이션 스타일
+        case bold           // 16pt font - 볼드 스타일
+        case mobile         // 15pt font - 모바일 스타일
+        case fontSizeMedium // 18pt font - 중간 폰트 크기
+        case fontSizeLarge  // 25pt font - 큰 폰트 크기
+        case fontSizeXLarge // 32pt font - 매우 큰 폰트 크기
     }
     
     // MARK: - StyleProvider
@@ -293,6 +378,37 @@ extension TableViewModel {
                 return ("🔥 المزيد", "!!!")
             case ("ar", .mobile):
                 return ("📱 اضغط للتوسيع", "...")
+                // Font Size Testing - English
+            case ("en", .fontSizeMedium):
+                return ("📚 Read More (18pt)", "..")
+            case ("en", .fontSizeLarge):
+                return ("📖 Read More (25pt)", "...")
+            case ("en", .fontSizeXLarge):
+                return ("🎯 Read More (32pt)", "....")
+                // Font Size Testing - Korean
+            case ("ko", .fontSizeMedium):
+                return ("📚 더보기 (18pt)", "..")
+            case ("ko", .fontSizeLarge):
+                return ("📖 더보기 (25pt)", "...")
+            case ("ko", .fontSizeXLarge):
+                return ("🎯 더보기 (32pt)", "....")
+                // Font Size Testing - Japanese
+            case ("ja", .fontSizeMedium):
+                return ("📚 もっと見る (18pt)", "..")
+            case ("ja", .fontSizeLarge):
+                return ("📖 もっと見る (25pt)", "...")
+            case ("ja", .fontSizeXLarge):
+                return ("🎯 もっと見る (32pt)", "....")
+                // Font Size Testing - Arabic
+            case ("ar", .fontSizeMedium):
+                return ("📚 اقرأ المزيد (18pt)", "..")
+            case ("ar", .fontSizeLarge):
+                return ("📖 اقرأ المزيد (25pt)", "...")
+            case ("ar", .fontSizeXLarge):
+                return ("🎯 اقرأ المزيد (32pt)", "....")
+                // Font size styles fallback to English for other languages
+            case (_, .fontSizeMedium), (_, .fontSizeLarge), (_, .fontSizeXLarge):
+                return getReadMoreTexts(for: "en", style: style)
                 // Default fallback to English
             default:
                 return getReadMoreTexts(for: "en", style: style)
@@ -369,6 +485,36 @@ extension TableViewModel {
                         .foregroundColor: UIColor.systemIndigo,
                         .font: UIFont.systemFont(ofSize: 15, weight: .medium),
                         .backgroundColor: UIColor.systemIndigo.withAlphaComponent(0.1),
+                    ]
+                )
+                
+            case .fontSizeMedium:
+                label.font = UIFont.systemFont(ofSize: 18)
+                label.readMoreText = NSAttributedString(
+                    string: readMoreTexts.text,
+                    attributes: [
+                        .foregroundColor: UIColor.systemGreen,
+                        .font: UIFont.systemFont(ofSize: 18, weight: .semibold),
+                    ]
+                )
+                
+            case .fontSizeLarge:
+                label.font = UIFont.systemFont(ofSize: 25)
+                label.readMoreText = NSAttributedString(
+                    string: readMoreTexts.text,
+                    attributes: [
+                        .foregroundColor: UIColor.systemOrange,
+                        .font: UIFont.systemFont(ofSize: 25, weight: .bold),
+                    ]
+                )
+                
+            case .fontSizeXLarge:
+                label.font = UIFont.systemFont(ofSize: 32)
+                label.readMoreText = NSAttributedString(
+                    string: readMoreTexts.text,
+                    attributes: [
+                        .foregroundColor: UIColor.systemRed,
+                        .font: UIFont.systemFont(ofSize: 32, weight: .heavy),
                     ]
                 )
             }
