@@ -224,7 +224,7 @@ func readMoreLabel(_ label: ReadMoreLabel, didChangeExpandedState isExpanded: Bo
 class ExampleTableViewCell: UITableViewCell {
     private let readMoreLabel: ReadMoreLabel = {
         let label = ReadMoreLabel()
-        label.numberOfLines = 3
+        label.numberOfLinesWhenCollapsed = 3
         label.font = UIFont.systemFont(ofSize: 16)
         label.textColor = .label
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -242,11 +242,6 @@ class ExampleTableViewCell: UITableViewCell {
         readMoreLabel.setExpanded(isExpanded)
     }
     
-    // Cell reuse handling
-    override func prepareForReuse() {
-        super.prepareForReuse()
-        // ReadMoreLabel manages its state externally, no additional cleanup needed
-    }
 }
 
 // In your view controller

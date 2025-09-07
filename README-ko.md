@@ -234,7 +234,7 @@ func readMoreLabel(_ label: ReadMoreLabel, didChangeExpandedState isExpanded: Bo
 class ExampleTableViewCell: UITableViewCell {
     private let readMoreLabel: ReadMoreLabel = {
         let label = ReadMoreLabel()
-        label.numberOfLines = 3
+        label.numberOfLinesWhenCollapsed = 3
         label.font = UIFont.systemFont(ofSize: 16)
         label.textColor = .label
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -252,11 +252,6 @@ class ExampleTableViewCell: UITableViewCell {
         readMoreLabel.setExpanded(isExpanded)
     }
     
-    // 셀 재사용 처리
-    override func prepareForReuse() {
-        super.prepareForReuse()
-        // ReadMoreLabel은 외부에서 상태를 관리하므로 추가 정리 불필요
-    }
 }
 
 // 뷰 컨트롤러에서
@@ -345,7 +340,6 @@ ReadMoreLabel은 **Git Flow** 워크플로우를 따릅니다. 다음 가이드�
 8. `develop` 브랜치를 대상으로 Pull Request 열기
 9. PR 템플릿을 완전히 작성하세요
 
-자세한 개발 가이드라인과 Git Flow 워크플로우는 [CLAUDE.md](CLAUDE.md)를 참조하세요.
 
 ## 📞 지원
 
