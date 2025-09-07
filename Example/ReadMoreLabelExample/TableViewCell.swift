@@ -1,5 +1,5 @@
 //
-//  ExampleTableViewCell.swift
+//  TableViewCell.swift
 //  ReadMoreLabelExample
 //
 //  Created by SeungHo Choi on 9/4/25.
@@ -9,7 +9,7 @@ import ReadMoreLabel
 import UIKit
 
 @available(iOS 16.0, *)
-class ExampleTableViewCell: UITableViewCell {
+class TableViewCell: UITableViewCell {
     // MARK: - Properties
     
     weak var delegate: ReadMoreLabelDelegate?

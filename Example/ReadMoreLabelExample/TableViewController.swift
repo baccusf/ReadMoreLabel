@@ -43,7 +43,7 @@ class TableViewController: UIViewController {
     private func setupTableView() {
         tableView.delegate = self
         tableView.dataSource = self
-        tableView.register(ExampleTableViewCell.self, forCellReuseIdentifier: "ExampleCell")
+        tableView.register(TableViewCell.self, forCellReuseIdentifier: "TableViewCell")
         tableView.rowHeight = UITableView.automaticDimension
         tableView.estimatedRowHeight = 120
         tableView.separatorStyle = .singleLine
@@ -72,7 +72,7 @@ extension TableViewController: UITableViewDataSource {
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "ExampleCell", for: indexPath) as! ExampleTableViewCell
+        let cell = tableView.dequeueReusableCell(withIdentifier: "TableViewCell", for: indexPath) as! TableViewCell
         cell.configure(
             with: viewModel.sampleData[indexPath.row],
             isExpanded: viewModel.expandedStates[indexPath.row],
