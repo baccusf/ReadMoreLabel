@@ -139,6 +139,84 @@ class TableViewModel: ObservableObject {
                 style: .gradient,
                 position: .end,
                 language: "ko"
+            ),
+            
+            // Font Size Testing - English
+            ReadMoreSampleData(
+                text: "📝 Font Size Small (12pt): This text demonstrates ReadMoreLabel functionality with a smaller font size. The compact text allows for more content density while maintaining readability across different screen sizes and accessibility settings.",
+                style: .fontSizeSmall,
+                position: .end,
+                language: "en"
+            ),
+            ReadMoreSampleData(
+                text: "📚 Font Size Medium (18pt): This text showcases ReadMoreLabel with a medium font size that provides excellent balance between readability and content density. Perfect for most standard text content in modern mobile applications.",
+                style: .fontSizeMedium,
+                position: .end,
+                language: "en"
+            ),
+            ReadMoreSampleData(
+                text: "📖 Font Size Large (24pt): This text demonstrates ReadMoreLabel with a large font size that ensures excellent readability for users with visual impairments or when accessibility features are enabled in the system.",
+                style: .fontSizeLarge,
+                position: .end,
+                language: "en"
+            ),
+            ReadMoreSampleData(
+                text: "🎯 Font Size Extra Large (32pt): This text shows ReadMoreLabel functionality with an extra large font size, ideal for headlines, important announcements, or when maximum readability is required.",
+                style: .fontSizeXLarge,
+                position: .end,
+                language: "en"
+            ),
+            
+            // Font Size Testing - Korean
+            ReadMoreSampleData(
+                text: "📝 폰트 크기 작음 (12pt): 이 텍스트는 작은 폰트 크기로 ReadMoreLabel 기능을 보여줍니다. 컴팩트한 텍스트로 다양한 화면 크기와 접근성 설정에서 가독성을 유지하면서 더 많은 콘텐츠 밀도를 제공합니다.",
+                style: .fontSizeSmall,
+                position: .end,
+                language: "ko"
+            ),
+            ReadMoreSampleData(
+                text: "📚 폰트 크기 중간 (18pt): 이 텍스트는 가독성과 콘텐츠 밀도 사이의 완벽한 균형을 제공하는 중간 폰트 크기로 ReadMoreLabel을 보여줍니다. 최신 모바일 애플리케이션의 대부분 표준 텍스트 콘텐츠에 완벽합니다.",
+                style: .fontSizeMedium,
+                position: .end,
+                language: "ko"
+            ),
+            ReadMoreSampleData(
+                text: "📖 폰트 크기 큼 (24pt): 이 텍스트는 시각 장애가 있는 사용자나 시스템에서 접근성 기능이 활성화된 경우 뛰어난 가독성을 보장하는 큰 폰트 크기로 ReadMoreLabel을 보여줍니다.",
+                style: .fontSizeLarge,
+                position: .end,
+                language: "ko"
+            ),
+            ReadMoreSampleData(
+                text: "🎯 폰트 크기 매우 큼 (32pt): 이 텍스트는 헤드라인, 중요한 공지사항 또는 최대 가독성이 필요한 경우에 이상적인 매우 큰 폰트 크기로 ReadMoreLabel 기능을 보여줍니다.",
+                style: .fontSizeXLarge,
+                position: .end,
+                language: "ko"
+            ),
+            
+            // Font Size Testing - Japanese
+            ReadMoreSampleData(
+                text: "📝 フォントサイズ小 (12pt): このテキストは小さなフォントサイズでReadMoreLabel機能を示しています。コンパクトなテキストにより、さまざまな画面サイズとアクセシビリティ設定で可読性を維持しながら、より多くのコンテンツ密度を提供します。",
+                style: .fontSizeSmall,
+                position: .end,
+                language: "ja"
+            ),
+            ReadMoreSampleData(
+                text: "📚 フォントサイズ中 (18pt): このテキストは可読性とコンテンツ密度の完璧なバランスを提供する中サイズのフォントでReadMoreLabelを紹介します。現代のモバイルアプリケーションの大部分の標準テキストコンテンツに最適です。",
+                style: .fontSizeMedium,
+                position: .end,
+                language: "ja"
+            ),
+            ReadMoreSampleData(
+                text: "📖 フォントサイズ大 (24pt): このテキストは視覚障害のあるユーザーやシステムでアクセシビリティ機能が有効になっている場合に優れた可読性を保証する大きなフォントサイズでReadMoreLabelを示しています。",
+                style: .fontSizeLarge,
+                position: .end,
+                language: "ja"
+            ),
+            ReadMoreSampleData(
+                text: "🎯 フォントサイズ特大 (32pt): このテキストは見出し、重要なお知らせ、または最大限の可読性が必要な場合に理想的な特大フォントサイズでReadMoreLabel機能を示しています。",
+                style: .fontSizeXLarge,
+                position: .end,
+                language: "ja"
             )
         ]
         
