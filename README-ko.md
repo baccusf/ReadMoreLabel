@@ -8,6 +8,18 @@
 
 [English](README.md) | [日本語](README-ja.md) | [العربية](README-ar.md) | **한국어**
 
+## 🎬 데모
+
+![ReadMoreLabel 데모](screenshots/ReadMoreLabel_Demo.mp4)
+
+## 📱 스크린샷
+
+### 애니메이션 예제
+<img src="screenshots/01_animation_examples.png" width="300" alt="애니메이션 예제"> <img src="screenshots/02_animation_examples_rtl.png" width="300" alt="RTL 지원이 포함된 애니메이션 예제">
+
+### 테이블 뷰 예제
+<img src="screenshots/03_table_view_examples.png" width="300" alt="테이블 뷰 예제"> <img src="screenshots/04_table_view_with_rtl.png" width="300" alt="RTL 지원이 포함된 테이블 뷰">
+
 ## ✨ 주요 기능
 
 - **스마트 텍스트 자르기**: 정확한 텍스트 레이아웃 계산으로 지정된 위치에 "더보기" 표시

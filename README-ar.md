@@ -8,6 +8,18 @@
 
 [한국어](README-ko.md) | [日本語](README-ja.md) | [English](README.md) | **العربية**
 
+## 🎬 العرض التوضيحي
+
+![عرض ReadMoreLabel التوضيحي](screenshots/ReadMoreLabel_Demo.mp4)
+
+## 📱 لقطات الشاشة
+
+### أمثلة الرسوم المتحركة
+<img src="screenshots/01_animation_examples.png" width="300" alt="أمثلة الرسوم المتحركة"> <img src="screenshots/02_animation_examples_rtl.png" width="300" alt="أمثلة الرسوم المتحركة مع دعم RTL">
+
+### أمثلة العرض الجدولي
+<img src="screenshots/03_table_view_examples.png" width="300" alt="أمثلة العرض الجدولي"> <img src="screenshots/04_table_view_with_rtl.png" width="300" alt="العرض الجدولي مع دعم RTL">
+
 ## ✨ المميزات
 
 - **قطع ذكي للنص**: يحسب بدقة تخطيط النص لإظهار "اقرأ المزيد" في الموضع المحدد

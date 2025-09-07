@@ -8,6 +8,18 @@ A powerful and flexible UILabel subclass that provides "Read More" functionality
 
 [한국어](README-ko.md) | [日本語](README-ja.md) | [العربية](README-ar.md) | **English**
 
+## 🎬 Demo
+
+![ReadMoreLabel Demo](screenshots/ReadMoreLabel_Demo.mp4)
+
+## 📱 Screenshots
+
+### Animation Examples
+<img src="screenshots/01_animation_examples.png" width="300" alt="Animation Examples"> <img src="screenshots/02_animation_examples_rtl.png" width="300" alt="Animation Examples with RTL Support">
+
+### Table View Examples  
+<img src="screenshots/03_table_view_examples.png" width="300" alt="Table View Examples"> <img src="screenshots/04_table_view_with_rtl.png" width="300" alt="Table View with RTL Support">
+
 ## ✨ Features
 
 - **Smart Text Truncation**: Precisely calculates text layout to show "Read More" at the specified position

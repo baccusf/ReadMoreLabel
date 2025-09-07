@@ -8,6 +8,18 @@
 
 [한국어](README-ko.md) | [English](README.md) | [العربية](README-ar.md) | **日本語**
 
+## 🎬 デモ
+
+![ReadMoreLabel デモ](screenshots/ReadMoreLabel_Demo.mp4)
+
+## 📱 スクリーンショット
+
+### アニメーション例
+<img src="screenshots/01_animation_examples.png" width="300" alt="アニメーション例"> <img src="screenshots/02_animation_examples_rtl.png" width="300" alt="RTL対応アニメーション例">
+
+### テーブルビュー例
+<img src="screenshots/03_table_view_examples.png" width="300" alt="テーブルビュー例"> <img src="screenshots/04_table_view_with_rtl.png" width="300" alt="RTL対応テーブルビュー">
+
 ## ✨ 主な機能
 
 - **スマートテキスト切り取り**: 正確なテキストレイアウト計算により、指定した位置に「続きを読む」を表示
