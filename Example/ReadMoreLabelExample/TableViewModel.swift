@@ -231,6 +231,82 @@ class TableViewModel: ObservableObject {
                 style: .colorful,
                 position: .end,
                 language: "ar"
+            ),
+            
+            // Font Size Testing - Arabic
+            ReadMoreSampleData(
+                text: "📝 حجم الخط الصغير (12pt): يوضح هذا النص وظيفة ReadMoreLabel بحجم خط صغير. النص المضغوط يوفر كثافة محتوى أكبر مع الحفاظ على قابلية القراءة عبر أحجام الشاشات المختلفة وإعدادات إمكانية الوصول. مثالي للتطبيقات التي تتطلب عرض معلومات مكثفة.",
+                style: .fontSizeSmall,
+                position: .end,
+                language: "ar"
+            ),
+            ReadMoreSampleData(
+                text: "📚 حجم الخط المتوسط (18pt): يُظهر هذا النص ReadMoreLabel بحجم خط متوسط يوفر توازناً ممتازاً بين قابلية القراءة وكثافة المحتوى. مثالي لمعظم محتوى النص القياسي في تطبيقات الهاتف المحمول الحديثة مع دعم كامل للغة العربية واتجاه الكتابة من اليمين إلى اليسار.",
+                style: .fontSizeMedium,
+                position: .end,
+                language: "ar"
+            ),
+            ReadMoreSampleData(
+                text: "📖 حجم الخط الكبير (24pt): يُظهر هذا النص ReadMoreLabel بحجم خط كبير يضمن قابلية قراءة ممتازة للمستخدمين ذوي الإعاقات البصرية أو عند تفعيل ميزات إمكانية الوصول في النظام. يدعم جميع الميزات المتقدمة للمكتبة مع التخطيط RTL المناسب للنصوص العربية.",
+                style: .fontSizeLarge,
+                position: .end,
+                language: "ar"
+            ),
+            ReadMoreSampleData(
+                text: "🎯 حجم الخط الكبير جداً (32pt): يُظهر هذا النص وظيفة ReadMoreLabel بحجم خط كبير جداً، مثالي للعناوين والإعلانات المهمة أو عندما تكون أقصى قابلية للقراءة مطلوبة. يوفر تجربة مستخدم متميزة مع دعم كامل للغة العربية والتخطيط من اليمين إلى اليسار.",
+                style: .fontSizeXLarge,
+                position: .end,
+                language: "ar"
+            ),
+            
+            // Additional newLine position examples for variety
+            ReadMoreSampleData(
+                text: "📱 NewLine Mobile Style Example! This text demonstrates the mobile-optimized style with newLine position. The 'Read More' button will appear on a completely new line after the specified number of lines. This provides a clean separation and better user experience for mobile interfaces.",
+                style: .mobile,
+                position: .newLine,
+                language: "en"
+            ),
+            ReadMoreSampleData(
+                text: "🔥 BOLD NewLine Example! This demonstrates the bold style with newLine position where the 'SEE MORE' button appears on a separate line. Perfect for making important content stand out while maintaining clean layout separation. The bold styling ensures maximum visibility and user engagement.",
+                style: .bold,
+                position: .newLine,
+                language: "en"
+            ),
+            ReadMoreSampleData(
+                text: "📱 모바일 최적화 newLine 예제입니다! 이 텍스트는 모바일에 최적화된 스타일과 newLine 위치를 보여줍니다. '탭하여 확장' 버튼이 지정된 줄 수 후 완전히 새로운 줄에 나타납니다. 모바일 인터페이스를 위한 깔끔한 구분과 더 나은 사용자 경험을 제공합니다.",
+                style: .mobile,
+                position: .newLine,
+                language: "ko"
+            ),
+            ReadMoreSampleData(
+                text: "🎨 컬러풀 newLine 스타일 예제! 이것은 newLine 위치에서 컬러풀한 스타일을 보여주는데, '더 읽기' 버튼이 별도의 줄에 나타납니다. 색상과 밑줄이 있는 스타일링으로 시각적 매력을 더하면서도 깔끔한 레이아웃 구분을 유지합니다.",
+                style: .colorful,
+                position: .newLine,
+                language: "ko"
+            ),
+            ReadMoreSampleData(
+                text: "📱 モバイル最適化 newLine の例です！このテキストはモバイルに最適化されたスタイルと newLine ポジションを示しています。「タップして展開」ボタンが指定された行数の後に完全に新しい行に表示されます。モバイルインターフェースのためのきれいな区切りとより良いユーザーエクスペリエンスを提供します。",
+                style: .mobile,
+                position: .newLine,
+                language: "ja"
+            ),
+            ReadMoreSampleData(
+                text: "🔥 太字 newLine スタイルの例！これは newLine ポジションで太字スタイルを示しており、「もっと見る」ボタンが別の行に表示されます。重要なコンテンツを目立たせながら、きれいなレイアウト区切りを維持するのに最適です。",
+                style: .bold,
+                position: .newLine,
+                language: "ja"
+            ),
+            ReadMoreSampleData(
+                text: "📱 مثال محمول محسن لـ newLine! يُظهر هذا النص النمط المحسن للهاتف المحمول مع موضع newLine. سيظهر زر 'اضغط للتوسيع' في سطر جديد تماماً بعد العدد المحدد من الأسطر. يوفر هذا فصلاً نظيفاً وتجربة مستخدم أفضل لواجهات الهاتف المحمول مع دعم RTL الكامل.",
+                style: .mobile,
+                position: .newLine,
+                language: "ar"
+            ),
+            ReadMoreSampleData(
+                text: "🎨 مثال ملون لـ newLine! يُظهر هذا النمط الملون مع موضع newLine، حيث يظهر زر 'اقرأ المزيد' في سطر منفصل. التصميم بالألوان والتسطير يضيف جاذبية بصرية مع الحفاظ على فصل التخطيط النظيف والدعم الكامل لاتجاه الكتابة من اليمين إلى اليسار.",
+                style: .colorful,
+                position: .newLine,
+                language: "ar"
             )
         ]
         

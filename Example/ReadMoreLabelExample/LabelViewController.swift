@@ -15,6 +15,9 @@ class LabelViewController: UIViewController {
     // ScrollView and content
     private let scrollView = UIScrollView()
     private let contentView = UIView()
+    
+    // StackView for labels layout
+    private let labelsStackView = UIStackView()
 
     // ReadMoreLabels for different languages
     private let englishLabel = ReadMoreLabel()
@@ -39,6 +42,9 @@ class LabelViewController: UIViewController {
         // Setup scroll view
         setupScrollView()
 
+        // Setup labels stack view
+        setupLabelsStackView()
+        
         // Setup labels
         setupReadMoreLabels()
 
@@ -105,6 +111,16 @@ class LabelViewController: UIViewController {
         view.addSubview(scrollView)
         scrollView.addSubview(contentView)
     }
+    
+    private func setupLabelsStackView() {
+        labelsStackView.axis = .vertical
+        labelsStackView.spacing = 30
+        labelsStackView.distribution = .fill
+        labelsStackView.alignment = .fill
+        labelsStackView.translatesAutoresizingMaskIntoConstraints = false
+        
+        contentView.addSubview(labelsStackView)
+    }
 
     private func setupReadMoreLabels() {
         let labels = [englishLabel, koreanLabel, japaneseLabel, arabicLabel]
@@ -115,7 +131,7 @@ class LabelViewController: UIViewController {
             label.font = UIFont.systemFont(ofSize: 16)
             label.textColor = .label
             label.delegate = self
-            contentView.addSubview(label)
+            labelsStackView.addArrangedSubview(label)
         }
         
         // RTL 설정 for Arabic
@@ -154,26 +170,11 @@ class LabelViewController: UIViewController {
             contentView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
             contentView.widthAnchor.constraint(equalTo: scrollView.widthAnchor),
 
-            // English label
-            englishLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 20),
-            englishLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            englishLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
-
-            // Korean label
-            koreanLabel.topAnchor.constraint(equalTo: englishLabel.bottomAnchor, constant: 30),
-            koreanLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            koreanLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
-
-            // Japanese label
-            japaneseLabel.topAnchor.constraint(equalTo: koreanLabel.bottomAnchor, constant: 30),
-            japaneseLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            japaneseLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
-
-            // Arabic label
-            arabicLabel.topAnchor.constraint(equalTo: japaneseLabel.bottomAnchor, constant: 30),
-            arabicLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            arabicLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
-            arabicLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -30),
+            // Labels StackView constraints (much simpler!)
+            labelsStackView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 20),
+            labelsStackView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
+            labelsStackView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
+            labelsStackView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -30),
         ])
     }
 
