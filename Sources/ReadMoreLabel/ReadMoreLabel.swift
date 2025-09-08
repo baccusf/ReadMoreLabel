@@ -848,7 +848,7 @@ private extension NSAttributedString {
         }
 
         // Fixed boundary condition: >= to handle exact line matches
-        if actualLinesNeeded <= numberOfLines {
+        if actualLinesNeeded < numberOfLines {
             return .noTruncationNeeded
         }
 
@@ -983,7 +983,7 @@ private extension NSAttributedString {
         let actualLinesNeeded = lineFragments.count
 
         // Early exit: no truncation needed
-        if actualLinesNeeded <= numberOfLines {
+        if actualLinesNeeded < numberOfLines {
             return .noTruncationNeeded
         }
 
