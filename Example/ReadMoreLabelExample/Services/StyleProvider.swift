@@ -96,6 +96,9 @@ class StyleProvider {
         // Apply ellipsis
         label.ellipsisText = NSAttributedString(string: readMoreTexts.ellipsis)
         
+        // Set numberOfLines to 3 for all styles (fix for Japanese newLine position bug)
+        label.numberOfLines = 3
+        
         // Apply style-specific attributes
         switch style {
         case .basic:
