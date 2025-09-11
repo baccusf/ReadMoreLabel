@@ -500,27 +500,44 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
 // MARK: - NSLayoutManager Extensions
 
 private extension NSLayoutManager {
-    /// Enhanced TextKit 1 truncation location finder with precision
-    func findTruncateLocation(withWidth targetWidth: CGFloat, in glyphRange: NSRange) -> Int {
+    /// Direct character-based text clipping using targetWidth for precise emoji and complex character handling
+    func findTruncateLocation(withWidth targetWidth: CGFloat, in glyphRange: NSRange, lineWidth: CGFloat) -> Int {
         let characterRange = characterRange(forGlyphRange: glyphRange, actualGlyphRange: nil)
-
-        // Enhanced hit testing with improved precision
+        
+        // Get line fragment positioning information
         let lineRect = lineFragmentRect(forGlyphAt: glyphRange.location, effectiveRange: nil)
-
-        // Accurate character boundary detection
-        let targetPoint = CGPoint(x: lineRect.origin.x + targetWidth, y: lineRect.midY)
-
-        let characterIndex = characterIndex(
-            for: targetPoint,
+        let lineUsedRect = lineFragmentUsedRect(forGlyphAt: glyphRange.location, effectiveRange: nil)
+        let actualLineWidth = lineUsedRect.width
+        
+        // Handle short lines that don't require truncation
+        if targetWidth >= actualLineWidth {
+            let lineEndIndex = characterRange.location + characterRange.length
+            
+            // Exclude trailing newline if present
+            if let textStorage = textStorage {
+                let lineText = textStorage.attributedSubstring(from: characterRange)
+                if lineText.string.hasSuffix("\n") {
+                    return lineEndIndex - 1
+                }
+            }
+            
+            return lineEndIndex
+        }
+        
+        // Direct character index lookup at targetWidth position
+        let clipPoint = CGPoint(x: lineRect.origin.x + targetWidth, y: lineRect.midY)
+        
+        // Apple's character-level precision for emoji and complex characters
+        var characterFraction: CGFloat = 0
+        let clipCharacterIndex = characterIndex(
+            for: clipPoint,
             in: textContainers[0],
-            fractionOfDistanceBetweenInsertionPoints: nil
+            fractionOfDistanceBetweenInsertionPoints: &characterFraction
         )
-
-        // Enhanced boundary checking
-        let clampedIndex = max(characterRange.location,
-                               min(characterIndex, characterRange.location + characterRange.length))
-
-        return clampedIndex
+        
+        // Clamp to valid character range
+        return max(characterRange.location, 
+                   min(clipCharacterIndex, characterRange.location + characterRange.length))
     }
 
     /// Calculates text size with maximum number of lines constraint
@@ -867,23 +884,36 @@ private extension NSAttributedString {
             }
         }
 
-        // Calculate actual used text width (based on usedRect)
-        var lastLineUsedWidth: CGFloat = 0
+        // Calculate actual used text width and position in the last line
+        var lastLineUsedRect = CGRect.zero
         layoutManager.enumerateLineFragments(forGlyphRange: lastLineRange) {
             _, usedRect, _, _, _ in
-            lastLineUsedWidth = usedRect.width
+            lastLineUsedRect = usedRect
         }
+        let lastLineUsedWidth = lastLineUsedRect.width
 
-        // Enhanced suffix width calculation using TextKit 1 precision with proper padding and line break mode
+        // Enhanced suffix width calculation using TextKit 1 precision
         let suffixWidth = suffix.calculateWidth(
             with: containerWidth,
             lineFragmentPadding: lineFragmentPadding,
             lineBreakMode: lineBreakMode
         )
 
-        // Enhanced truncation with improved precision
-        let availableWidth = max(0, containerWidth - suffixWidth)
-        let truncateCharacterIndex = layoutManager.findTruncateLocation(withWidth: availableWidth, in: lastLineRange)
+        // Calculate available width for text before suffix
+        let availableWidth: CGFloat
+        if lastLineUsedWidth + suffixWidth >= containerWidth {
+            // Line is too long, need to truncate text to make space for suffix
+            availableWidth = containerWidth - suffixWidth
+        } else {
+            // Line has enough space, truncate text to place suffix directly after
+            availableWidth = lastLineUsedWidth
+        }
+        
+        let truncateCharacterIndex = layoutManager.findTruncateLocation(
+            withWidth: availableWidth, 
+            in: lastLineRange,
+            lineWidth: lastLineUsedWidth
+        )
 
         let truncatedText = attributedSubstring(from: NSRange(location: 0, length: truncateCharacterIndex))
         let cleanedTruncatedText = truncatedText.removingTrailingNewlineIfNeeded()
