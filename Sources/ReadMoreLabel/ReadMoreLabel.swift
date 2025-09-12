@@ -285,7 +285,8 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
         originalText: NSAttributedString,
         numberOfLines: Int,
         containerWidth: CGFloat,
-        suffix: NSAttributedString
+        suffix: NSAttributedString,
+        isRTL: Bool = false
     ) -> TextTruncationResult {
         let alignedText = originalText.applyingTextAlignment(textAlignment, font: font, textColor: textColor)
         
@@ -303,7 +304,8 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
                 readMoreText: readMoreText,
                 newLineCharacter: Self.newLineCharacter,
                 attributeKey: AttributeKey.isReadMore,
-                defaultAttributes: defaultTextAttributes
+                defaultAttributes: defaultTextAttributes,
+                isRTL: isRTL
             )
         } else {
             // Use TextKit 2 for .end position as requested by user
@@ -312,7 +314,8 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
                 containerWidth: containerWidth,
                 suffix: suffix,
                 lineFragmentPadding: lineFragmentPadding,
-                lineBreakMode: lineBreakMode
+                lineBreakMode: lineBreakMode,
+                isRTL: isRTL
             )
         }
     }
@@ -404,7 +407,8 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
             originalText: attributedText,
             numberOfLines: numberOfLinesWhenCollapsed,
             containerWidth: availableWidth,
-            suffix: suffix
+            suffix: suffix,
+            isRTL: self.isRTL
         )
 
         if result.needsTruncation,
@@ -440,6 +444,7 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
             newLineCharacter: Self.newLineCharacter,
             attributeKey: AttributeKey.isReadMore,
             defaultAttributes: defaultTextAttributes,
+            isRTL: self.isRTL
         )
 
         if result.needsTruncation,
@@ -759,9 +764,10 @@ private extension NSAttributedString {
         let ellipsisWithLastAttributes = ellipsisText.createMutableWithAttributes(lastAttributes)
 
         if isRTL {
-            suffix.append(NSAttributedString(string: "\u{061C}", attributes: lastAttributes)) // ALM
+            // RTL 텍스트: RLM + ellipsis + NBSP + readMore
+            suffix.append(NSAttributedString(string: "\u{200F}", attributes: lastAttributes)) // RLM (Right-to-Left Mark)
             suffix.append(ellipsisWithLastAttributes) // ".."
-            suffix.append(NSAttributedString(string: "\u{00A0}", attributes: lastAttributes)) // NBSP
+            suffix.append(NSAttributedString(string: "\u{00A0}", attributes: lastAttributes)) // NBSP (Non-Breaking Space)
         } else {
             suffix.append(ellipsisWithLastAttributes)
             suffix.append(NSAttributedString(string: spaceBetween, attributes: lastAttributes))
@@ -791,7 +797,8 @@ private extension NSAttributedString {
         containerWidth: CGFloat,
         suffix: NSAttributedString,
         lineFragmentPadding: CGFloat = 0,
-        lineBreakMode: NSLineBreakMode = .byWordWrapping
+        lineBreakMode: NSLineBreakMode = .byWordWrapping,
+        isRTL: Bool = false
     ) -> ReadMoreLabel.TextTruncationResult {
         let (_, textLayoutManager, _) = creatingTextLayoutManagerStack(
             containerWidth: containerWidth,
@@ -835,7 +842,16 @@ private extension NSAttributedString {
         // Reserve appropriate space for suffix
         let lastLineUsedWidth = lastLineFragment.typographicBounds.width
         let maxAvailableWidth = containerWidth - suffixWidth
-        let truncatePoint = CGPoint(x: maxAvailableWidth, y: lastLineFragment.typographicBounds.midY)
+        
+        // RTL 텍스트에서는 truncate point가 다르게 계산되어야 함
+        let truncatePoint: CGPoint
+        if isRTL {
+            // RTL: suffix가 텍스트 시작 부분(오른쪽)에 와야 하므로 suffixWidth만큼 떨어진 곳부터 시작
+            truncatePoint = CGPoint(x: suffixWidth, y: lastLineFragment.typographicBounds.midY)
+        } else {
+            // LTR: suffix가 텍스트 끝 부분(오른쪽)에 와야 하므로 기존 로직 사용
+            truncatePoint = CGPoint(x: maxAvailableWidth, y: lastLineFragment.typographicBounds.midY)
+        }
 
         let rawTruncateIndex = lastLineFragment.characterIndex(for: truncatePoint)
         let truncateIndex: Int
@@ -847,11 +863,27 @@ private extension NSAttributedString {
             truncateIndex = max(0, min(relativeIndex, lastLineText.length))
         }
         
-        let truncated = lastLineText.attributedSubstring(from: NSRange(location: 0, length: truncateIndex)).removingTrailingNewlineIfNeeded()
-        result.append(truncated)
-        result.append(suffix)
+        if isRTL {
+            // RTL: suffix를 먼저 추가하고 그 다음에 자른 텍스트를 추가
+            let suffixStartIndex = result.length
+            result.append(suffix)
+            
+            // RTL에서는 truncateIndex부터 끝까지의 텍스트를 추가
+            let remainingRange = NSRange(location: truncateIndex, length: lastLineText.length - truncateIndex)
+            if remainingRange.length > 0 {
+                let remainingText = lastLineText.attributedSubstring(from: remainingRange).removingTrailingNewlineIfNeeded()
+                result.append(remainingText)
+            }
+            
+            return .truncated(result, NSRange(location: suffixStartIndex, length: suffix.length))
+        } else {
+            // LTR: 기존 로직 사용
+            let truncated = lastLineText.attributedSubstring(from: NSRange(location: 0, length: truncateIndex)).removingTrailingNewlineIfNeeded()
+            result.append(truncated)
+            result.append(suffix)
 
-        return .truncated(result, NSRange(location: result.length - suffix.length, length: suffix.length))
+            return .truncated(result, NSRange(location: result.length - suffix.length, length: suffix.length))
+        }
     }
 
     /// TextKit 2: Applies ReadMore truncation for newLine position with enhanced coordinate handling
@@ -880,7 +912,8 @@ private extension NSAttributedString {
         readMoreText: NSAttributedString,
         newLineCharacter: String,
         attributeKey: NSAttributedString.Key,
-        defaultAttributes: [NSAttributedString.Key: Any]
+        defaultAttributes: [NSAttributedString.Key: Any],
+        isRTL: Bool = false
     ) -> ReadMoreLabel.TextTruncationResult {
         let alignedText = applyingTextAlignment(textAlignment, font: font, textColor: textColor)
         let (_, textLayoutManager, _) = alignedText.creatingTextLayoutManagerStack(
@@ -919,12 +952,26 @@ private extension NSAttributedString {
         let lastAttributes = lastTextAttributes(defaultAttributes: defaultAttributes)
         let readMoreWithOriginalAttributes = readMoreText.createMutableWithAttributes(lastAttributes)
         
-        finalText.append(NSAttributedString(string: newLineCharacter, attributes: lastAttributes))
-        let readMoreStartLocation = finalText.length
-        finalText.append(readMoreWithOriginalAttributes)
+        let finalReadMoreRange: NSRange
+        if isRTL {
+            // RTL: RLM + newLine + RLM + readMore 순서로 구성
+            finalText.append(NSAttributedString(string: "\u{200F}", attributes: lastAttributes)) // RLM
+            finalText.append(NSAttributedString(string: newLineCharacter, attributes: lastAttributes))
+            finalText.append(NSAttributedString(string: "\u{200F}", attributes: lastAttributes)) // RLM
+            let readMoreStartLocation = finalText.length
+            finalText.append(readMoreWithOriginalAttributes)
+            
+            finalReadMoreRange = NSRange(location: readMoreStartLocation, length: readMoreWithOriginalAttributes.length)
+            finalText.addAttribute(attributeKey, value: true, range: finalReadMoreRange)
+        } else {
+            // LTR: 기존 로직
+            finalText.append(NSAttributedString(string: newLineCharacter, attributes: lastAttributes))
+            let readMoreStartLocation = finalText.length
+            finalText.append(readMoreWithOriginalAttributes)
 
-        let finalReadMoreRange = NSRange(location: readMoreStartLocation, length: readMoreWithOriginalAttributes.length)
-        finalText.addAttribute(attributeKey, value: true, range: finalReadMoreRange)
+            finalReadMoreRange = NSRange(location: readMoreStartLocation, length: readMoreWithOriginalAttributes.length)
+            finalText.addAttribute(attributeKey, value: true, range: finalReadMoreRange)
+        }
 
         return .truncated(finalText, finalReadMoreRange)
     }
