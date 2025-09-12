@@ -96,8 +96,6 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
         }
     }
 
-    private var tapGestureRecognizer: UITapGestureRecognizer?
-
     // MARK: - Constants
 
     private static let defaultSpaceBetweenEllipsisAndReadMore: String = " "
@@ -105,10 +103,19 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
 
     // MARK: - Private Properties
 
+    private var tapGestureRecognizer: UITapGestureRecognizer?
+
     private var lineFragmentPadding: CGFloat {
         0.0
     }
 
+    /// RTL(Right-to-Left) 환경 감지
+    private var isRTL: Bool {
+        return semanticContentAttribute == .forceRightToLeft ||
+               (semanticContentAttribute == .unspecified &&
+                effectiveUserInterfaceLayoutDirection == .rightToLeft)
+    }
+    
     private var defaultTextAttributes: [NSAttributedString.Key: Any] {
         var attributes: [NSAttributedString.Key: Any] = [:]
         attributes[.font] = font
@@ -389,7 +396,8 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
             readMoreText: readMoreText,
             spaceBetween: Self.defaultSpaceBetweenEllipsisAndReadMore,
             attributeKey: AttributeKey.isReadMore,
-            defaultAttributes: defaultTextAttributes
+            defaultAttributes: defaultTextAttributes,
+            isRTL: self.isRTL
         )
 
         let result = applyReadMore(
@@ -431,7 +439,7 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
             readMoreText: readMoreText,
             newLineCharacter: Self.newLineCharacter,
             attributeKey: AttributeKey.isReadMore,
-            defaultAttributes: defaultTextAttributes
+            defaultAttributes: defaultTextAttributes,
         )
 
         if result.needsTruncation,
@@ -509,7 +517,8 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
             lineFragmentPadding: lineFragmentPadding,
             lineBreakMode: lineBreakMode,
             readMorePosition: readMorePosition,
-            newLineCharacter: Self.newLineCharacter
+            newLineCharacter: Self.newLineCharacter,
+            isRTL: self.isRTL
         )
         
         return result
@@ -649,11 +658,9 @@ private extension NSAttributedString {
         lineFragmentPadding: CGFloat,
         lineBreakMode: NSLineBreakMode,
         readMorePosition: ReadMoreLabel.Position,
-        newLineCharacter: String
+        newLineCharacter: String,
+        isRTL: Bool
     ) -> Bool {
-        #if DEBUG
-        #endif
-        
         let (textContentStorage, textLayoutManager, textContainer) = creatingTextLayoutManagerStack(
             containerWidth: containerWidth,
             lineFragmentPadding: lineFragmentPadding,
@@ -663,27 +670,12 @@ private extension NSAttributedString {
         // Force layout - essential for accurate glyph position calculation
         textLayoutManager.ensureLayout(for: textLayoutManager.documentRange)
         
-        let readMoreStartIndex = range.location
-        let readMoreEndIndex = range.location + range.length
-        
-        // Special handling for newLine position
-        if readMorePosition == .newLine, readMoreStartIndex > 0 {
-            let stringIndex = string.index(string.startIndex, offsetBy: readMoreStartIndex - 1)
-            let previousChar = string[stringIndex]
-            if String(previousChar) == newLineCharacter {
-                return isLocationInReadMoreGlyphBounds(
-                    location: location,
-                    range: range,
-                    textLayoutManager: textLayoutManager
-                )
-            }
-        }
-        
         // Standard .end position handling
         return isLocationInReadMoreGlyphBounds(
             location: location,
             range: range,
-            textLayoutManager: textLayoutManager
+            textLayoutManager: textLayoutManager,
+            isRTL: isRTL
         )
     }
     
@@ -692,7 +684,8 @@ private extension NSAttributedString {
     private func isLocationInReadMoreGlyphBounds(
         location: CGPoint,
         range: NSRange,
-        textLayoutManager: NSTextLayoutManager
+        textLayoutManager: NSTextLayoutManager,
+        isRTL: Bool
     ) -> Bool {
         // Get textLayoutFragment directly from touch point
         guard let fragment = textLayoutManager.textLayoutFragment(for: location) else {
@@ -747,20 +740,25 @@ private extension NSAttributedString {
         readMoreText: NSAttributedString,
         spaceBetween: String,
         attributeKey: NSAttributedString.Key,
-        defaultAttributes: [NSAttributedString.Key: Any]
+        defaultAttributes: [NSAttributedString.Key: Any],
+        isRTL: Bool
     ) -> NSAttributedString {
         let lastAttributes = lastTextAttributes(defaultAttributes: defaultAttributes)
 
         let suffix = NSMutableAttributedString()
-
         let ellipsisWithLastAttributes = ellipsisText.createMutableWithAttributes(lastAttributes)
 
-        suffix.append(ellipsisWithLastAttributes)
-        suffix.append(NSAttributedString(string: spaceBetween, attributes: lastAttributes))
+        if isRTL {
+            suffix.append(NSAttributedString(string: "\u{061C}", attributes: lastAttributes)) // ALM
+            suffix.append(ellipsisWithLastAttributes) // ".."
+            suffix.append(NSAttributedString(string: "\u{00A0}", attributes: lastAttributes)) // NBSP
+        } else {
+            suffix.append(ellipsisWithLastAttributes)
+            suffix.append(NSAttributedString(string: spaceBetween, attributes: lastAttributes))
+        }
+
         let readMoreStartLocation = suffix.length
-
         let readMoreWithOriginalAttributes = readMoreText.createMutableWithAttributes(lastAttributes)
-
         suffix.append(readMoreWithOriginalAttributes)
         let readMoreRange = NSRange(location: readMoreStartLocation, length: readMoreWithOriginalAttributes.length)
         suffix.addAttribute(attributeKey, value: true, range: readMoreRange)
