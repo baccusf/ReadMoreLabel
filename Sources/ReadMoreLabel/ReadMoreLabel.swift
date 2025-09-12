@@ -709,7 +709,17 @@ private extension NSAttributedString {
                     x: location.x - fragmentFrame.origin.x,
                     y: location.y - fragmentFrame.origin.y
                 )
-                let characterIndex = lineFragment.characterIndex(for: relativeLocation)
+                
+                var characterIndex = lineFragment.characterIndex(for: relativeLocation)
+                
+                // For RTL text, try inverted X coordinate if standard approach fails
+                if isRTL {
+                    let rtlRelativeLocation = CGPoint(
+                        x: lineFragment.typographicBounds.width - relativeLocation.x,
+                        y: relativeLocation.y
+                    )
+                    characterIndex = lineFragment.characterIndex(for: rtlRelativeLocation)
+                }
                 
                 // Calculate absolute index based on entire document
                 let documentRange = textLayoutManager.documentRange
