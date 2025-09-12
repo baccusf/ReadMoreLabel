@@ -153,13 +153,13 @@ class LabelViewController: UIViewController {
         NSLayoutConstraint.activate([
             // Top controls container constraints
             topControlsContainer.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            topControlsContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            topControlsContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            topControlsContainer.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
+            topControlsContainer.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
             
             // Scroll view constraints (below top controls)
             scrollView.topAnchor.constraint(equalTo: topControlsContainer.bottomAnchor),
-            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            scrollView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
             scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
 
             // Content view constraints

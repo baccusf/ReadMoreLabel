@@ -269,8 +269,33 @@ class TableViewModel: ObservableObject {
                 style: .fontSizeXLarge,
                 position: .end,
                 language: "ar"
-            )
-
+            ),
+            
+            // 엣지 케이스
+            ReadMoreSampleData(
+                text: "1\n2\n🚀🔥💯 이모지가 포함된 텍스트 예제입니다! ",
+                style: .mobile,
+                position: .end,
+                language: "ko"
+            ),
+            ReadMoreSampleData(
+                text: "1\n2\n3\n🚀🔥💯 이모지가 포함된 텍스트 예제입니다! ",
+                style: .mobile,
+                position: .end,
+                language: "ko"
+            ),
+            ReadMoreSampleData(
+                text: "\n\n\n🚀🔥💯 이모지가 포함된 텍스트 예제입니다! ",
+                style: .mobile,
+                position: .end,
+                language: "ko"
+            ),
+            ReadMoreSampleData(
+                text: "1\n2\n🚀🔥💯 이모지가 포함된 텍스트 예제입니다! 🎉✨🌟 ReadMoreLabel은 복잡한 유니코드 문자도 정확하게 처리할 수 있습니다.",
+                style: .mobile,
+                position: .end,
+                language: "ko"
+            ),
         ]
         
         expandedStates = Array(repeating: false, count: sampleData.count)
