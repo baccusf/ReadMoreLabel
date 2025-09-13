@@ -830,26 +830,24 @@ private extension NSAttributedString {
             lineBreakMode: lineBreakMode
         )
 
-        // Early termination: only collect fragments up to numberOfLines
-        var lineCount = 0
-        var targetLineInfo: (fragment: NSTextLayoutFragment, lineFragment: NSTextLineFragment)?
+        // Collect all line information
+        var allLineFragments: [(fragment: NSTextLayoutFragment, lineFragment: NSTextLineFragment)] = []
         let documentStart = textLayoutManager.documentRange.location
         
         textLayoutManager.enumerateTextLayoutFragments(from: documentStart, options: []) { fragment in
             for lineFragment in fragment.textLineFragments {
-                lineCount += 1
-                if lineCount == numberOfLines {
-                    targetLineInfo = (fragment: fragment, lineFragment: lineFragment)
-                    return false // Early termination
-                }
+                allLineFragments.append((fragment: fragment, lineFragment: lineFragment))
             }
-            return lineCount < numberOfLines // Continue only if we need more lines
+            return true
         }
         
-        // Check if truncation is needed
-        guard lineCount > numberOfLines, let (lastFragment, lastLineFragment) = targetLineInfo else {
+        // Check line count
+        guard numberOfLines < allLineFragments.count else {
             return .noTruncationNeeded
         }
+        
+        // Last line information
+        let (lastFragment, lastLineFragment) = allLineFragments[numberOfLines - 1]
         let lastLineStart = textLayoutManager.offset(from: documentStart, 
                                                    to: lastFragment.rangeInElement.location) + lastLineFragment.characterRange.location
         
@@ -882,9 +880,10 @@ private extension NSAttributedString {
         }
 
         let rawTruncateIndex = lastLineFragment.characterIndex(for: truncatePoint)
-        // characterIndex(for:) returns document-based index, convert to relative index
-        let relativeIndex = rawTruncateIndex - lastLineStart
-        let truncateIndex = max(0, min(relativeIndex, lastLineText.length))
+        // 최적화: newline 존재 여부에 따른 조건부 index 변환 간소화
+        let hasNewlines = result.string.contains("\n") || lastLineText.string.contains("\n")
+        let adjustedIndex = hasNewlines ? rawTruncateIndex : rawTruncateIndex - lastLineStart
+        let truncateIndex = max(0, min(adjustedIndex, lastLineText.length))
         
         // LTR: 기존 로직 사용
         let truncated = lastLineText.attributedSubstring(from: NSRange(location: 0, length: truncateIndex)).removingTrailingNewlineIfNeeded()
