@@ -675,60 +675,86 @@ private extension NSAttributedString {
         // Force layout - essential for accurate glyph position calculation
         textLayoutManager.ensureLayout(for: textLayoutManager.documentRange)
         
-        // Standard .end position handling
+        // Standard .end position handling with RTL support
         return isLocationInReadMoreGlyphBounds(
             location: location,
             range: range,
-            textLayoutManager: textLayoutManager
+            textLayoutManager: textLayoutManager,
+            isRTL: isRTL
         )
     }
     
-    /// Direct ReadMore touch detection with BiDi mixed text support
+    /// Direct ReadMore touch detection using glyph bounds enumeration for BiDi mixed text
     @available(iOS 16.0, *)
     private func isLocationInReadMoreGlyphBounds(
         location: CGPoint,
         range: NSRange,
-        textLayoutManager: NSTextLayoutManager
+        textLayoutManager: NSTextLayoutManager,
+        isRTL: Bool
     ) -> Bool {
-        // Get textLayoutFragment directly from touch point
-        guard let fragment = textLayoutManager.textLayoutFragment(for: location) else {
+        let documentRange = textLayoutManager.documentRange
+        
+        // Create NSTextRange for ReadMore range
+        guard let readMoreStartLocation = textLayoutManager.location(textLayoutManager.documentRange.location, offsetBy: range.location),
+              let readMoreEndLocation = textLayoutManager.location(readMoreStartLocation, offsetBy: range.length),
+              let readMoreTextRange = NSTextRange(location: readMoreStartLocation, end: readMoreEndLocation) else {
             return false
         }
         
-        let fragmentFrame = fragment.layoutFragmentFrame
-        
-        // Find character index of touch point within fragment
-        for lineFragment in fragment.textLineFragments {
-            let lineBounds = CGRect(
-                x: fragmentFrame.origin.x + lineFragment.typographicBounds.origin.x,
-                y: fragmentFrame.origin.y + lineFragment.typographicBounds.origin.y,
-                width: lineFragment.typographicBounds.width,
-                height: lineFragment.typographicBounds.height
-            )
+        // Enumerate all segments in ReadMore range to find glyph bounds
+        var foundReadMoreGlyph = false
+        textLayoutManager.enumerateTextSegments(
+            in: readMoreTextRange,
+            type: .standard,
+            options: []
+        ) { segmentRange, segmentFrame, baselinePosition, textContainer in
             
-            if lineBounds.contains(location) {
-                let relativeLocation = CGPoint(
-                    x: location.x - fragmentFrame.origin.x,
-                    y: location.y - fragmentFrame.origin.y
-                )
+            // Check if touch point is within this segment's frame
+            if segmentFrame.contains(location) {
                 
-                // Direct TextKit 2 hit testing
-                let characterIndex = lineFragment.characterIndex(for: relativeLocation)
+                // Get text layout fragment for this segment
+                guard let fragment = textLayoutManager.textLayoutFragment(for: segmentFrame.origin) else {
+                    return true // Continue enumeration
+                }
                 
-                // Calculate absolute index
-                let documentRange = textLayoutManager.documentRange
-                let fragmentStartOffset = textLayoutManager.offset(from: documentRange.location, to: fragment.rangeInElement.location)
-                let absoluteIndex = fragmentStartOffset + characterIndex
-                
-                // Check if touched character is within ReadMore range and has ReadMore attribute
-                if NSLocationInRange(absoluteIndex, range) && absoluteIndex < length {
-                    let attributes = attributes(at: absoluteIndex, effectiveRange: nil)
-                    return (attributes[ReadMoreLabel.AttributeKey.isReadMore] as? Bool) == true
+                // Check each line fragment within the text layout fragment
+                for lineFragment in fragment.textLineFragments {
+                    let lineFragmentFrame = CGRect(
+                        x: fragment.layoutFragmentFrame.origin.x + lineFragment.typographicBounds.origin.x,
+                        y: fragment.layoutFragmentFrame.origin.y + lineFragment.typographicBounds.origin.y,
+                        width: lineFragment.typographicBounds.width,
+                        height: lineFragment.typographicBounds.height
+                    )
+                    
+                    if lineFragmentFrame.contains(location) {
+                        // Check attributes at the touch point to confirm ReadMore text
+                        let relativeLocation = CGPoint(
+                            x: location.x - fragment.layoutFragmentFrame.origin.x,
+                            y: location.y - fragment.layoutFragmentFrame.origin.y
+                        )
+                        
+                        let characterIndex = lineFragment.characterIndex(for: relativeLocation)
+                        let fragmentStartOffset = textLayoutManager.offset(from: documentRange.location, to: fragment.rangeInElement.location)
+                        let absoluteIndex = fragmentStartOffset + characterIndex
+                        
+                        // Verify this is ReadMore text by checking attributes
+                        if absoluteIndex < length {
+                            let attributes = attributes(at: absoluteIndex, effectiveRange: nil)
+                            let isReadMoreAttribute = (attributes[ReadMoreLabel.AttributeKey.isReadMore] as? Bool) == true
+                            
+                            if isReadMoreAttribute {
+                                foundReadMoreGlyph = true
+                                return false // Stop enumeration
+                            }
+                        }
+                    }
                 }
             }
+            
+            return true // Continue enumeration
         }
         
-        return false
+        return foundReadMoreGlyph
     }
     
     /// Creates a ReadMore suffix with ellipsis and ReadMore text
