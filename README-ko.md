@@ -236,8 +236,6 @@ hebrewLabel.readMoreText = NSAttributedString(string: "קרא עוד")
 3. **접근성**: 컴포넌트는 VoiceOver와 Dynamic Type을 자동으로 지원
 4. **스레드 안전성**: 항상 메인 스레드에서 프로퍼티 업데이트
 5. **다국어 지원**: TextKit2를 사용하여 다양한 언어에서 글리프 계산 이슈를 해결하고 정확한 텍스트 측정을 제공
-5. **TextKit 1**: 안정적인 텍스트 처리를 위해 검증된 TextKit 1 API를 기반으로 구축
-6. **메모리 관리**: 안정성을 위해 적절한 TextKit 스택 참조를 유지하는 컴포넌트
 
 ## 🔧 고급 사용법
 
