@@ -1091,7 +1091,7 @@ extension ReadMoreLabel {
         mutating func updateNumberOfLines(_ newValue: Int) {
             layoutConfigState.updateNumberOfLines(newValue)
         }
-
+ 
         /// Updates the original text and resets related state
         /// - Parameter newText: New attributed text to set
         mutating func updateOriginalText(_ newText: NSAttributedString?) {
