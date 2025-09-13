@@ -133,7 +133,7 @@ class LabelViewController: UIViewController {
             labelsStackView.addArrangedSubview(label)
         }
         
-        // RTL 설정 for Arabic
+        // RTL setup for Arabic
         arabicLabel.textAlignment = .right
         arabicLabel.semanticContentAttribute = .forceRightToLeft
     }

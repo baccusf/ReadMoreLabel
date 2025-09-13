@@ -273,6 +273,12 @@ class TableViewModel: ObservableObject {
             
             // 엣지 케이스
             ReadMoreSampleData(
+                text: "1\n2\n🚀🔥💯 이모지가 포함된 텍스트 예제입니다! 🎉✨🌟 ReadMoreLabel은 복잡한 유니코드",
+                style: .mobile,
+                position: .end,
+                language: "ko"
+            ),
+            ReadMoreSampleData(
                 text: "1\n2\n🚀🔥💯 이모지가 포함된 텍스트 예제입니다! ",
                 style: .mobile,
                 position: .end,
