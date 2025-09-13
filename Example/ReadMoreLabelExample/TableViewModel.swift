@@ -271,7 +271,7 @@ class TableViewModel: ObservableObject {
                 language: "ar"
             ),
             
-            // 엣지 케이스
+            // Edge Cases
             ReadMoreSampleData(
                 text: "1\n2\n🚀🔥💯 이모지가 포함된 텍스트 예제입니다! 🎉✨🌟 ReadMoreLabel은 복잡한 유니코드",
                 style: .mobile,
@@ -329,15 +329,15 @@ extension TableViewModel {
     // MARK: - ReadMoreLabel Style Extension
 
     enum Style {
-        case basic          // 16pt font - 기본 스타일
-        case colorful       // 16pt font - 컬러풀 스타일
-        case emoji          // 15pt font - 이모지 스타일
-        case gradient       // 16pt font - 그라데이션 스타일
-        case bold           // 16pt font - 볼드 스타일
-        case mobile         // 15pt font - 모바일 스타일
-        case fontSizeMedium // 18pt font - 중간 폰트 크기
-        case fontSizeLarge  // 25pt font - 큰 폰트 크기
-        case fontSizeXLarge // 32pt font - 매우 큰 폰트 크기
+        case basic          // 16pt font - Basic style
+        case colorful       // 16pt font - Colorful style
+        case emoji          // 15pt font - Emoji style
+        case gradient       // 16pt font - Gradient style
+        case bold           // 16pt font - Bold style
+        case mobile         // 15pt font - Mobile style
+        case fontSizeMedium // 18pt font - Medium font size
+        case fontSizeLarge  // 25pt font - Large font size
+        case fontSizeXLarge // 32pt font - Extra large font size
     }
     
     // MARK: - StyleProvider
