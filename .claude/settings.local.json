@@ -56,7 +56,11 @@
       "mcp__context7__resolve-library-id",
       "mcp__context7__get-library-docs",
       "mcp__XcodeBuildMCP__key_sequence",
-      "mcp__XcodeBuildMCP__stop_app_sim"
+      "mcp__XcodeBuildMCP__stop_app_sim",
+      "mcp__ios-simulator__get_booted_sim_id",
+      "Bash(gh issue create:*)",
+      "mcp__XcodeBuildMCP__clean",
+      "mcp__XcodeBuildMCP__doctor"
     ],
     "deny": [],
     "defaultMode": "acceptEdits",

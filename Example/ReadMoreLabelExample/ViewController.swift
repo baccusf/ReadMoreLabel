@@ -1,23 +1,20 @@
 import ReadMoreLabel
 import UIKit
+import Foundation
 
 // MARK: - Main View Controller
 
+/// Main View Controller following MVVM pattern
+/// Single Responsibility: UI presentation and navigation
 class ViewController: UIViewController {
-    private let tableView = UITableView()
 
-    private let examples: [(title: String, subtitle: String, viewController: UIViewController.Type)] = [
-        (
-            title: "📋 Table View Examples",
-            subtitle: "Multiple styles with different languages and positions",
-            viewController: TableViewController.self
-        ),
-        (
-            title: "🎬 Animation Examples",
-            subtitle: "ScrollView with animation controls",
-            viewController: LabelViewController.self
-        ),
-    ]
+    // MARK: - Properties
+
+    private let tableView = UITableView()
+    private lazy var viewModel = MainViewModel.create(navigationController: navigationController)
+    private let cellStyle = CellStyleProvider.mainScreenStyle()
+
+    // MARK: - View Lifecycle
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -26,8 +23,10 @@ class ViewController: UIViewController {
         setupTableView()
     }
 
+    // MARK: - Private Methods
+
     private func setupUI() {
-        title = "ReadMoreLabel Demo"
+        title = "ReadMoreLabel Examples"
         view.backgroundColor = .systemBackground
 
         // Setup navigation bar - use standard title size
@@ -48,48 +47,30 @@ class ViewController: UIViewController {
         tableView.delegate = self
         tableView.dataSource = self
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: "Cell")
-        tableView.rowHeight = UITableView.automaticDimension
-        tableView.estimatedRowHeight = 80
-        tableView.separatorInset = UIEdgeInsets(top: 0, left: 20, bottom: 0, right: 20)
 
-        // Style the table view
-        if #available(iOS 15.0, *) {
-            tableView.sectionHeaderTopPadding = 0
-        }
+        // Remove extra separators
+        tableView.tableFooterView = UIView()
     }
+
+
 }
 
 // MARK: - UITableViewDataSource
 
 extension ViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        examples.count
+        return viewModel.numberOfItems()
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
-        let example = examples[indexPath.row]
+        let example = viewModel.item(at: indexPath.row)
 
-        // Configure cell
         cell.textLabel?.text = example.title
-        cell.textLabel?.font = UIFont.systemFont(ofSize: 18, weight: .semibold)
-        cell.textLabel?.textColor = .label
-
         cell.detailTextLabel?.text = example.subtitle
-        cell.detailTextLabel?.font = UIFont.systemFont(ofSize: 14, weight: .medium)
-        cell.detailTextLabel?.textColor = .secondaryLabel
-        cell.detailTextLabel?.numberOfLines = 2
 
-        cell.accessoryType = .disclosureIndicator
-        cell.selectionStyle = .default
-
-        // Add custom styling
-        cell.backgroundColor = .secondarySystemBackground
-        cell.layer.cornerRadius = 12
-        cell.layer.masksToBounds = true
-
-        // Add some spacing between cells
-        cell.separatorInset = UIEdgeInsets(top: 0, left: 0, bottom: 0, right: .greatestFiniteMagnitude)
+        // Apply consistent styling using service
+        CellStyleProvider.applyStyle(cellStyle, to: cell)
 
         return cell
     }
@@ -101,19 +82,11 @@ extension ViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
 
-        let example = examples[indexPath.row]
-
-        // Create and present the selected view controller
-        let viewController: UIViewController = if example.viewController == TableViewController.self {
-            TableViewController()
-        } else {
-            LabelViewController()
-        }
-
-        navigationController?.pushViewController(viewController, animated: true)
+        // Delegate navigation logic to ViewModel
+        viewModel.selectItem(at: indexPath.row)
     }
 
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        80
+        return cellStyle.rowHeight
     }
 }
