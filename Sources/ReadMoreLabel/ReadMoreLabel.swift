@@ -286,6 +286,7 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
         numberOfLines: Int,
         containerWidth: CGFloat,
         suffix: NSAttributedString,
+        precomputedReadMoreRange: NSRange,
         isRTL: Bool = false
     ) -> TextTruncationResult {
         let alignedText = originalText.applyingTextAlignment(textAlignment, font: font, textColor: textColor)
@@ -313,6 +314,7 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
                 numberOfLines: numberOfLines,
                 containerWidth: containerWidth,
                 suffix: suffix,
+                precomputedReadMoreRange: precomputedReadMoreRange,
                 lineFragmentPadding: lineFragmentPadding,
                 lineBreakMode: lineBreakMode,
                 isRTL: isRTL
@@ -394,7 +396,7 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
             return
         }
 
-        let suffix = attributedText.creatingReadMoreSuffix(
+        let suffixInfo = attributedText.creatingReadMoreSuffix(
             ellipsisText: ellipsisText,
             readMoreText: readMoreText,
             spaceBetween: Self.defaultSpaceBetweenEllipsisAndReadMore,
@@ -407,7 +409,8 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
             originalText: attributedText,
             numberOfLines: numberOfLinesWhenCollapsed,
             containerWidth: availableWidth,
-            suffix: suffix,
+            suffix: suffixInfo.attributedString,
+            precomputedReadMoreRange: suffixInfo.readMoreRange,
             isRTL: self.isRTL
         )
 
@@ -684,7 +687,7 @@ private extension NSAttributedString {
         )
     }
     
-    /// ReadMore touch detection using precise character index and attribute check for BiDi text
+    /// ReadMore touch detection with performance optimization and precise accuracy for BiDi text
     @available(iOS 16.0, *)
     private func isLocationInReadMoreGlyphBounds(
         location: CGPoint,
@@ -692,7 +695,12 @@ private extension NSAttributedString {
         textLayoutManager: NSTextLayoutManager,
         isRTL: Bool
     ) -> Bool {
-        // 1. 터치 포인트에서 정확한 character index 구하기 (TextKit 2 방식)
+        // 성능 최적화: 전체 텍스트 속성 먼저 확인
+        guard let attributedText = (textLayoutManager.textContentManager as? NSTextContentStorage)?.attributedString else {
+            return false
+        }
+        
+        // 1. 터치 포인트에서 정확한 character index 구하기
         var characterIndex: Int = NSNotFound
         
         textLayoutManager.enumerateTextLayoutFragments(from: textLayoutManager.documentRange.location, options: []) { fragment in
@@ -734,15 +742,15 @@ private extension NSAttributedString {
             return true // 계속 탐색
         }
         
-        // 2. character index 유효성 검증
+        // 2. character index 유효성 및 range 검증 (성능 최적화)
         guard characterIndex != NSNotFound,
               characterIndex >= 0,
-              let attributedText = (textLayoutManager.textContentManager as? NSTextContentStorage)?.attributedString,
-              characterIndex < attributedText.length else {
+              characterIndex < attributedText.length,
+              NSLocationInRange(characterIndex, range) else {
             return false
         }
         
-        // 3. 터치한 위치의 글자가 isReadMore 속성을 가지고 있는지 확인
+        // 3. 정확한 속성 확인 (정확성 보장)
         let attributes = attributedText.attributes(at: characterIndex, effectiveRange: nil)
         return (attributes[ReadMoreLabel.AttributeKey.isReadMore] as? Bool) == true
     }
@@ -755,6 +763,8 @@ private extension NSAttributedString {
     ///   - attributeKey: Attribute key for ReadMore identification
     ///   - defaultAttributes: Default text attributes to use
     /// - Returns: Complete ReadMore suffix with proper attributes
+    /// ReadMore suffix info with precomputed range for performance optimization
+    /// Returns: (attributedString, readMoreRange)
     func creatingReadMoreSuffix(
         ellipsisText: NSAttributedString,
         readMoreText: NSAttributedString,
@@ -762,7 +772,7 @@ private extension NSAttributedString {
         attributeKey: NSAttributedString.Key,
         defaultAttributes: [NSAttributedString.Key: Any],
         isRTL: Bool
-    ) -> NSAttributedString {
+    ) -> (attributedString: NSAttributedString, readMoreRange: NSRange) {
         let lastAttributes = lastTextAttributes(defaultAttributes: defaultAttributes)
 
         let suffix = NSMutableAttributedString()
@@ -791,7 +801,7 @@ private extension NSAttributedString {
         
         suffix.addAttribute(attributeKey, value: true, range: readMoreRange)
 
-        return suffix
+        return (attributedString: suffix, readMoreRange: readMoreRange)
     }
 
     /// Enhanced TextKit 2: Modern text truncation with NSTextLayoutFragment
@@ -808,6 +818,7 @@ private extension NSAttributedString {
         numberOfLines: Int,
         containerWidth: CGFloat,
         suffix: NSAttributedString,
+        precomputedReadMoreRange: NSRange,
         lineFragmentPadding: CGFloat = 0,
         lineBreakMode: NSLineBreakMode = .byWordWrapping,
         isRTL: Bool = false
@@ -881,19 +892,11 @@ private extension NSAttributedString {
         let suffixStartLocation = result.length
         result.append(suffix)
 
-        // ReadMore 범위를 전체 텍스트 기준으로 조정
-        var adjustedReadMoreRange = NSRange(location: suffixStartLocation, length: suffix.length)
-        
-        // suffix 내부에서 실제 ReadMore 범위 찾기
-        suffix.enumerateAttribute(ReadMoreLabel.AttributeKey.isReadMore, in: NSRange(location: 0, length: suffix.length), options: []) { value, range, stop in
-            if (value as? Bool) == true {
-                adjustedReadMoreRange = NSRange(
-                    location: suffixStartLocation + range.location,
-                    length: range.length
-                )
-                stop.pointee = true
-            }
-        }
+        // ReadMore 범위를 전체 텍스트 기준으로 조정 (성능 최적화: 사전 계산된 범위 사용)
+        let adjustedReadMoreRange = NSRange(
+            location: suffixStartLocation + precomputedReadMoreRange.location,
+            length: precomputedReadMoreRange.length
+        )
         
         return .truncated(result, adjustedReadMoreRange)
     }
