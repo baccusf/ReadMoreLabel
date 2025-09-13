@@ -702,8 +702,9 @@ private extension NSAttributedString {
         
         // 1. 터치 포인트에서 정확한 character index 구하기
         var characterIndex: Int = NSNotFound
+        let documentStart = textLayoutManager.documentRange.location
         
-        textLayoutManager.enumerateTextLayoutFragments(from: textLayoutManager.documentRange.location, options: []) { fragment in
+        textLayoutManager.enumerateTextLayoutFragments(from: documentStart, options: []) { fragment in
             let fragmentFrame = fragment.layoutFragmentFrame
             
             // 터치 포인트가 이 fragment 내에 있는지 확인
@@ -733,7 +734,7 @@ private extension NSAttributedString {
                 let characterIndexInLine = lineFragment.characterIndex(for: relativeLocation)
                 if characterIndexInLine != NSNotFound {
                     // fragment의 시작 위치와 더해서 전체 텍스트에서의 index 계산
-                    let fragmentStartIndex = textLayoutManager.offset(from: textLayoutManager.documentRange.location, to: fragment.rangeInElement.location)
+                    let fragmentStartIndex = textLayoutManager.offset(from: documentStart, to: fragment.rangeInElement.location)
                     characterIndex = fragmentStartIndex + characterIndexInLine
                     return false // 찾았으므로 중단
                 }
@@ -831,7 +832,9 @@ private extension NSAttributedString {
 
         // Collect all line information
         var allLineFragments: [(fragment: NSTextLayoutFragment, lineFragment: NSTextLineFragment)] = []
-        textLayoutManager.enumerateTextLayoutFragments(from: textLayoutManager.documentRange.location, options: []) { fragment in
+        let documentStart = textLayoutManager.documentRange.location
+        
+        textLayoutManager.enumerateTextLayoutFragments(from: documentStart, options: []) { fragment in
             for lineFragment in fragment.textLineFragments {
                 allLineFragments.append((fragment: fragment, lineFragment: lineFragment))
             }
@@ -845,7 +848,7 @@ private extension NSAttributedString {
         
         // Last line information
         let (lastFragment, lastLineFragment) = allLineFragments[numberOfLines - 1]
-        let lastLineStart = textLayoutManager.offset(from: textLayoutManager.documentRange.location, 
+        let lastLineStart = textLayoutManager.offset(from: documentStart, 
                                                    to: lastFragment.rangeInElement.location) + lastLineFragment.characterRange.location
         
         // Step 1: All text before the last line
@@ -939,7 +942,9 @@ private extension NSAttributedString {
 
         // Collect all line information
         var allLineFragments: [(fragment: NSTextLayoutFragment, lineFragment: NSTextLineFragment)] = []
-        textLayoutManager.enumerateTextLayoutFragments(from: textLayoutManager.documentRange.location, options: []) { fragment in
+        let documentStart = textLayoutManager.documentRange.location
+        
+        textLayoutManager.enumerateTextLayoutFragments(from: documentStart, options: []) { fragment in
             for lineFragment in fragment.textLineFragments {
                 allLineFragments.append((fragment: fragment, lineFragment: lineFragment))
             }
@@ -953,7 +958,7 @@ private extension NSAttributedString {
 
         // Last line information
         let (lastFragment, lastLineFragment) = allLineFragments[numberOfLines - 1]
-        let lastLineStart = textLayoutManager.offset(from: textLayoutManager.documentRange.location, 
+        let lastLineStart = textLayoutManager.offset(from: documentStart, 
                                                    to: lastFragment.rangeInElement.location) + lastLineFragment.characterRange.location
         let lastLineRange = NSRange(location: lastLineStart, length: lastLineFragment.characterRange.length)
         
