@@ -23,7 +23,6 @@ Pod::Spec.new do |spec|
 
   spec.platform     = :ios, "16.0"
   spec.ios.deployment_target = "16.0"
-  spec.tvos.deployment_target = "16.0"
 
   spec.source       = { :git => "https://github.com/baccusf/ReadMoreLabel.git", :tag => "#{spec.version}" }
   spec.source_files = "Sources/ReadMoreLabel/**/*.{swift}"
