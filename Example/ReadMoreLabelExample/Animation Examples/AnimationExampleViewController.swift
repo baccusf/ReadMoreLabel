@@ -2,10 +2,10 @@ import ReadMoreLabel
 import UIKit
 
 @available(iOS 16.0, *)
-class LabelViewController: UIViewController {
+class AnimationExampleViewController: UIViewController {
     // MARK: - Properties
     
-    private let viewModel = LabelViewModel()
+    private let viewModel = AnimationExampleViewModel()
     
     // Top controls (outside scroll view)
     private let topControlsContainer = UIView()
@@ -237,7 +237,7 @@ class LabelViewController: UIViewController {
 // MARK: - ReadMoreLabelDelegate
 
 @available(iOS 16.0, *)
-extension LabelViewController: ReadMoreLabelDelegate {
+extension AnimationExampleViewController: ReadMoreLabelDelegate {
     func readMoreLabel(_ label: ReadMoreLabel, didChangeExpandedState isExpanded: Bool) {
         // Update ViewModel state
         let allLabels = [englishLabel, koreanLabel, japaneseLabel, arabicLabel]

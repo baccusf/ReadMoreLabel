@@ -15,10 +15,17 @@
 		2B1A3E592A8B5C1F00123456 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 2B1A3E572A8B5C1F00123456 /* LaunchScreen.storyboard */; };
 		2B1A3E612A8B5C8B00123456 /* ReadMoreLabel in Frameworks */ = {isa = PBXBuildFile; productRef = 2B1A3E602A8B5C8B00123456 /* ReadMoreLabel */; };
 		2B1A3E622A8B5C8B00123457 /* TableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B1A3E632A8B5C8B00123457 /* TableViewController.swift */; };
-		2B1A3E642A8B5C8B00123458 /* LabelViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B1A3E652A8B5C8B00123458 /* LabelViewController.swift */; };
+		2B1A3E642A8B5C8B00123458 /* AnimationExampleViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B1A3E652A8B5C8B00123458 /* AnimationExampleViewController.swift */; };
 		2B1A3E662A8B5C8B00123459 /* TableViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B1A3E672A8B5C8B00123459 /* TableViewModel.swift */; };
-		2B1A3E682A8B5C8B00123460 /* LabelViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B1A3E692A8B5C8B00123460 /* LabelViewModel.swift */; };
+		2B1A3E682A8B5C8B00123460 /* AnimationExampleViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B1A3E692A8B5C8B00123460 /* AnimationExampleViewModel.swift */; };
 		A926D5492E69162C00159299 /* TableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A926D5482E69161F00159299 /* TableViewCell.swift */; };
+		A97B0FD22E7584510073EE43 /* PerformanceMeasurement.swift in Sources */ = {isa = PBXBuildFile; fileRef = A97B0FCE2E7584510073EE43 /* PerformanceMeasurement.swift */; };
+		A97B0FD32E7584510073EE43 /* PerformanceReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A97B0FCF2E7584510073EE43 /* PerformanceReporter.swift */; };
+		A97B0FD42E7584510073EE43 /* PerformanceTestViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A97B0FD02E7584510073EE43 /* PerformanceTestViewModel.swift */; };
+		A97B0FD52E7584510073EE43 /* MemoryProfiler.swift in Sources */ = {isa = PBXBuildFile; fileRef = A97B0FCD2E7584510073EE43 /* MemoryProfiler.swift */; };
+		A97B0FDC2E7586FD0073EE43 /* MainViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A97B0FD72E7586FD0073EE43 /* MainViewModel.swift */; };
+		A97B0FE52E7588280073EE43 /* NavigationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A97B0FE32E7588280073EE43 /* NavigationService.swift */; };
+		A97B0FE62E7588280073EE43 /* CellStyleProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = A97B0FE22E7588280073EE43 /* CellStyleProvider.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -31,10 +38,17 @@
 		2B1A3E582A8B5C1F00123456 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		2B1A3E5A2A8B5C1F00123456 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		2B1A3E632A8B5C8B00123457 /* TableViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TableViewController.swift; sourceTree = "<group>"; };
-		2B1A3E652A8B5C8B00123458 /* LabelViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabelViewController.swift; sourceTree = "<group>"; };
+		2B1A3E652A8B5C8B00123458 /* AnimationExampleViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnimationExampleViewController.swift; sourceTree = "<group>"; };
 		2B1A3E672A8B5C8B00123459 /* TableViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TableViewModel.swift; sourceTree = "<group>"; };
-		2B1A3E692A8B5C8B00123460 /* LabelViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabelViewModel.swift; sourceTree = "<group>"; };
+		2B1A3E692A8B5C8B00123460 /* AnimationExampleViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnimationExampleViewModel.swift; sourceTree = "<group>"; };
 		A926D5482E69161F00159299 /* TableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TableViewCell.swift; sourceTree = "<group>"; };
+		A97B0FCD2E7584510073EE43 /* MemoryProfiler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryProfiler.swift; sourceTree = "<group>"; };
+		A97B0FCE2E7584510073EE43 /* PerformanceMeasurement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformanceMeasurement.swift; sourceTree = "<group>"; };
+		A97B0FCF2E7584510073EE43 /* PerformanceReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformanceReporter.swift; sourceTree = "<group>"; };
+		A97B0FD02E7584510073EE43 /* PerformanceTestViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformanceTestViewModel.swift; sourceTree = "<group>"; };
+		A97B0FD72E7586FD0073EE43 /* MainViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainViewModel.swift; sourceTree = "<group>"; };
+		A97B0FE22E7588280073EE43 /* CellStyleProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CellStyleProvider.swift; sourceTree = "<group>"; };
+		A97B0FE32E7588280073EE43 /* NavigationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -71,17 +85,64 @@
 				2B1A3E4C2A8B5C1E00123456 /* AppDelegate.swift */,
 				2B1A3E4E2A8B5C1E00123456 /* SceneDelegate.swift */,
 				2B1A3E502A8B5C1E00123456 /* ViewController.swift */,
-				2B1A3E632A8B5C8B00123457 /* TableViewController.swift */,
-				2B1A3E672A8B5C8B00123459 /* TableViewModel.swift */,
-				A926D5482E69161F00159299 /* TableViewCell.swift */,
-				2B1A3E652A8B5C8B00123458 /* LabelViewController.swift */,
-				2B1A3E692A8B5C8B00123460 /* LabelViewModel.swift */,
+				A97B0FE42E7588280073EE43 /* Services */,
+				A97B0FD92E7586FD0073EE43 /* ViewModels */,
+				A97B0FD12E7584510073EE43 /* Performance */,
+				A97B0FC82E7581E90073EE43 /* TableViewExamples */,
+				A97B0FC92E7581F70073EE43 /* Animation Examples */,
 				2B1A3E522A8B5C1E00123456 /* Main.storyboard */,
 				2B1A3E552A8B5C1F00123456 /* Assets.xcassets */,
 				2B1A3E572A8B5C1F00123456 /* LaunchScreen.storyboard */,
 				2B1A3E5A2A8B5C1F00123456 /* Info.plist */,
 			);
 			path = ReadMoreLabelExample;
+			sourceTree = "<group>";
+		};
+		A97B0FC82E7581E90073EE43 /* TableViewExamples */ = {
+			isa = PBXGroup;
+			children = (
+				2B1A3E632A8B5C8B00123457 /* TableViewController.swift */,
+				2B1A3E672A8B5C8B00123459 /* TableViewModel.swift */,
+				A926D5482E69161F00159299 /* TableViewCell.swift */,
+			);
+			path = TableViewExamples;
+			sourceTree = "<group>";
+		};
+		A97B0FC92E7581F70073EE43 /* Animation Examples */ = {
+			isa = PBXGroup;
+			children = (
+				2B1A3E652A8B5C8B00123458 /* AnimationExampleViewController.swift */,
+				2B1A3E692A8B5C8B00123460 /* AnimationExampleViewModel.swift */,
+			);
+			path = "Animation Examples";
+			sourceTree = "<group>";
+		};
+		A97B0FD12E7584510073EE43 /* Performance */ = {
+			isa = PBXGroup;
+			children = (
+				A97B0FCD2E7584510073EE43 /* MemoryProfiler.swift */,
+				A97B0FCE2E7584510073EE43 /* PerformanceMeasurement.swift */,
+				A97B0FCF2E7584510073EE43 /* PerformanceReporter.swift */,
+				A97B0FD02E7584510073EE43 /* PerformanceTestViewModel.swift */,
+			);
+			path = Performance;
+			sourceTree = "<group>";
+		};
+		A97B0FD92E7586FD0073EE43 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				A97B0FD72E7586FD0073EE43 /* MainViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		A97B0FE42E7588280073EE43 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				A97B0FE22E7588280073EE43 /* CellStyleProvider.swift */,
+				A97B0FE32E7588280073EE43 /* NavigationService.swift */,
+			);
+			path = Services;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -164,10 +225,17 @@
 				2B1A3E512A8B5C1E00123456 /* ViewController.swift in Sources */,
 				2B1A3E622A8B5C8B00123457 /* TableViewController.swift in Sources */,
 				A926D5492E69162C00159299 /* TableViewCell.swift in Sources */,
-				2B1A3E642A8B5C8B00123458 /* LabelViewController.swift in Sources */,
+				2B1A3E642A8B5C8B00123458 /* AnimationExampleViewController.swift in Sources */,
 				2B1A3E662A8B5C8B00123459 /* TableViewModel.swift in Sources */,
-				2B1A3E682A8B5C8B00123460 /* LabelViewModel.swift in Sources */,
+				2B1A3E682A8B5C8B00123460 /* AnimationExampleViewModel.swift in Sources */,
 				2B1A3E4D2A8B5C1E00123456 /* AppDelegate.swift in Sources */,
+				A97B0FDC2E7586FD0073EE43 /* MainViewModel.swift in Sources */,
+				A97B0FD22E7584510073EE43 /* PerformanceMeasurement.swift in Sources */,
+				A97B0FD32E7584510073EE43 /* PerformanceReporter.swift in Sources */,
+				A97B0FD42E7584510073EE43 /* PerformanceTestViewModel.swift in Sources */,
+				A97B0FE52E7588280073EE43 /* NavigationService.swift in Sources */,
+				A97B0FE62E7588280073EE43 /* CellStyleProvider.swift in Sources */,
+				A97B0FD52E7584510073EE43 /* MemoryProfiler.swift in Sources */,
 				2B1A3E4F2A8B5C1E00123456 /* SceneDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

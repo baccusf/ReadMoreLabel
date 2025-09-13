@@ -1,5 +1,6 @@
 import Foundation
 import UIKit
+import ReadMoreLabel
 
 // MARK: - Performance Measurement Service
 
@@ -57,7 +58,6 @@ final class PerformanceMeasurement {
             label.numberOfLines = Constants.testLines
             label.text = text
 
-            // Use sizeThatFits instead of layoutIfNeeded to bypass layout system
             _ = label.sizeThatFits(CGSize(width: Constants.testFrameSize.width, height: .greatestFiniteMagnitude))
 
             let endTime = CFAbsoluteTimeGetCurrent()
@@ -85,7 +85,6 @@ final class PerformanceMeasurement {
             label.numberOfLines = Constants.testLines
             label.text = text
 
-            // Use sizeThatFits instead of layoutIfNeeded to bypass layout system
             _ = label.sizeThatFits(CGSize(width: Constants.testFrameSize.width, height: .greatestFiniteMagnitude))
 
             let endTime = CFAbsoluteTimeGetCurrent()
@@ -125,7 +124,6 @@ final class PerformanceMeasurement {
                 let startTime = CFAbsoluteTimeGetCurrent()
 
                 label.text = text
-                // Use sizeThatFits instead of layoutIfNeeded
                 _ = label.sizeThatFits(CGSize(width: Constants.testFrameSize.width, height: .greatestFiniteMagnitude))
 
                 let endTime = CFAbsoluteTimeGetCurrent()
