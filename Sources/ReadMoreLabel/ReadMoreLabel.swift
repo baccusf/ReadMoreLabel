@@ -875,42 +875,27 @@ private extension NSAttributedString {
             truncateIndex = max(0, min(relativeIndex, lastLineText.length))
         }
         
-//        if isRTL {
-//            // RTL: suffix를 먼저 추가하고 그 다음에 자른 텍스트를 추가
-//            let suffixStartIndex = result.length
-//            result.append(suffix)
-//            
-//            // RTL에서는 truncateIndex부터 끝까지의 텍스트를 추가
-//            let remainingRange = NSRange(location: truncateIndex, length: lastLineText.length - truncateIndex)
-//            if remainingRange.length > 0 {
-//                let remainingText = lastLineText.attributedSubstring(from: remainingRange).removingTrailingNewlineIfNeeded()
-//                result.append(remainingText)
-//            }
-//            
-//            return .truncated(result, NSRange(location: suffixStartIndex, length: suffix.length))
-//        } else {
-            // LTR: 기존 로직 사용
-            let truncated = lastLineText.attributedSubstring(from: NSRange(location: 0, length: truncateIndex)).removingTrailingNewlineIfNeeded()
-            result.append(truncated)
-            let suffixStartLocation = result.length
-            result.append(suffix)
+        // LTR: 기존 로직 사용
+        let truncated = lastLineText.attributedSubstring(from: NSRange(location: 0, length: truncateIndex)).removingTrailingNewlineIfNeeded()
+        result.append(truncated)
+        let suffixStartLocation = result.length
+        result.append(suffix)
 
-            // ReadMore 범위를 전체 텍스트 기준으로 조정
-            var adjustedReadMoreRange = NSRange(location: suffixStartLocation, length: suffix.length)
-            
-            // suffix 내부에서 실제 ReadMore 범위 찾기
-            suffix.enumerateAttribute(ReadMoreLabel.AttributeKey.isReadMore, in: NSRange(location: 0, length: suffix.length), options: []) { value, range, stop in
-                if (value as? Bool) == true {
-                    adjustedReadMoreRange = NSRange(
-                        location: suffixStartLocation + range.location,
-                        length: range.length
-                    )
-                    stop.pointee = true
-                }
+        // ReadMore 범위를 전체 텍스트 기준으로 조정
+        var adjustedReadMoreRange = NSRange(location: suffixStartLocation, length: suffix.length)
+        
+        // suffix 내부에서 실제 ReadMore 범위 찾기
+        suffix.enumerateAttribute(ReadMoreLabel.AttributeKey.isReadMore, in: NSRange(location: 0, length: suffix.length), options: []) { value, range, stop in
+            if (value as? Bool) == true {
+                adjustedReadMoreRange = NSRange(
+                    location: suffixStartLocation + range.location,
+                    length: range.length
+                )
+                stop.pointee = true
             }
-            
-            return .truncated(result, adjustedReadMoreRange)
-//        }
+        }
+        
+        return .truncated(result, adjustedReadMoreRange)
     }
 
     /// TextKit 2: Applies ReadMore truncation for newLine position with enhanced coordinate handling
