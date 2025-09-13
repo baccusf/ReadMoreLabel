@@ -684,7 +684,7 @@ private extension NSAttributedString {
         )
     }
     
-    /// ReadMore touch detection using exact rendering bounds calculation for BiDi text
+    /// ReadMore touch detection using precise character index and attribute check for BiDi text
     @available(iOS 16.0, *)
     private func isLocationInReadMoreGlyphBounds(
         location: CGPoint,
@@ -692,43 +692,59 @@ private extension NSAttributedString {
         textLayoutManager: NSTextLayoutManager,
         isRTL: Bool
     ) -> Bool {
-        // 정석 방법: ReadMore 범위의 실제 렌더링 영역 직접 계산
-        guard let startLocation = textLayoutManager.location(textLayoutManager.documentRange.location, offsetBy: range.location),
-              let endLocation = textLayoutManager.location(startLocation, offsetBy: range.length),
-              let readMoreTextRange = NSTextRange(location: startLocation, end: endLocation) else {
-            return false
-        }
+        // 1. 터치 포인트에서 정확한 character index 구하기 (TextKit 2 방식)
+        var characterIndex: Int = NSNotFound
         
-        // ReadMore 범위가 실제로 렌더링된 모든 영역 수집
-        var readMoreRenderingRects: [CGRect] = []
-        
-        textLayoutManager.enumerateTextLayoutFragments(from: startLocation, options: []) { fragment in
+        textLayoutManager.enumerateTextLayoutFragments(from: textLayoutManager.documentRange.location, options: []) { fragment in
             let fragmentFrame = fragment.layoutFragmentFrame
             
-            // ReadMore 범위와 교차하는지 확인
-            guard fragment.rangeInElement.intersects(readMoreTextRange) else {
-                return true
+            // 터치 포인트가 이 fragment 내에 있는지 확인
+            guard fragmentFrame.contains(location) else {
+                return true // 계속 탐색
             }
             
             for lineFragment in fragment.textLineFragments {
-                // ReadMore 텍스트 부분의 정확한 렌더링 bounds
                 let lineRect = CGRect(
                     x: fragmentFrame.origin.x + lineFragment.typographicBounds.origin.x,
                     y: fragmentFrame.origin.y + lineFragment.typographicBounds.origin.y,
                     width: lineFragment.typographicBounds.width,
                     height: lineFragment.typographicBounds.height
                 )
-                readMoreRenderingRects.append(lineRect)
+                
+                // 터치 포인트가 이 line fragment 내에 있는지 확인
+                guard lineRect.contains(location) else {
+                    continue
+                }
+                
+                // line fragment 내에서 정확한 character index 찾기
+                let relativeLocation = CGPoint(
+                    x: location.x - lineRect.origin.x,
+                    y: location.y - lineRect.origin.y
+                )
+                
+                let characterIndexInLine = lineFragment.characterIndex(for: relativeLocation)
+                if characterIndexInLine != NSNotFound {
+                    // fragment의 시작 위치와 더해서 전체 텍스트에서의 index 계산
+                    let fragmentStartIndex = textLayoutManager.offset(from: textLayoutManager.documentRange.location, to: fragment.rangeInElement.location)
+                    characterIndex = fragmentStartIndex + characterIndexInLine
+                    return false // 찾았으므로 중단
+                }
             }
             
-            // ReadMore 범위를 지나면 중단
-            return textLayoutManager.offset(from: fragment.rangeInElement.endLocation, to: endLocation) > 0
+            return true // 계속 탐색
         }
         
-        // 터치 위치가 실제 ReadMore 렌더링 영역에 포함되는지 확인
-        return readMoreRenderingRects.contains { rect in
-            rect.contains(location)
+        // 2. character index 유효성 검증
+        guard characterIndex != NSNotFound,
+              characterIndex >= 0,
+              let attributedText = (textLayoutManager.textContentManager as? NSTextContentStorage)?.attributedString,
+              characterIndex < attributedText.length else {
+            return false
         }
+        
+        // 3. 터치한 위치의 글자가 isReadMore 속성을 가지고 있는지 확인
+        let attributes = attributedText.attributes(at: characterIndex, effectiveRange: nil)
+        return (attributes[ReadMoreLabel.AttributeKey.isReadMore] as? Bool) == true
     }
     
     /// Creates a ReadMore suffix with ellipsis and ReadMore text
