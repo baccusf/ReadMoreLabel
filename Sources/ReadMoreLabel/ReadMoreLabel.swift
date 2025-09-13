@@ -764,20 +764,27 @@ private extension NSAttributedString {
         let ellipsisWithLastAttributes = ellipsisText.createMutableWithAttributes(lastAttributes)
 
         if isRTL {
-            // RTL 텍스트: RLM + ellipsis + NBSP + readMore
-            suffix.append(NSAttributedString(string: "\u{200F}", attributes: lastAttributes)) // RLM (Right-to-Left Mark)
+            // RTL 텍스트: ellipsis + NBSP + readMore + RLM (BiDi 중립 문자 처리)
             suffix.append(ellipsisWithLastAttributes) // ".."
             suffix.append(NSAttributedString(string: "\u{00A0}", attributes: lastAttributes)) // NBSP (Non-Breaking Space)
+            let readMoreStartLocation = suffix.length
+            let readMoreWithOriginalAttributes = readMoreText.createMutableWithAttributes(lastAttributes)
+            
+            // RTL 텍스트 끝의 중립 문자(느낌표 등)를 올바르게 처리하기 위해 RLM 추가
+            readMoreWithOriginalAttributes.append(NSAttributedString(string: "\u{200F}", attributes: lastAttributes)) // RLM (Right-to-Left Mark)
+            
+            suffix.append(readMoreWithOriginalAttributes) // "더보기!!" 
+            let readMoreRange = NSRange(location: readMoreStartLocation, length: readMoreText.length) // 원본 길이 사용
+            suffix.addAttribute(attributeKey, value: true, range: readMoreRange)
         } else {
             suffix.append(ellipsisWithLastAttributes)
             suffix.append(NSAttributedString(string: spaceBetween, attributes: lastAttributes))
+            let readMoreStartLocation = suffix.length
+            let readMoreWithOriginalAttributes = readMoreText.createMutableWithAttributes(lastAttributes)
+            suffix.append(readMoreWithOriginalAttributes)
+            let readMoreRange = NSRange(location: readMoreStartLocation, length: readMoreWithOriginalAttributes.length)
+            suffix.addAttribute(attributeKey, value: true, range: readMoreRange)
         }
-
-        let readMoreStartLocation = suffix.length
-        let readMoreWithOriginalAttributes = readMoreText.createMutableWithAttributes(lastAttributes)
-        suffix.append(readMoreWithOriginalAttributes)
-        let readMoreRange = NSRange(location: readMoreStartLocation, length: readMoreWithOriginalAttributes.length)
-        suffix.addAttribute(attributeKey, value: true, range: readMoreRange)
 
         return suffix
     }
@@ -863,27 +870,27 @@ private extension NSAttributedString {
             truncateIndex = max(0, min(relativeIndex, lastLineText.length))
         }
         
-        if isRTL {
-            // RTL: suffix를 먼저 추가하고 그 다음에 자른 텍스트를 추가
-            let suffixStartIndex = result.length
-            result.append(suffix)
-            
-            // RTL에서는 truncateIndex부터 끝까지의 텍스트를 추가
-            let remainingRange = NSRange(location: truncateIndex, length: lastLineText.length - truncateIndex)
-            if remainingRange.length > 0 {
-                let remainingText = lastLineText.attributedSubstring(from: remainingRange).removingTrailingNewlineIfNeeded()
-                result.append(remainingText)
-            }
-            
-            return .truncated(result, NSRange(location: suffixStartIndex, length: suffix.length))
-        } else {
+//        if isRTL {
+//            // RTL: suffix를 먼저 추가하고 그 다음에 자른 텍스트를 추가
+//            let suffixStartIndex = result.length
+//            result.append(suffix)
+//            
+//            // RTL에서는 truncateIndex부터 끝까지의 텍스트를 추가
+//            let remainingRange = NSRange(location: truncateIndex, length: lastLineText.length - truncateIndex)
+//            if remainingRange.length > 0 {
+//                let remainingText = lastLineText.attributedSubstring(from: remainingRange).removingTrailingNewlineIfNeeded()
+//                result.append(remainingText)
+//            }
+//            
+//            return .truncated(result, NSRange(location: suffixStartIndex, length: suffix.length))
+//        } else {
             // LTR: 기존 로직 사용
             let truncated = lastLineText.attributedSubstring(from: NSRange(location: 0, length: truncateIndex)).removingTrailingNewlineIfNeeded()
             result.append(truncated)
             result.append(suffix)
 
             return .truncated(result, NSRange(location: result.length - suffix.length, length: suffix.length))
-        }
+//        }
     }
 
     /// TextKit 2: Applies ReadMore truncation for newLine position with enhanced coordinate handling
@@ -952,27 +959,12 @@ private extension NSAttributedString {
         let lastAttributes = lastTextAttributes(defaultAttributes: defaultAttributes)
         let readMoreWithOriginalAttributes = readMoreText.createMutableWithAttributes(lastAttributes)
         
-        let finalReadMoreRange: NSRange
-        if isRTL {
-            // RTL: RLM + newLine + RLM + readMore 순서로 구성
-            finalText.append(NSAttributedString(string: "\u{200F}", attributes: lastAttributes)) // RLM
-            finalText.append(NSAttributedString(string: newLineCharacter, attributes: lastAttributes))
-            finalText.append(NSAttributedString(string: "\u{200F}", attributes: lastAttributes)) // RLM
-            let readMoreStartLocation = finalText.length
-            finalText.append(readMoreWithOriginalAttributes)
-            
-            finalReadMoreRange = NSRange(location: readMoreStartLocation, length: readMoreWithOriginalAttributes.length)
-            finalText.addAttribute(attributeKey, value: true, range: finalReadMoreRange)
-        } else {
-            // LTR: 기존 로직
-            finalText.append(NSAttributedString(string: newLineCharacter, attributes: lastAttributes))
-            let readMoreStartLocation = finalText.length
-            finalText.append(readMoreWithOriginalAttributes)
+        finalText.append(NSAttributedString(string: newLineCharacter, attributes: lastAttributes))
+        let readMoreStartLocation = finalText.length
+        finalText.append(readMoreWithOriginalAttributes)
 
-            finalReadMoreRange = NSRange(location: readMoreStartLocation, length: readMoreWithOriginalAttributes.length)
-            finalText.addAttribute(attributeKey, value: true, range: finalReadMoreRange)
-        }
-
+        let finalReadMoreRange = NSRange(location: readMoreStartLocation, length: readMoreWithOriginalAttributes.length)
+        finalText.addAttribute(attributeKey, value: true, range: finalReadMoreRange)
         return .truncated(finalText, finalReadMoreRange)
     }
 

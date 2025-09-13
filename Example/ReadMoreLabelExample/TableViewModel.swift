@@ -383,7 +383,7 @@ extension TableViewModel {
                 return ("📱 タップして展開", "...")
                 // Arabic
             case ("ar", .basic):
-                return ("اقرأ المزيد..", "..")
+                return ("اقرأ المزيد..", "...")
             case ("ar", .colorful):
                 return ("🎨 اقرأ المزيد", "***")
             case ("ar", .emoji):
