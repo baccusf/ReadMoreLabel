@@ -109,7 +109,7 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
         0.0
     }
 
-    /// RTL(Right-to-Left) 환경 감지
+    /// RTL (Right-to-Left) environment detection
     private var isRTL: Bool {
         return semanticContentAttribute == .forceRightToLeft ||
                (semanticContentAttribute == .unspecified &&
@@ -695,21 +695,21 @@ private extension NSAttributedString {
         textLayoutManager: NSTextLayoutManager,
         isRTL: Bool
     ) -> Bool {
-        // 성능 최적화: 전체 텍스트 속성 먼저 확인
+        // Performance optimization: check full text attributes first
         guard let attributedText = (textLayoutManager.textContentManager as? NSTextContentStorage)?.attributedString else {
             return false
         }
         
-        // 1. 터치 포인트에서 정확한 character index 구하기
+        // 1. Get precise character index from touch point
         var characterIndex: Int = NSNotFound
         let documentStart = textLayoutManager.documentRange.location
         
         textLayoutManager.enumerateTextLayoutFragments(from: documentStart, options: []) { fragment in
             let fragmentFrame = fragment.layoutFragmentFrame
             
-            // 터치 포인트가 이 fragment 내에 있는지 확인
+            // Check if touch point is within this fragment
             guard fragmentFrame.contains(location) else {
-                return true // 계속 탐색
+                return true // Continue searching
             }
             
             for lineFragment in fragment.textLineFragments {
@@ -720,12 +720,12 @@ private extension NSAttributedString {
                     height: lineFragment.typographicBounds.height
                 )
                 
-                // 터치 포인트가 이 line fragment 내에 있는지 확인
+                // Check if touch point is within this line fragment
                 guard lineRect.contains(location) else {
                     continue
                 }
                 
-                // line fragment 내에서 정확한 character index 찾기
+                // Find precise character index within line fragment
                 let relativeLocation = CGPoint(
                     x: location.x - lineRect.origin.x,
                     y: location.y - lineRect.origin.y
@@ -733,17 +733,17 @@ private extension NSAttributedString {
                 
                 let characterIndexInLine = lineFragment.characterIndex(for: relativeLocation)
                 if characterIndexInLine != NSNotFound {
-                    // fragment의 시작 위치와 더해서 전체 텍스트에서의 index 계산
+                    // Calculate index in full text by adding fragment start position
                     let fragmentStartIndex = textLayoutManager.offset(from: documentStart, to: fragment.rangeInElement.location)
                     characterIndex = fragmentStartIndex + characterIndexInLine
-                    return false // 찾았으므로 중단
+                    return false // Found, terminate search
                 }
             }
             
-            return true // 계속 탐색
+            return true // Continue searching
         }
         
-        // 2. character index 유효성 및 range 검증 (성능 최적화)
+        // 2. Character index validation and range verification (performance optimization)
         guard characterIndex != NSNotFound,
               characterIndex >= 0,
               characterIndex < attributedText.length,
@@ -751,7 +751,7 @@ private extension NSAttributedString {
             return false
         }
         
-        // 3. 정확한 속성 확인 (정확성 보장)
+        // 3. Precise attribute verification (accuracy guarantee)
         let attributes = attributedText.attributes(at: characterIndex, effectiveRange: nil)
         return (attributes[ReadMoreLabel.AttributeKey.isReadMore] as? Bool) == true
     }
@@ -779,22 +779,22 @@ private extension NSAttributedString {
         let suffix = NSMutableAttributedString()
         let ellipsisWithLastAttributes = ellipsisText.createMutableWithAttributes(lastAttributes)
 
-        // RTL/LTR에 따른 구성 요소 순서 및 간격 처리
+        // Component ordering and spacing based on RTL/LTR
         suffix.append(ellipsisWithLastAttributes) // ".."
         suffix.append(NSAttributedString(string: isRTL ? "\u{00A0}" : spaceBetween, attributes: lastAttributes)) // NBSP
         
-        // readMore 텍스트 처리 (공통 로직)
+        // ReadMore text processing (common logic)
         let readMoreStartLocation = suffix.length
         let readMoreWithOriginalAttributes = readMoreText.createMutableWithAttributes(lastAttributes)
         
-        // RTL에서만 BiDi 중립 문자 처리를 위한 RLM 추가
+        // Add RLM for BiDi neutral character handling in RTL only
         if isRTL {
             readMoreWithOriginalAttributes.append(NSAttributedString(string: "\u{200F}", attributes: lastAttributes)) // RLM
         }
         
         suffix.append(readMoreWithOriginalAttributes)
         
-        // readMore 범위 설정 (RLM 문자 추가를 고려한 실제 길이 사용)
+        // Set readMore range (using actual length considering RLM character addition)
         let readMoreRange = NSRange(
             location: readMoreStartLocation, 
             length: readMoreWithOriginalAttributes.length
@@ -869,29 +869,29 @@ private extension NSAttributedString {
         let lastLineUsedWidth = lastLineFragment.typographicBounds.width
         let maxAvailableWidth = containerWidth - suffixWidth
         
-        // RTL 텍스트에서는 truncate point가 다르게 계산되어야 함
+        // RTL text requires different truncate point calculation
         let truncatePoint: CGPoint
         if isRTL {
-            // RTL: suffix가 텍스트 시작 부분(오른쪽)에 와야 하므로 suffixWidth만큼 떨어진 곳부터 시작
+            // RTL: suffix should be at text beginning (right), start from suffixWidth offset
             truncatePoint = CGPoint(x: suffixWidth, y: lastLineFragment.typographicBounds.midY)
         } else {
-            // LTR: suffix가 텍스트 끝 부분(오른쪽)에 와야 하므로 기존 로직 사용
+            // LTR: suffix should be at text end (right), use existing logic
             truncatePoint = CGPoint(x: maxAvailableWidth, y: lastLineFragment.typographicBounds.midY)
         }
 
         let rawTruncateIndex = lastLineFragment.characterIndex(for: truncatePoint)
-        // 최적화: newline 존재 여부에 따른 조건부 index 변환 간소화
+        // Optimization: simplified conditional index conversion based on newline presence
         let hasNewlines = result.string.contains("\n") || lastLineText.string.contains("\n")
         let adjustedIndex = hasNewlines ? rawTruncateIndex : rawTruncateIndex - lastLineStart
         let truncateIndex = max(0, min(adjustedIndex, lastLineText.length))
         
-        // LTR: 기존 로직 사용
+        // LTR: use existing logic
         let truncated = lastLineText.attributedSubstring(from: NSRange(location: 0, length: truncateIndex)).removingTrailingNewlineIfNeeded()
         result.append(truncated)
         let suffixStartLocation = result.length
         result.append(suffix)
 
-        // ReadMore 범위를 전체 텍스트 기준으로 조정 (성능 최적화: 사전 계산된 범위 사용)
+        // Adjust ReadMore range to full text basis (performance optimization: use precomputed range)
         let adjustedReadMoreRange = NSRange(
             location: suffixStartLocation + precomputedReadMoreRange.location,
             length: precomputedReadMoreRange.length
