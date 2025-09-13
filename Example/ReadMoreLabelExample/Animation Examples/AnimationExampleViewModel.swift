@@ -6,11 +6,11 @@
 //
 
 import Foundation
-import ReadMoreLabel
 import UIKit
 
 @available(iOS 16.0, *)
-class LabelViewModel: ObservableObject {
+class AnimationExampleViewModel: ObservableObject {
+    
     // MARK: - Published Properties
     
     @Published var labelData: [ReadMoreLabelData] = []
@@ -80,7 +80,35 @@ class LabelViewModel: ObservableObject {
                 ),
                 language: "ja",
                 isExpanded: false
+            ),
+            ReadMoreLabelData(
+                text: "🇸🇦 هذا نص عربي طويل يوضح وظائف ReadMoreLabel. عندما تضغط على زر 'اقرأ المزيد'، سيتوسع النص لإظهار المحتوى الكامل مع حركة سلسة. تدعم هذه المكتبة لغات متعددة وتوفر طريقة نظيفة للتعامل مع اقتطاع النص في تطبيقات iOS. يمكنك تخصيص المظهر والرسوم المتحركة والسلوك وفقًا لاحتياجاتك.",
+                readMoreText: NSAttributedString(
+                    string: "اقرأ المزيد",
+                    attributes: [.foregroundColor: UIColor.systemBlue]
+                ),
+                language: "ar",
+                isExpanded: false
             )
         ]
+    }
+}
+
+extension AnimationExampleViewModel {
+    // MARK: - Nested Types
+    
+    struct ReadMoreLabelData: Identifiable {
+        let id = UUID()
+        let text: String
+        let readMoreText: NSAttributedString
+        let language: String
+        var isExpanded: Bool
+        
+        init(text: String, readMoreText: NSAttributedString, language: String, isExpanded: Bool) {
+            self.text = text
+            self.readMoreText = readMoreText
+            self.language = language
+            self.isExpanded = isExpanded
+        }
     }
 }

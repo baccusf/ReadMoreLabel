@@ -24,7 +24,7 @@ class TableViewController: UIViewController {
     }
 
     private func setupUI() {
-        title = "ReadMoreLabel Examples"
+        title = "Table View Examples"
         view.backgroundColor = .systemBackground
 
         tableView.translatesAutoresizingMaskIntoConstraints = false

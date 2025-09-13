@@ -1,6 +1,6 @@
 import UIKit
 
-// MARK: - Public Protocols (Interface Segregation Principle)
+// MARK: - Public Protocols
 
 /// Configuration interface for ReadMore appearance and behavior
 public protocol ReadMoreConfiguration: AnyObject {
@@ -27,7 +27,6 @@ public protocol ReadMoreQueryable: AnyObject {
 }
 
 /// UILabel with "Read More" functionality for truncated text
-/// Implements segregated interfaces for better maintainability and testability
 @objc @IBDesignable
 public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, ReadMoreQueryable {
     @objc public weak var delegate: ReadMoreLabelDelegate?
@@ -49,14 +48,10 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
             state.isExpanded
         }
         set {
-            // Internal state update without delegate notification
-            // Delegate notification is handled by setExpanded methods
             guard state.setExpanded(newValue) else {
                 return
             }
             updateDisplay()
-            // Note: delegate notification removed to prevent double calls
-            // Use setExpanded(_:) or setExpanded(_:notifyDelegate:) for delegate notification
         }
     }
 
@@ -109,7 +104,7 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
         0.0
     }
 
-    /// RTL (Right-to-Left) environment detection
+    /// Detects RTL (Right-to-Left) language environment
     private var isRTL: Bool {
         return semanticContentAttribute == .forceRightToLeft ||
                (semanticContentAttribute == .unspecified &&
@@ -235,7 +230,7 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
 
     // MARK: - Private Implementation
 
-    /// Set expanded state with option to control delegate notification
+    /// Sets expansion state with delegate notification control
     /// - Parameters:
     ///   - expanded: The expanded state to set
     ///   - notifyDelegate: Whether to notify delegate of the change
@@ -265,7 +260,6 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
     }
 
     private func setupTapGesture() {
-        // Remove existing tap gesture if any
         if let existingGesture = tapGestureRecognizer {
             removeGestureRecognizer(existingGesture)
         }
@@ -275,7 +269,7 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
         addGestureRecognizer(tapGesture)
     }
 
-    /// Single responsibility method for handling configuration changes
+    /// Handles display updates when configuration changes
     private func handleConfigurationChange() {
         updateDisplay()
         invalidateDisplayAndLayout()
@@ -291,9 +285,7 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
     ) -> TextTruncationResult {
         let alignedText = originalText.applyingTextAlignment(textAlignment, font: font, textColor: textColor)
         
-        // TextKit 2: Handle different positions - use TextKit 2 for both .end and .newLine
         if readMorePosition == .newLine {
-            // Use TextKit 2 for newLine position as requested by user
             return alignedText.applyingReadMoreForNewLineTextLayout(
                 numberOfLines: numberOfLines,
                 containerWidth: containerWidth,
@@ -309,7 +301,6 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
                 isRTL: isRTL
             )
         } else {
-            // Use TextKit 2 for .end position as requested by user
             return alignedText.applyingReadMoreTruncation(
                 numberOfLines: numberOfLines,
                 containerWidth: containerWidth,
@@ -327,9 +318,7 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
         super.numberOfLines = lines
     }
 
-    // MARK: - Enhanced TextKit 1 Helper Methods
-
-    /// Helper to get safe line count for display
+    // MARK: - Helper Methods
     private var safeLineCount: Int {
         numberOfLinesWhenCollapsed == 0 ? 0 : numberOfLinesWhenCollapsed
     }
@@ -350,9 +339,8 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
         )
     }
 
-    /// Validates and returns display state, or nil if invalid (optimized)
+    /// Validates and returns display state
     private func validateDisplayState() -> (attributedText: NSAttributedString, availableWidth: CGFloat)? {
-        // Performance optimization: early bounds check
         let availableWidth = bounds.width
         guard availableWidth > 0,
               let attributedTextToDisplay = state.originalText,
@@ -364,13 +352,12 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
         return (attributedTextToDisplay, availableWidth)
     }
 
-    /// Checks if text should be displayed in expanded form (optimized)
+    /// Determines if text should be displayed in expanded form
     private func shouldDisplayExpandedText() -> Bool {
-        // Performance optimization: check cheaper condition first
         isExpanded || numberOfLinesWhenCollapsed == 0
     }
 
-    /// Handles expanded text display
+    /// Handles text display in expanded state
     private func handleExpandedState(_ attributedText: NSAttributedString) {
         super.attributedText = attributedText
         setInternalNumberOfLines(0)
@@ -379,6 +366,9 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
     }
 
     /// Displays truncated text based on readMorePosition
+    /// - Parameters:
+    ///   - attributedText: The attributed text to display
+    ///   - availableWidth: Available width for text layout
     private func displayTruncatedText(_ attributedText: NSAttributedString, availableWidth: CGFloat) {
         switch readMorePosition {
         case .end:
@@ -454,7 +444,6 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
            let (finalText, readMoreRange) = result.textAndRange
         {
         
-            // Always show numberOfLines + 1 lines in newLine position
             super.attributedText = finalText
             setInternalNumberOfLines(numberOfLinesWhenCollapsed + 1)
             state.readMoreTextRange = readMoreRange
@@ -477,7 +466,6 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
         }
 
         if hasReadMoreTextAtLocation(locationInLabel, in: attributedText) {
-            // Notify delegate about user-initiated expansion
             setExpanded(true, notifyDelegate: true)
         }
     }
@@ -487,7 +475,7 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
         setNeedsLayout()
     }
 
-    /// Reapplies current text styling (alignment, font, color) and refreshes display
+    /// Reapplies text styling and refreshes display
     private func reapplyTextStylingAndRefreshDisplay() {
         if let originalText = state.originalText {
             state.updateOriginalText(originalText.applyingTextAlignment(
@@ -517,7 +505,6 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
             return false
         }
         
-        // TextKit 2: Use as requested by user - fix coordinate system compatibility
         let result = attributedText.hitTestReadMoreTextLayout(
             at: location,
             in: readMoreRange,
@@ -536,12 +523,11 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
 // MARK: - NSAttributedString Extensions
 
 private extension NSAttributedString {
-    /// Creates a mutable attributed string with base attributes, then merges source attributes
-    /// The source attributes will override base attributes where they conflict
+    /// Creates mutable attributed string with base attributes
+    /// - Parameter baseAttributes: Base attributes to apply
+    /// - Returns: Mutable attributed string with merged attributes
     func createMutableWithAttributes(_ baseAttributes: [NSAttributedString.Key: Any]) -> NSMutableAttributedString {
         let mutableString = NSMutableAttributedString(attributedString: self)
-
-        // Add base attributes only where they don't already exist
         enumerateAttributes(in: NSRange(location: 0, length: length), options: []) { existingAttributes, range, _ in
             var attributesToAdd: [NSAttributedString.Key: Any] = [:]
 
@@ -559,7 +545,9 @@ private extension NSAttributedString {
         return mutableString
     }
 
-    /// Gets the attributes from the last character, or returns default attributes if string is empty
+    /// Returns last character attributes or default values
+    /// - Parameter defaultAttributes: Default attributes to use if string is empty
+    /// - Returns: Attributes from last character or default attributes
     func lastTextAttributes(defaultAttributes: [NSAttributedString.Key: Any] = [:]) -> [NSAttributedString.Key: Any] {
         if length > 0 {
             attributes(at: length - 1, effectiveRange: nil)
@@ -568,33 +556,30 @@ private extension NSAttributedString {
         }
     }
 
-    /// Enhanced TextKit 2: Modern width calculation using NSTextLayoutFragment
+    /// Calculates precise text width using TextKit 2
     /// - Parameters:
     ///   - containerWidth: Width constraint for the text container
     ///   - lineFragmentPadding: Line fragment padding (default: 0)
     ///   - lineBreakMode: Line break mode (default: .byWordWrapping)
     /// - Returns: Calculated width of the text
-    @available(iOS 16.0, *)
     func calculateTextLayoutWidth(
         with containerWidth: CGFloat,
         lineFragmentPadding: CGFloat = 0,
         lineBreakMode: NSLineBreakMode = .byWordWrapping
     ) -> CGFloat {
-        // Create TextKit 2 stack using unified builder for reliable width measurement
         let (textContentStorage, textLayoutManager, textContainer) = creatingTextLayoutManagerStack(
             containerWidth: containerWidth,
             lineFragmentPadding: lineFragmentPadding,
             lineBreakMode: lineBreakMode
         )
 
-        // TextKit 2: Calculate width by enumerating layout fragments
         var maxWidth: CGFloat = 0
         let documentRange = textLayoutManager.documentRange
         
         textLayoutManager.enumerateTextLayoutFragments(from: documentRange.location, options: []) { fragment in
             let fragmentWidth = fragment.layoutFragmentFrame.width
             maxWidth = max(maxWidth, fragmentWidth)
-            return true // Continue enumeration
+            return true
         }
 
         return ceil(maxWidth)
@@ -610,7 +595,12 @@ private extension NSAttributedString {
         return mutableString
     }
 
-    /// Applies text alignment and font to attributed string
+    /// Applies text alignment, font, and color attributes
+    /// - Parameters:
+    ///   - textAlignment: Text alignment to apply
+    ///   - font: Font to apply
+    ///   - textColor: Text color to apply (optional)
+    /// - Returns: Attributed string with applied styling
     func applyingTextAlignment(_ textAlignment: NSTextAlignment, font: UIFont,
                                textColor: UIColor? = nil) -> NSAttributedString
     {
@@ -618,19 +608,16 @@ private extension NSAttributedString {
         let mutableAttributedText = NSMutableAttributedString(attributedString: self)
         mutableAttributedText.addAttribute(.font, value: font, range: range)
 
-        // Apply text color if provided
         if let textColor {
             mutableAttributedText.addAttribute(.foregroundColor, value: textColor, range: range)
         }
 
-        // Check if alignment is already correct
         if let existingStyle = attribute(.paragraphStyle, at: 0, effectiveRange: nil) as? NSParagraphStyle,
            existingStyle.alignment == textAlignment
         {
             return mutableAttributedText
         }
 
-        // Create or modify paragraph style
         let paragraphStyle: NSMutableParagraphStyle = if let existingStyle = attribute(
             .paragraphStyle,
             at: 0,
@@ -647,8 +634,7 @@ private extension NSAttributedString {
         return mutableAttributedText
     }
 
-    /// TextKit 2 precise Hit Testing: Touch detection based on glyph area
-    /// Accurate touch detection using actual glyph area instead of characterIndex
+    /// Precise hit testing using TextKit 2 based on glyph bounds
     /// - Parameters:
     ///   - location: Touch point
     ///   - range: ReadMore text range
@@ -657,8 +643,8 @@ private extension NSAttributedString {
     ///   - lineBreakMode: Line break mode
     ///   - readMorePosition: Position type (.end or .newLine)
     ///   - newLineCharacter: New line character
-    /// - Returns: Whether the touch hit the actual glyph area of ReadMore text
-    @available(iOS 16.0, *)
+    ///   - isRTL: Whether text is right-to-left
+    /// - Returns: Whether the touch hit the ReadMore text
     func hitTestReadMoreTextLayout(
         at location: CGPoint,
         in range: NSRange,
@@ -675,10 +661,7 @@ private extension NSAttributedString {
             lineBreakMode: lineBreakMode
         )
 
-        // Force layout - essential for accurate glyph position calculation
         textLayoutManager.ensureLayout(for: textLayoutManager.documentRange)
-        
-        // Standard .end position handling with RTL support
         return isLocationInReadMoreGlyphBounds(
             location: location,
             range: range,
@@ -687,29 +670,31 @@ private extension NSAttributedString {
         )
     }
     
-    /// ReadMore touch detection with performance optimization and precise accuracy for BiDi text
-    @available(iOS 16.0, *)
+    /// ReadMore touch detection with BiDi text support
+    /// - Parameters:
+    ///   - location: Touch location point
+    ///   - range: ReadMore text range to check
+    ///   - textLayoutManager: TextKit 2 layout manager
+    ///   - isRTL: Whether text is right-to-left
+    /// - Returns: Whether touch location is within ReadMore glyph bounds
     private func isLocationInReadMoreGlyphBounds(
         location: CGPoint,
         range: NSRange,
         textLayoutManager: NSTextLayoutManager,
         isRTL: Bool
     ) -> Bool {
-        // Performance optimization: check full text attributes first
         guard let attributedText = (textLayoutManager.textContentManager as? NSTextContentStorage)?.attributedString else {
             return false
         }
         
-        // 1. Get precise character index from touch point
         var characterIndex: Int = NSNotFound
         let documentStart = textLayoutManager.documentRange.location
         
         textLayoutManager.enumerateTextLayoutFragments(from: documentStart, options: []) { fragment in
             let fragmentFrame = fragment.layoutFragmentFrame
             
-            // Check if touch point is within this fragment
             guard fragmentFrame.contains(location) else {
-                return true // Continue searching
+                return true
             }
             
             for lineFragment in fragment.textLineFragments {
@@ -720,12 +705,10 @@ private extension NSAttributedString {
                     height: lineFragment.typographicBounds.height
                 )
                 
-                // Check if touch point is within this line fragment
                 guard lineRect.contains(location) else {
                     continue
                 }
                 
-                // Find precise character index within line fragment
                 let relativeLocation = CGPoint(
                     x: location.x - lineRect.origin.x,
                     y: location.y - lineRect.origin.y
@@ -733,17 +716,15 @@ private extension NSAttributedString {
                 
                 let characterIndexInLine = lineFragment.characterIndex(for: relativeLocation)
                 if characterIndexInLine != NSNotFound {
-                    // Calculate index in full text by adding fragment start position
                     let fragmentStartIndex = textLayoutManager.offset(from: documentStart, to: fragment.rangeInElement.location)
                     characterIndex = fragmentStartIndex + characterIndexInLine
-                    return false // Found, terminate search
+                    return false
                 }
             }
             
-            return true // Continue searching
+            return true
         }
         
-        // 2. Character index validation and range verification (performance optimization)
         guard characterIndex != NSNotFound,
               characterIndex >= 0,
               characterIndex < attributedText.length,
@@ -751,21 +732,19 @@ private extension NSAttributedString {
             return false
         }
         
-        // 3. Precise attribute verification (accuracy guarantee)
         let attributes = attributedText.attributes(at: characterIndex, effectiveRange: nil)
         return (attributes[ReadMoreLabel.AttributeKey.isReadMore] as? Bool) == true
     }
     
-    /// Creates a ReadMore suffix with ellipsis and ReadMore text
+    /// Creates ReadMore suffix with ellipsis and ReadMore text
     /// - Parameters:
     ///   - ellipsisText: Ellipsis text to prepend
     ///   - readMoreText: ReadMore text to append
     ///   - spaceBetween: Space character between ellipsis and ReadMore
     ///   - attributeKey: Attribute key for ReadMore identification
     ///   - defaultAttributes: Default text attributes to use
-    /// - Returns: Complete ReadMore suffix with proper attributes
-    /// ReadMore suffix info with precomputed range for performance optimization
-    /// Returns: (attributedString, readMoreRange)
+    ///   - isRTL: Whether text is right-to-left
+    /// - Returns: Complete ReadMore suffix with range information
     func creatingReadMoreSuffix(
         ellipsisText: NSAttributedString,
         readMoreText: NSAttributedString,
@@ -812,9 +791,16 @@ private extension NSAttributedString {
     ///   - containerWidth: Available width for text layout
     ///   - suffix: ReadMore suffix to append
     ///   - lineFragmentPadding: Line fragment padding
-    ///   - lineBreakMode: Line break mode
+    /// Modern text truncation using TextKit 2 and NSTextLayoutFragment
+    /// - Parameters:
+    ///   - numberOfLines: Maximum number of lines to display
+    ///   - containerWidth: Available width for text layout
+    ///   - suffix: ReadMore suffix to append
+    ///   - precomputedReadMoreRange: Pre-calculated ReadMore range
+    ///   - lineFragmentPadding: Line fragment padding (default: 0)
+    ///   - lineBreakMode: Line break mode (default: .byWordWrapping)
+    ///   - isRTL: Whether text is right-to-left (default: false)
     /// - Returns: TextTruncationResult with truncated text and range
-    @available(iOS 16.0, *)
     func applyingReadMoreTruncation(
         numberOfLines: Int,
         containerWidth: CGFloat,
@@ -830,7 +816,6 @@ private extension NSAttributedString {
             lineBreakMode: lineBreakMode
         )
 
-        // Collect all line information
         var allLineFragments: [(fragment: NSTextLayoutFragment, lineFragment: NSTextLineFragment)] = []
         let documentStart = textLayoutManager.documentRange.location
         
@@ -841,20 +826,15 @@ private extension NSAttributedString {
             return true
         }
         
-        // Check line count
         guard numberOfLines < allLineFragments.count else {
             return .noTruncationNeeded
         }
         
-        // Last line information
         let (lastFragment, lastLineFragment) = allLineFragments[numberOfLines - 1]
         let lastLineStart = textLayoutManager.offset(from: documentStart, 
                                                    to: lastFragment.rangeInElement.location) + lastLineFragment.characterRange.location
         
-        // Step 1: All text before the last line
         let result = NSMutableAttributedString(attributedString: attributedSubstring(from: NSRange(location: 0, length: lastLineStart)))
-        
-        // Step 2: Truncate last line and add suffix
         let lastLineRange = NSRange(location: lastLineStart, length: lastLineFragment.characterRange.length)
         let lastLineText = attributedSubstring(from: lastLineRange)
         
@@ -865,33 +845,26 @@ private extension NSAttributedString {
             lineBreakMode: lineBreakMode
         )
         
-        // Reserve appropriate space for suffix
         let lastLineUsedWidth = lastLineFragment.typographicBounds.width
         let maxAvailableWidth = containerWidth - suffixWidth
         
-        // RTL text requires different truncate point calculation
         let truncatePoint: CGPoint
         if isRTL {
-            // RTL: suffix should be at text beginning (right), start from suffixWidth offset
             truncatePoint = CGPoint(x: suffixWidth, y: lastLineFragment.typographicBounds.midY)
         } else {
-            // LTR: suffix should be at text end (right), use existing logic
             truncatePoint = CGPoint(x: maxAvailableWidth, y: lastLineFragment.typographicBounds.midY)
         }
 
         let rawTruncateIndex = lastLineFragment.characterIndex(for: truncatePoint)
-        // Optimization: simplified conditional index conversion based on newline presence
         let hasNewlines = result.string.contains("\n") || lastLineText.string.contains("\n")
         let adjustedIndex = hasNewlines ? rawTruncateIndex : rawTruncateIndex - lastLineStart
         let truncateIndex = max(0, min(adjustedIndex, lastLineText.length))
         
-        // LTR: use existing logic
         let truncated = lastLineText.attributedSubstring(from: NSRange(location: 0, length: truncateIndex)).removingTrailingNewlineIfNeeded()
         result.append(truncated)
         let suffixStartLocation = result.length
         result.append(suffix)
 
-        // Adjust ReadMore range to full text basis (performance optimization: use precomputed range)
         let adjustedReadMoreRange = NSRange(
             location: suffixStartLocation + precomputedReadMoreRange.location,
             length: precomputedReadMoreRange.length
@@ -900,21 +873,21 @@ private extension NSAttributedString {
         return .truncated(result, adjustedReadMoreRange)
     }
 
-    /// TextKit 2: Applies ReadMore truncation for newLine position with enhanced coordinate handling
+    /// Applies ReadMore truncation for newLine position using TextKit 2
     /// - Parameters:
     ///   - numberOfLines: Maximum number of lines to display
     ///   - containerWidth: Available width for text layout
     ///   - textAlignment: Text alignment
     ///   - font: Font to apply
     ///   - textColor: Text color to apply
-    ///   - lineFragmentPadding: Line fragment padding
-    ///   - lineBreakMode: Line break mode
+    ///   - lineFragmentPadding: Line fragment padding (default: 0)
+    ///   - lineBreakMode: Line break mode (default: .byWordWrapping)
     ///   - readMoreText: ReadMore text to append
     ///   - newLineCharacter: Character for new line
     ///   - attributeKey: Attribute key for ReadMore identification
     ///   - defaultAttributes: Default text attributes to use
+    ///   - isRTL: Whether text is right-to-left (default: false)
     /// - Returns: TextTruncationResult with truncated text and range
-    @available(iOS 16.0, *)
     func applyingReadMoreForNewLineTextLayout(
         numberOfLines: Int,
         containerWidth: CGFloat,
@@ -936,7 +909,6 @@ private extension NSAttributedString {
             lineBreakMode: lineBreakMode
         )
 
-        // Collect all line information
         var allLineFragments: [(fragment: NSTextLayoutFragment, lineFragment: NSTextLineFragment)] = []
         let documentStart = textLayoutManager.documentRange.location
         
@@ -947,23 +919,19 @@ private extension NSAttributedString {
             return true
         }
 
-        // Check line count
         guard numberOfLines < allLineFragments.count else {
             return .noTruncationNeeded
         }
 
-        // Last line information
         let (lastFragment, lastLineFragment) = allLineFragments[numberOfLines - 1]
         let lastLineStart = textLayoutManager.offset(from: documentStart, 
                                                    to: lastFragment.rangeInElement.location) + lastLineFragment.characterRange.location
         let lastLineRange = NSRange(location: lastLineStart, length: lastLineFragment.characterRange.length)
         
-        // newLine position: truncate at end of last line
         let truncateOffset = lastLineRange.location + lastLineRange.length
         let truncatedSubstring = attributedSubstring(from: NSRange(location: 0, length: truncateOffset))
         let cleanedTruncatedText = truncatedSubstring.removingTrailingNewlineIfNeeded()
         
-        // Compose final text
         let finalText = NSMutableAttributedString(attributedString: cleanedTruncatedText)
         let lastAttributes = lastTextAttributes(defaultAttributes: defaultAttributes)
         let readMoreWithOriginalAttributes = readMoreText.createMutableWithAttributes(lastAttributes)
@@ -977,33 +945,28 @@ private extension NSAttributedString {
         return .truncated(finalText, finalReadMoreRange)
     }
 
-    /// Creates a configured TextKit 2 stack for text measurement and layout
+    /// Creates configured TextKit 2 stack for text measurement and layout
     /// - Parameters:
     ///   - containerWidth: Width constraint for the text container
     ///   - lineFragmentPadding: Line fragment padding (default: 0)
     ///   - lineBreakMode: Line break mode (default: .byWordWrapping)
     ///   - maximumNumberOfLines: Maximum number of lines (default: 0 for unlimited)
     /// - Returns: Tuple containing connected TextKit 2 components
-    @available(iOS 16.0, *)
     func creatingTextLayoutManagerStack(
         containerWidth: CGFloat,
         lineFragmentPadding: CGFloat = 0,
         lineBreakMode: NSLineBreakMode = .byWordWrapping,
         maximumNumberOfLines: Int = 0
     ) -> (textContentStorage: NSTextContentStorage, textLayoutManager: NSTextLayoutManager, textContainer: NSTextContainer) {
-        // Create TextKit 2 components
         let textContentStorage = NSTextContentStorage()
         let textLayoutManager = NSTextLayoutManager()
         let textContainer = NSTextContainer(size: CGSize(width: containerWidth, height: .greatestFiniteMagnitude))
 
-        // Set up the attributed string
         textContentStorage.attributedString = NSAttributedString(attributedString: self)
 
-        // Connect TextKit 2 components
         textContentStorage.addTextLayoutManager(textLayoutManager)
         textLayoutManager.textContainer = textContainer
 
-        // Configure text container for TextKit 2
         textContainer.lineFragmentPadding = lineFragmentPadding
         textContainer.lineBreakMode = lineBreakMode
         textContainer.maximumNumberOfLines = maximumNumberOfLines
@@ -1043,9 +1006,9 @@ extension ReadMoreLabel {
         private(set) var originalText: NSAttributedString?
         private(set) var readMoreTextRange: NSRange?
 
-        /// Updates original text and clears related state
+            /// Updates original text and clears related state
+        /// - Parameter newText: New attributed text to set
         mutating func updateOriginalText(_ newText: NSAttributedString?) {
-            // Performance optimization: avoid unnecessary changes
             guard originalText != newText else {
                 return
             }
@@ -1055,6 +1018,7 @@ extension ReadMoreLabel {
         }
 
         /// Updates ReadMore text range
+        /// - Parameter range: New ReadMore text range
         mutating func updateReadMoreTextRange(_ range: NSRange?) {
             readMoreTextRange = range
         }
@@ -1068,12 +1032,13 @@ extension ReadMoreLabel {
         }
     }
 
-    /// Layout configuration state management
+    /// Manages layout configuration state
     private struct LayoutConfigState {
         private(set) var numberOfLines: Int = 3
         private(set) var internalNumberOfLines: Int = 0
 
         /// Updates number of lines with validation
+        /// - Parameter newValue: New number of lines value
         mutating func updateNumberOfLines(_ newValue: Int) {
             let sanitizedValue = max(0, newValue)
             guard sanitizedValue != numberOfLines else {
@@ -1084,12 +1049,13 @@ extension ReadMoreLabel {
         }
 
         /// Updates internal number of lines
+        /// - Parameter lines: New internal number of lines
         mutating func updateInternalNumberOfLines(_ lines: Int) {
             internalNumberOfLines = lines
         }
     }
 
-    /// Composite state management object for ReadMoreLabel
+    /// Composite state management for ReadMoreLabel
     private struct State {
         private(set) var isExpanded: Bool = false
         private var textContentState = TextContentState()
@@ -1121,15 +1087,16 @@ extension ReadMoreLabel {
         // MARK: - Mutating Methods
 
         /// Updates the number of lines
+        /// - Parameter newValue: New number of lines value
         mutating func updateNumberOfLines(_ newValue: Int) {
             layoutConfigState.updateNumberOfLines(newValue)
         }
-
+ 
         /// Updates the original text and resets related state
+        /// - Parameter newText: New attributed text to set
         mutating func updateOriginalText(_ newText: NSAttributedString?) {
             textContentState.updateOriginalText(newText)
 
-            // Reset expansion state if no text
             if newText == nil, isExpanded {
                 isExpanded = false
             }
@@ -1171,22 +1138,5 @@ extension ReadMoreLabel {
                 (text, range)
             }
         }
-    }
-}
-
-// MARK: - String Helper Extensions
-
-extension String {
-    /// Extracts substring from NSRange for debugging purposes
-    func substring(with range: NSRange) -> String? {
-        guard range.location != NSNotFound,
-              range.location >= 0,
-              range.location + range.length <= count else {
-            return nil
-        }
-        
-        let startIndex = index(startIndex, offsetBy: range.location)
-        let endIndex = index(startIndex, offsetBy: range.length)
-        return String(self[startIndex..<endIndex])
     }
 }
