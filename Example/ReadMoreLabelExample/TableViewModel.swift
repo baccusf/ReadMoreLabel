@@ -47,7 +47,7 @@ class TableViewModel: ObservableObject {
     
     private func loadSampleData() {
         sampleData = [
-            // English Examples (9개) - 7-8줄 길이로 확장, position 균형 조정
+            // English Examples (9 items) - Extended to 7-8 lines length, balanced position distribution
             ReadMoreSampleData(
                 text: "This is a comprehensive English text that demonstrates the basic ReadMoreLabel functionality in detail. The library provides an intuitive and powerful way to handle text truncation in modern iOS applications with advanced features. Users can easily tap the button to reveal the complete content with smooth animations, excellent readability, and seamless user experience. The basic style maintains clean typography while ensuring optimal performance across all device sizes and orientations.",
                 style: .basic,
@@ -103,7 +103,7 @@ class TableViewModel: ObservableObject {
                 language: "en"
             ),
 
-            // Korean Examples (9개) - 7-8줄 길이로 확장, position 균형 조정
+            // Korean Examples (9 items) - Extended to 7-8 lines length, balanced position distribution
             ReadMoreSampleData(
                 text: "종합적인 한국어 기본 스타일 예제입니다! ReadMoreLabel이 한국어 텍스트 처리에서 어떻게 뛰어나게 작동하는지 자세히 보여줍니다. 사용자는 버튼을 쉽게 탭하여 전체 내용을 확인할 수 있으며, 부드러운 애니메이션과 함께 텍스트가 아름답게 확장됩니다. 기본 스타일은 깔끔한 타이포그래피를 유지하면서도 모든 기기 크기와 방향에서 최적의 성능을 보장하여 우수한 사용자 경험을 제공합니다.",
                 style: .basic,
@@ -159,7 +159,7 @@ class TableViewModel: ObservableObject {
                 language: "ko"
             ),
 
-            // Japanese Examples (9개) - 7-8줄 길이로 확장, position 균형 조정
+            // Japanese Examples (9 items) - Extended to 7-8 lines length, balanced position distribution
             ReadMoreSampleData(
                 text: "包括的な日本語基本スタイル例です！ReadMoreLabelが日本語テキスト処理で優れた動作をどのように詳細に示すかを紹介します。ユーザーは簡単にボタンをタップして完全な内容を確認でき、スムーズなアニメーションとともにテキストが美しく展開されます。基本スタイルは清潔なタイポグラフィを維持しながら、すべてのデバイスサイズと向きで最適なパフォーマンスを保証し、優れたユーザーエクスペリエンスを提供します。",
                 style: .basic,
@@ -215,7 +215,7 @@ class TableViewModel: ObservableObject {
                 language: "ja"
             ),
 
-            // Arabic Examples (9개) - 7-8줄 길이로 확장, position 균형 조정, RTL 지원
+            // Arabic Examples (9 items) - Extended to 7-8 lines length, balanced position distribution, RTL support
             ReadMoreSampleData(
                 text: "🇸🇦 مثال شامل للنمط الأساسي العربي! يُظهر بالتفصيل كيفية عمل ReadMoreLabel مع معالجة النصوص العربية بطريقة ممتازة. يمكن للمستخدمين بسهولة النقر على الزر لعرض المحتوى الكامل، وسيتوسع النص بشكل جميل مع حركات سلسة ورائعة. النمط الأساسي يحافظ على طباعة نظيفة بينما يضمن الأداء الأمثل عبر جميع أحجام الأجهزة والاتجاهات، مما يوفر تجربة مستخدم متميزة مع دعم كامل لاتجاه الكتابة من اليمين إلى اليسار.",
                 style: .basic,
