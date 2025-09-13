@@ -684,7 +684,7 @@ private extension NSAttributedString {
         )
     }
     
-    /// Direct ReadMore touch detection using glyph bounds enumeration for BiDi mixed text
+    /// ReadMore touch detection using exact rendering bounds calculation for BiDi text
     @available(iOS 16.0, *)
     private func isLocationInReadMoreGlyphBounds(
         location: CGPoint,
@@ -692,47 +692,43 @@ private extension NSAttributedString {
         textLayoutManager: NSTextLayoutManager,
         isRTL: Bool
     ) -> Bool {
-        // Get textLayoutFragment directly from touch point
-        guard let fragment = textLayoutManager.textLayoutFragment(for: location) else {
+        // 정석 방법: ReadMore 범위의 실제 렌더링 영역 직접 계산
+        guard let startLocation = textLayoutManager.location(textLayoutManager.documentRange.location, offsetBy: range.location),
+              let endLocation = textLayoutManager.location(startLocation, offsetBy: range.length),
+              let readMoreTextRange = NSTextRange(location: startLocation, end: endLocation) else {
             return false
         }
         
-        let fragmentFrame = fragment.layoutFragmentFrame
+        // ReadMore 범위가 실제로 렌더링된 모든 영역 수집
+        var readMoreRenderingRects: [CGRect] = []
         
-        // Find character index of touch point within fragment
-        for lineFragment in fragment.textLineFragments {
-            let lineBounds = CGRect(
-                x: fragmentFrame.origin.x + lineFragment.typographicBounds.origin.x,
-                y: fragmentFrame.origin.y + lineFragment.typographicBounds.origin.y,
-                width: lineFragment.typographicBounds.width,
-                height: lineFragment.typographicBounds.height
-            )
+        textLayoutManager.enumerateTextLayoutFragments(from: startLocation, options: []) { fragment in
+            let fragmentFrame = fragment.layoutFragmentFrame
             
-            if lineBounds.contains(location) {
-                let relativeLocation = CGPoint(
-                    x: location.x - fragmentFrame.origin.x,
-                    y: location.y - fragmentFrame.origin.y
-                )
-                
-                // Direct TextKit 2 hit testing
-                let characterIndex = lineFragment.characterIndex(for: relativeLocation)
-                
-                // Calculate absolute index
-                let documentRange = textLayoutManager.documentRange
-                let fragmentStartOffset = textLayoutManager.offset(from: documentRange.location, to: fragment.rangeInElement.location)
-                let absoluteIndex = fragmentStartOffset + characterIndex
-                
-                // Check if touched character is within ReadMore range and has ReadMore attribute
-                if NSLocationInRange(absoluteIndex, range) {
-                    let attributes = attributes(at: absoluteIndex, effectiveRange: nil)
-                    return (attributes[ReadMoreLabel.AttributeKey.isReadMore] as? Bool) == true
-                } else if absoluteIndex < length && absoluteIndex >= 0 {
-                    return true
-                }
+            // ReadMore 범위와 교차하는지 확인
+            guard fragment.rangeInElement.intersects(readMoreTextRange) else {
+                return true
             }
+            
+            for lineFragment in fragment.textLineFragments {
+                // ReadMore 텍스트 부분의 정확한 렌더링 bounds
+                let lineRect = CGRect(
+                    x: fragmentFrame.origin.x + lineFragment.typographicBounds.origin.x,
+                    y: fragmentFrame.origin.y + lineFragment.typographicBounds.origin.y,
+                    width: lineFragment.typographicBounds.width,
+                    height: lineFragment.typographicBounds.height
+                )
+                readMoreRenderingRects.append(lineRect)
+            }
+            
+            // ReadMore 범위를 지나면 중단
+            return textLayoutManager.offset(from: fragment.rangeInElement.endLocation, to: endLocation) > 0
         }
         
-        return false
+        // 터치 위치가 실제 ReadMore 렌더링 영역에 포함되는지 확인
+        return readMoreRenderingRects.contains { rect in
+            rect.contains(location)
+        }
     }
     
     /// Creates a ReadMore suffix with ellipsis and ReadMore text
