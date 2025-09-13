@@ -1,6 +1,6 @@
-# ReadMoreLabel 프로젝트용 SwiftLint 설정
+# SwiftLint configuration for ReadMoreLabel project
 
-# 대상 경로
+# Target paths
 included:
   - Sources
   - Tests
@@ -13,10 +13,10 @@ excluded:
   - DerivedData
   - Scripts
 
-# 리포터
+# Reporter
 reporter: "github-actions-logging"
 
-# 기본 활성화된 규칙 중 비활성화할 규칙들
+# Disabled rules from default enabled rules
 disabled_rules:
   - trailing_whitespace
   - identifier_name
@@ -41,7 +41,7 @@ disabled_rules:
   - unneeded_override
   - explicit_self
 
-# 추가로 활성화할 규칙들 (opt-in)
+# Additional opt-in rules to enable
 opt_in_rules:
   - array_init
   - closure_end_indentation
@@ -54,24 +54,24 @@ opt_in_rules:
   - sorted_imports
   - switch_case_alignment
 
-# 코드 스타일/복잡도 임계치 (ReadMoreLabel 프로젝트에 맞게 조정)
+# Code style/complexity thresholds (adjusted for ReadMoreLabel project)
 type_body_length:
-  warning: 400  # ReadMoreLabel 클래스 크기 고려
+  warning: 400  # Considering ReadMoreLabel class size
   error: 600
 
 file_length:
-  warning: 800  # ReadMoreLabel.swift 파일 크기 고려
+  warning: 800  # Considering ReadMoreLabel.swift file size
   error: 1500
 
 function_body_length:
-  warning: 100  # TextKit 관련 복잡한 메서드 고려
+  warning: 100  # Considering complex TextKit-related methods
   error: 150
 
 cyclomatic_complexity:
-  warning: 15   # 조건문이 많은 TextKit 로직 고려
-  error: 35     # Example 앱의 복잡한 메서드 고려
+  warning: 15   # Considering TextKit logic with many conditionals
+  error: 35     # Considering complex methods in Example app
 
-# 중첩 깊이
+# Nesting depth
 nesting:
   type_level: 5
   function_level: 10

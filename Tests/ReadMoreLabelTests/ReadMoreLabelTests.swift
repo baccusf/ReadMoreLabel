@@ -17,7 +17,7 @@ final class ReadMoreLabelTests: XCTestCase {
     func testInitialState() {
         XCTAssertEqual(label.numberOfLines, 3)
         XCTAssertFalse(label.isExpanded)
-        XCTAssertEqual(label.readMoreText.string, "더보기..")
+        XCTAssertEqual(label.readMoreText.string, "Read More..")
     }
 
     func testExpandableWithShortText() {
