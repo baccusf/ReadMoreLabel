@@ -763,28 +763,32 @@ private extension NSAttributedString {
         let suffix = NSMutableAttributedString()
         let ellipsisWithLastAttributes = ellipsisText.createMutableWithAttributes(lastAttributes)
 
+        // RTL/LTR에 따른 구성 요소 순서 및 간격 처리
         if isRTL {
-            // RTL 텍스트: ellipsis + NBSP + readMore + RLM (BiDi 중립 문자 처리)
             suffix.append(ellipsisWithLastAttributes) // ".."
-            suffix.append(NSAttributedString(string: "\u{00A0}", attributes: lastAttributes)) // NBSP (Non-Breaking Space)
-            let readMoreStartLocation = suffix.length
-            let readMoreWithOriginalAttributes = readMoreText.createMutableWithAttributes(lastAttributes)
-            
-            // RTL 텍스트 끝의 중립 문자(느낌표 등)를 올바르게 처리하기 위해 RLM 추가
-            readMoreWithOriginalAttributes.append(NSAttributedString(string: "\u{200F}", attributes: lastAttributes)) // RLM (Right-to-Left Mark)
-            
-            suffix.append(readMoreWithOriginalAttributes) // "더보기!!" 
-            let readMoreRange = NSRange(location: readMoreStartLocation, length: readMoreText.length) // 원본 길이 사용
-            suffix.addAttribute(attributeKey, value: true, range: readMoreRange)
+            suffix.append(NSAttributedString(string: "\u{00A0}", attributes: lastAttributes)) // NBSP
         } else {
-            suffix.append(ellipsisWithLastAttributes)
-            suffix.append(NSAttributedString(string: spaceBetween, attributes: lastAttributes))
-            let readMoreStartLocation = suffix.length
-            let readMoreWithOriginalAttributes = readMoreText.createMutableWithAttributes(lastAttributes)
-            suffix.append(readMoreWithOriginalAttributes)
-            let readMoreRange = NSRange(location: readMoreStartLocation, length: readMoreWithOriginalAttributes.length)
-            suffix.addAttribute(attributeKey, value: true, range: readMoreRange)
+            suffix.append(ellipsisWithLastAttributes) // ".."
+            suffix.append(NSAttributedString(string: spaceBetween, attributes: lastAttributes)) // " "
         }
+        
+        // readMore 텍스트 처리 (공통 로직)
+        let readMoreStartLocation = suffix.length
+        let readMoreWithOriginalAttributes = readMoreText.createMutableWithAttributes(lastAttributes)
+        
+        // RTL에서만 BiDi 중립 문자 처리를 위한 RLM 추가
+        if isRTL {
+            readMoreWithOriginalAttributes.append(NSAttributedString(string: "\u{200F}", attributes: lastAttributes)) // RLM
+        }
+        
+        suffix.append(readMoreWithOriginalAttributes)
+        
+        // readMore 범위 설정 (RTL은 원본 길이, LTR은 실제 길이 사용)
+        let readMoreRange = NSRange(
+            location: readMoreStartLocation, 
+            length: isRTL ? readMoreText.length : readMoreWithOriginalAttributes.length
+        )
+        suffix.addAttribute(attributeKey, value: true, range: readMoreRange)
 
         return suffix
     }
