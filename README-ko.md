@@ -6,11 +6,13 @@
 
 우아한 텍스트 자르기와 확장 기능을 제공하는 강력하고 유연한 UILabel 서브클래스입니다.
 
-[English](README.md) | [日本語](README-ja.md) | [العربية](README-ar.md) | **한국어**
+[English](README.md) | [日本語](README-ja.md) | **한국어**
 
 ## 🎬 데모
 
-![ReadMoreLabel 데모](screenshots/ReadMoreLabel_Demo.mp4)
+> **참고**: 최고의 경험을 위해 [데모 영상](screenshots/ReadMoreLabel_Demo.mp4)을 다운로드하여 로컬에서 보시거나 아래 애니메이션 스크린샷을 확인해주세요.
+
+[![데모 영상](https://img.shields.io/badge/📹_데모_영상-다운로드_클릭-blue.svg)](screenshots/ReadMoreLabel_Demo.mp4)
 
 ## 📱 스크린샷
 
@@ -29,7 +31,7 @@
 - **RTL 언어 지원**: 아랍어, 히브리어 등 오른쪽에서 왼쪽으로 쓰는 언어 완벽 지원 및 BiDi 텍스트 처리
 - **부드러운 애니메이션**: 내장된 확장/축소 애니메이션과 델리게이트 콜백
 - **커스터마이징 가능한 외관**: "더보기" 텍스트에 NSAttributedString 스타일링 지원
-- **유연한 설정**: `numberOfLinesWhenCollapsed = 0`으로 "더보기" 기능 비활성화 가능
+- **유연한 설정**: `numberOfLines = 0`으로 "더보기" 기능 비활성화 가능
 - **UILabel 호환성**: 최소한의 코드 변경으로 기존 UILabel 대체 가능
 - **Interface Builder 지원**: IBDesignable과 IBInspectable 프로퍼티 지원
 - **안전한 API 설계**: 상속받은 UILabel 프로퍼티의 직접 수정 방지
@@ -69,7 +71,7 @@ class ViewController: UIViewController {
         super.viewDidLoad()
         
         // 기본 설정
-        readMoreLabel.numberOfLinesWhenCollapsed = 3
+        readMoreLabel.numberOfLines = 3
         readMoreLabel.text = "여기에 긴 텍스트 내용을 입력하세요..."
         
         // "더보기" 텍스트 커스터마이징
@@ -100,7 +102,7 @@ extension ViewController: ReadMoreLabelDelegate {
 
 ```swift
 let readMoreLabel = ReadMoreLabel()
-readMoreLabel.numberOfLinesWhenCollapsed = 2
+readMoreLabel.numberOfLines = 2
 readMoreLabel.text = "긴 텍스트 내용..."
 readMoreLabel.translatesAutoresizingMaskIntoConstraints = false
 
@@ -137,7 +139,7 @@ if readMoreLabel.isExpandable {
 
 ```swift
 // 0으로 설정하여 자르기 비활성화 (일반 UILabel처럼 동작)
-readMoreLabel.numberOfLinesWhenCollapsed = 0
+readMoreLabel.numberOfLines = 0
 ```
 
 ## 🎨 커스터마이징
@@ -146,7 +148,7 @@ readMoreLabel.numberOfLinesWhenCollapsed = 0
 
 | 프로퍼티 | 타입 | 설명 | 기본값 |
 |----------|------|------|--------|
-| `numberOfLinesWhenCollapsed` | `Int` | 축소 시 표시할 줄 수 (0 = 무제한) | `3` |
+| `numberOfLines` | `Int` | 축소 시 표시할 줄 수 (0 = 무제한) | `3` |
 | `readMoreText` | `NSAttributedString` | 스타일링 가능한 "더보기" 텍스트 | `"Read More.."` |
 | `ellipsisText` | `NSAttributedString` | "더보기" 앞의 커스터마이징 가능한 ellipsis 텍스트 | `".."` |
 | `readMorePosition` | `ReadMoreLabel.Position` | "더보기" 텍스트 위치 (`.end`, `.newLine`) | `.end` |
@@ -226,36 +228,14 @@ hebrewLabel.readMoreText = NSAttributedString(string: "קרא עוד")
 
 ## ⚠️ 중요 사항
 
-### 보호된 프로퍼티
-
-ReadMoreLabel은 적절한 기능을 보장하기 위해 특정 UILabel 프로퍼티를 재정의합니다:
-
-- **`numberOfLines`**: 대신 `numberOfLinesWhenCollapsed` 사용
-- **`lineBreakMode`**: `.byWordWrapping`으로 고정
-
-이러한 프로퍼티를 직접 설정하려고 하면 디버그 경고가 표시되고 무시됩니다.
-
-### 네이밍 충돌
-
-다른 라이브러리와 충돌이 발생하는 경우, Swift 모듈 네임스페이스를 사용하세요:
-
-```swift
-import ReadMoreLabel
-let label = ReadMoreLabel.ReadMoreLabel()  // 전체 모듈명 사용
-
-// 또는 typealias 생성
-typealias MyReadMoreLabel = ReadMoreLabel.ReadMoreLabel
-let label = MyReadMoreLabel()
-```
 
 ### 모범 사례
 
 1. **Auto Layout**: 적절한 텍스트 측정을 위해 항상 Auto Layout 제약 조건 사용
-2. **성능**: 대용량 텍스트의 경우 처음에 `numberOfLinesWhenCollapsed = 0`으로 설정하고 필요할 때 자르기 활성화 고려
+2. **성능**: 대용량 텍스트의 경우 처음에 `numberOfLines = 0`으로 설정하고 필요할 때 자르기 활성화 고려
 3. **접근성**: 컴포넌트는 VoiceOver와 Dynamic Type을 자동으로 지원
 4. **스레드 안전성**: 항상 메인 스레드에서 프로퍼티 업데이트
-5. **TextKit 1**: 안정적인 텍스트 처리를 위해 검증된 TextKit 1 API를 기반으로 구축
-6. **메모리 관리**: 안정성을 위해 적절한 TextKit 스택 참조를 유지하는 컴포넌트
+5. **다국어 지원**: TextKit2를 사용하여 다양한 언어에서 글리프 계산 이슈를 해결하고 정확한 텍스트 측정을 제공
 
 ## 🔧 고급 사용법
 
