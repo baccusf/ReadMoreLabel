@@ -683,7 +683,7 @@ private extension NSAttributedString {
         )
     }
     
-    /// Direct ReadMore touch detection based on touch point
+    /// Direct ReadMore touch detection with BiDi mixed text support
     @available(iOS 16.0, *)
     private func isLocationInReadMoreGlyphBounds(
         location: CGPoint,
@@ -707,20 +707,20 @@ private extension NSAttributedString {
             )
             
             if lineBounds.contains(location) {
-                // Get character index directly from touch point
                 let relativeLocation = CGPoint(
                     x: location.x - fragmentFrame.origin.x,
                     y: location.y - fragmentFrame.origin.y
                 )
                 
+                // Direct TextKit 2 hit testing
                 let characterIndex = lineFragment.characterIndex(for: relativeLocation)
                 
-                // Calculate absolute index based on entire document
+                // Calculate absolute index
                 let documentRange = textLayoutManager.documentRange
                 let fragmentStartOffset = textLayoutManager.offset(from: documentRange.location, to: fragment.rangeInElement.location)
                 let absoluteIndex = fragmentStartOffset + characterIndex
                 
-                // Check if within ReadMore range and has ReadMore attribute
+                // Check if touched character is within ReadMore range and has ReadMore attribute
                 if NSLocationInRange(absoluteIndex, range) && absoluteIndex < length {
                     let attributes = attributes(at: absoluteIndex, effectiveRange: nil)
                     return (attributes[ReadMoreLabel.AttributeKey.isReadMore] as? Bool) == true
