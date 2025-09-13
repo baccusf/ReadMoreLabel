@@ -692,6 +692,14 @@ private extension NSAttributedString {
         textLayoutManager: NSTextLayoutManager,
         isRTL: Bool
     ) -> Bool {
+        
+        print("🔍 Touch location: \(location)")
+        print("🔍 Text Analysis:")
+        print("   Total text length: \(length)")
+        print("   ReadMore range: \(range)")
+        print("   Text around range: '\(String(string.dropFirst(max(0, range.location - 10)).prefix(20)))'")
+        print("   isRTL: \(isRTL)")
+        
         let documentRange = textLayoutManager.documentRange
         
         // Create NSTextRange for ReadMore range
@@ -734,16 +742,144 @@ private extension NSAttributedString {
                         )
                         
                         let characterIndex = lineFragment.characterIndex(for: relativeLocation)
+                        
+                        // For RTL debugging: try inverted X coordinate
+                        let invertedRelativeLocation = CGPoint(
+                            x: lineFragment.typographicBounds.width - relativeLocation.x,
+                            y: relativeLocation.y
+                        )
+                        let invertedCharacterIndex = lineFragment.characterIndex(for: invertedRelativeLocation)
+                        
+                        print("🔍 RTL Coordinate Analysis:")
+                        print("   Line fragment bounds: \(lineFragment.typographicBounds)")
+                        print("   Touch relative: \(relativeLocation)")
+                        print("   Touch inverted: \(invertedRelativeLocation)")
+                        print("   Character index normal: \(characterIndex)")
+                        print("   Character index inverted: \(invertedCharacterIndex)")
                         let fragmentStartOffset = textLayoutManager.offset(from: documentRange.location, to: fragment.rangeInElement.location)
                         let absoluteIndex = fragmentStartOffset + characterIndex
+                        let invertedAbsoluteIndex = fragmentStartOffset + invertedCharacterIndex
                         
-                        // Verify this is ReadMore text by checking attributes
+                        // Compare normal vs inverted character results
+                        print("🔍 Character Comparison:")
+                        print("   Normal absolute index: \(absoluteIndex)")
+                        print("   Inverted absolute index: \(invertedAbsoluteIndex)")
+                        
+                        // Get characters at both positions for comparison
+                        let currentString = string
+                        if absoluteIndex < length && absoluteIndex >= 0 && absoluteIndex < currentString.count {
+                            let safeIndex = currentString.index(currentString.startIndex, offsetBy: absoluteIndex, limitedBy: currentString.endIndex)
+                            if let index = safeIndex {
+                                let normalChar = String(currentString[index])
+                                print("   Normal character: '\(normalChar)'")
+                            } else {
+                                print("   Normal character: ❌ (invalid index)")
+                            }
+                        } else {
+                            print("   Normal character: ❌ (out of bounds: \(absoluteIndex))")
+                        }
+                        if invertedAbsoluteIndex < length && invertedAbsoluteIndex >= 0 && invertedAbsoluteIndex < currentString.count {
+                            let safeIndex = currentString.index(currentString.startIndex, offsetBy: invertedAbsoluteIndex, limitedBy: currentString.endIndex)
+                            if let index = safeIndex {
+                                let invertedChar = String(currentString[index])
+                                print("   Inverted character: '\(invertedChar)'")
+                            } else {
+                                print("   Inverted character: ❌ (invalid index)")
+                            }
+                        } else {
+                            print("   Inverted character: ❌ (out of bounds: \(invertedAbsoluteIndex))")
+                        }
+                        
+                        // Log touched character for debugging (handling composed characters properly)
+                        if absoluteIndex < length && absoluteIndex >= 0 {
+                            var foundGraphemeCluster = ""
+                            var foundRange = NSRange(location: 0, length: 0)
+                            
+                            // Find the complete grapheme cluster containing this index (with safety checks)
+                            if !currentString.isEmpty && absoluteIndex >= 0 && absoluteIndex < currentString.count {
+                                currentString.enumerateSubstrings(in: currentString.startIndex..<currentString.endIndex,
+                                                         options: [.byComposedCharacterSequences, .localized]) { substring, range, _, stop in
+                                    let nsRange = NSRange(range, in: currentString)
+                                    if NSLocationInRange(absoluteIndex, nsRange) {
+                                        foundGraphemeCluster = substring ?? ""
+                                        foundRange = nsRange
+                                        stop = true
+                                    }
+                                }
+                            } else {
+                                foundGraphemeCluster = "❌"
+                                foundRange = NSRange(location: absoluteIndex, length: 0)
+                                print("   ⚠️ Invalid range for grapheme enumeration: absoluteIndex=\(absoluteIndex), string.count=\(currentString.count)")
+                            }
+                            
+                            // Also get simple character for comparison
+                            let simpleChar: String
+                            if absoluteIndex < currentString.count {
+                                let stringIndex = currentString.index(currentString.startIndex, offsetBy: absoluteIndex, limitedBy: currentString.endIndex)
+                                simpleChar = stringIndex != nil ? String(currentString[stringIndex!]) : "❌"
+                            } else {
+                                simpleChar = "❌"
+                            }
+                            
+                            print("📍 Touched at index \(absoluteIndex):")
+                            print("   Complete grapheme: '\(foundGraphemeCluster)' (range: \(foundRange))")
+                            print("   Simple character: '\(simpleChar)'")
+                            if !foundGraphemeCluster.isEmpty {
+                                print("   Unicode: \(foundGraphemeCluster.unicodeScalars.map { "U+\(String($0.value, radix: 16, uppercase: true))" }.joined(separator: " "))")
+                                
+                                // Check if this contains neutral characters
+                                let hasNBSP = foundGraphemeCluster.contains("\u{00A0}")
+                                let hasRLM = foundGraphemeCluster.contains("\u{200F}")
+                                if hasNBSP || hasRLM {
+                                    print("   ⚠️ Contains neutral chars: NBSP=\(hasNBSP), RLM=\(hasRLM)")
+                                }
+                                
+                                // Analyze BiDi character types
+                                let unicodeScalars = Array(foundGraphemeCluster.unicodeScalars)
+                                for (i, scalar) in unicodeScalars.enumerated() {
+                                    let charType = scalar.value < 128 ? "ASCII" : 
+                                                  (scalar.value >= 0x1F600 && scalar.value <= 0x1F64F) ? "EMOJI" :
+                                                  (scalar.value >= 0x0600 && scalar.value <= 0x06FF) ? "ARABIC" :
+                                                  (scalar.value == 0x00A0) ? "NBSP" :
+                                                  (scalar.value == 0x200F) ? "RLM" : "OTHER"
+                                    print("   Char[\(i)]: U+\(String(scalar.value, radix: 16, uppercase: true)) (\(charType))")
+                                }
+                            }
+                            
+                            // Check ReadMore attribute using foundRange
+                            if foundRange.length > 0 {
+                                let rangeAttributes = attributes(at: foundRange.location, effectiveRange: nil)
+                                let isReadMoreAtRange = (rangeAttributes[ReadMoreLabel.AttributeKey.isReadMore] as? Bool) == true
+                                print("   isReadMore at range \(foundRange): \(isReadMoreAtRange)")
+                                
+                                // Also check at absoluteIndex for comparison
+                                let indexAttributes = attributes(at: absoluteIndex, effectiveRange: nil)
+                                let isReadMoreAtIndex = (indexAttributes[ReadMoreLabel.AttributeKey.isReadMore] as? Bool) == true
+                                print("   isReadMore at index \(absoluteIndex): \(isReadMoreAtIndex)")
+                                
+                                // Check offset from expected ReadMore range
+                                let expectedStart = range.location
+                                let expectedEnd = range.location + range.length - 1
+                                let offsetFromStart = absoluteIndex - expectedStart
+                                let offsetFromEnd = absoluteIndex - expectedEnd
+                                print("   Expected ReadMore range: \(range)")
+                                print("   Offset from start: \(offsetFromStart), from end: \(offsetFromEnd)")
+                            }
+                        }
+                        
+                        // Verify this is ReadMore text by checking attributes and range
                         if absoluteIndex < length {
                             let attributes = attributes(at: absoluteIndex, effectiveRange: nil)
                             let isReadMoreAttribute = (attributes[ReadMoreLabel.AttributeKey.isReadMore] as? Bool) == true
                             
-                            if isReadMoreAttribute {
+                            // Additional range-based check: if absoluteIndex is within expected ReadMore range
+                            let isWithinReadMoreRange = (absoluteIndex >= range.location && absoluteIndex < range.location + range.length)
+                            
+                            print("   Range-based check: absoluteIndex(\(absoluteIndex)) within expected range(\(range)): \(isWithinReadMoreRange)")
+                            
+                            if isReadMoreAttribute || isWithinReadMoreRange {
                                 foundReadMoreGlyph = true
+                                print("   ✅ ReadMore detected: attribute=\(isReadMoreAttribute), range=\(isWithinReadMoreRange)")
                                 return false // Stop enumeration
                             }
                         }
@@ -793,11 +929,22 @@ private extension NSAttributedString {
         
         suffix.append(readMoreWithOriginalAttributes)
         
-        // readMore 범위 설정 (RTL은 원본 길이, LTR은 실제 길이 사용)
+        // readMore 범위 설정 (RLM 문자 추가를 고려한 실제 길이 사용)
         let readMoreRange = NSRange(
             location: readMoreStartLocation, 
-            length: isRTL ? readMoreText.length : readMoreWithOriginalAttributes.length
+            length: readMoreWithOriginalAttributes.length
         )
+        
+        print("🔧 ReadMore Suffix Creation:")
+        print("   ellipsisText.length: \(ellipsisText.length)")
+        print("   spaceBetween: '\(isRTL ? "\\u{00A0}" : spaceBetween)' (length: \(isRTL ? 1 : spaceBetween.count))")
+        print("   readMoreText.length: \(readMoreText.length)")
+        print("   readMoreWithOriginalAttributes.length: \(readMoreWithOriginalAttributes.length)")
+        print("   readMoreStartLocation: \(readMoreStartLocation)")
+        print("   readMoreRange: \(readMoreRange)")
+        print("   suffix.length: \(suffix.length)")
+        print("   Final suffix: '\(suffix.string)'")
+        
         suffix.addAttribute(attributeKey, value: true, range: readMoreRange)
 
         return suffix
@@ -901,9 +1048,32 @@ private extension NSAttributedString {
             // LTR: 기존 로직 사용
             let truncated = lastLineText.attributedSubstring(from: NSRange(location: 0, length: truncateIndex)).removingTrailingNewlineIfNeeded()
             result.append(truncated)
+            let suffixStartLocation = result.length
             result.append(suffix)
 
-            return .truncated(result, NSRange(location: result.length - suffix.length, length: suffix.length))
+            // ReadMore 범위를 전체 텍스트 기준으로 조정
+            var adjustedReadMoreRange = NSRange(location: suffixStartLocation, length: suffix.length)
+            
+            // suffix 내부에서 실제 ReadMore 범위 찾기
+            suffix.enumerateAttribute(ReadMoreLabel.AttributeKey.isReadMore, in: NSRange(location: 0, length: suffix.length), options: []) { value, range, stop in
+                if (value as? Bool) == true {
+                    adjustedReadMoreRange = NSRange(
+                        location: suffixStartLocation + range.location,
+                        length: range.length
+                    )
+                    stop.pointee = true
+                }
+            }
+            
+            print("🔧 ReadMore Range Adjustment:")
+            print("   truncated.length: \(truncated.length)")
+            print("   suffixStartLocation: \(suffixStartLocation)")
+            print("   suffix.length: \(suffix.length)")
+            print("   Original range calculation: \(NSRange(location: result.length - suffix.length, length: suffix.length))")
+            print("   Adjusted ReadMore range: \(adjustedReadMoreRange)")
+            print("   result.length: \(result.length)")
+
+            return .truncated(result, adjustedReadMoreRange)
 //        }
     }
 
