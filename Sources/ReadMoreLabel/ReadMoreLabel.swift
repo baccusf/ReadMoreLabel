@@ -679,8 +679,7 @@ private extension NSAttributedString {
         return isLocationInReadMoreGlyphBounds(
             location: location,
             range: range,
-            textLayoutManager: textLayoutManager,
-            isRTL: isRTL
+            textLayoutManager: textLayoutManager
         )
     }
     
@@ -689,8 +688,7 @@ private extension NSAttributedString {
     private func isLocationInReadMoreGlyphBounds(
         location: CGPoint,
         range: NSRange,
-        textLayoutManager: NSTextLayoutManager,
-        isRTL: Bool
+        textLayoutManager: NSTextLayoutManager
     ) -> Bool {
         // Get textLayoutFragment directly from touch point
         guard let fragment = textLayoutManager.textLayoutFragment(for: location) else {
@@ -715,16 +713,7 @@ private extension NSAttributedString {
                     y: location.y - fragmentFrame.origin.y
                 )
                 
-                var characterIndex = lineFragment.characterIndex(for: relativeLocation)
-                
-                // For RTL text, try inverted X coordinate if standard approach fails
-                if isRTL {
-                    let rtlRelativeLocation = CGPoint(
-                        x: lineFragment.typographicBounds.width - relativeLocation.x,
-                        y: relativeLocation.y
-                    )
-                    characterIndex = lineFragment.characterIndex(for: rtlRelativeLocation)
-                }
+                let characterIndex = lineFragment.characterIndex(for: relativeLocation)
                 
                 // Calculate absolute index based on entire document
                 let documentRange = textLayoutManager.documentRange
@@ -764,13 +753,8 @@ private extension NSAttributedString {
         let ellipsisWithLastAttributes = ellipsisText.createMutableWithAttributes(lastAttributes)
 
         // RTL/LTR에 따른 구성 요소 순서 및 간격 처리
-        if isRTL {
-            suffix.append(ellipsisWithLastAttributes) // ".."
-            suffix.append(NSAttributedString(string: "\u{00A0}", attributes: lastAttributes)) // NBSP
-        } else {
-            suffix.append(ellipsisWithLastAttributes) // ".."
-            suffix.append(NSAttributedString(string: spaceBetween, attributes: lastAttributes)) // " "
-        }
+        suffix.append(ellipsisWithLastAttributes) // ".."
+        suffix.append(NSAttributedString(string: isRTL ? "\u{00A0}" : spaceBetween, attributes: lastAttributes)) // NBSP
         
         // readMore 텍스트 처리 (공통 로직)
         let readMoreStartLocation = suffix.length
