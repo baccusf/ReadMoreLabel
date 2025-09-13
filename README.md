@@ -6,11 +6,13 @@
 
 A powerful and flexible UILabel subclass that provides "Read More" functionality with elegant text truncation and expansion capabilities.
 
-[한국어](README-ko.md) | [日本語](README-ja.md) | [العربية](README-ar.md) | **English**
+[한국어](README-ko.md) | [日本語](README-ja.md) | **English**
 
 ## 🎬 Demo
 
-![ReadMoreLabel Demo](screenshots/ReadMoreLabel_Demo.mp4)
+> **Note**: For the best experience, please download and view the [Demo Video](screenshots/ReadMoreLabel_Demo.mp4) locally or check the animated screenshots below.
+
+[![Demo Video](https://img.shields.io/badge/📹_Demo_Video-Click_to_Download-blue.svg)](screenshots/ReadMoreLabel_Demo.mp4)
 
 ## 📱 Screenshots
 
@@ -29,7 +31,7 @@ A powerful and flexible UILabel subclass that provides "Read More" functionality
 - **RTL Language Support**: Full support for Right-to-Left languages (Arabic, Hebrew) with proper BiDi text handling
 - **Smooth Animations**: Built-in expand/collapse animations with delegate callbacks
 - **Customizable Appearance**: Support for NSAttributedString styling on "Read More" text
-- **Flexible Configuration**: Disable "Read More" functionality by setting `numberOfLinesWhenCollapsed = 0`
+- **Flexible Configuration**: Disable "Read More" functionality by setting `numberOfLines = 0`
 - **UILabel Compatibility**: Drop-in replacement with minimal code changes
 - **Interface Builder Support**: IBDesignable with IBInspectable properties
 - **Safe API Design**: Prevents direct modification of inherited UILabel properties
@@ -69,7 +71,7 @@ class ViewController: UIViewController {
         super.viewDidLoad()
         
         // Basic configuration
-        readMoreLabel.numberOfLinesWhenCollapsed = 3
+        readMoreLabel.numberOfLines = 3
         readMoreLabel.text = "Your long text content here..."
         
         // Custom "Read More" text with styling
@@ -104,7 +106,7 @@ extension ViewController: ReadMoreLabelDelegate {
 
 ```swift
 let readMoreLabel = ReadMoreLabel()
-readMoreLabel.numberOfLinesWhenCollapsed = 2
+readMoreLabel.numberOfLines = 2
 readMoreLabel.text = "Long text content..."
 readMoreLabel.translatesAutoresizingMaskIntoConstraints = false
 
@@ -141,7 +143,7 @@ if readMoreLabel.isExpandable {
 
 ```swift
 // Set to 0 to disable truncation (behaves like normal UILabel)
-readMoreLabel.numberOfLinesWhenCollapsed = 0
+readMoreLabel.numberOfLines = 0
 ```
 
 ## 🎨 Customization
@@ -150,7 +152,7 @@ readMoreLabel.numberOfLinesWhenCollapsed = 0
 
 | Property | Type | Description | Default |
 |----------|------|-------------|---------|
-| `numberOfLinesWhenCollapsed` | `Int` | Number of lines to show when collapsed (0 = unlimited) | `3` |
+| `numberOfLines` | `Int` | Number of lines to show when collapsed (0 = unlimited) | `3` |
 | `readMoreText` | `NSAttributedString` | Customizable "Read More" text with styling | `"Read More.."` |
 | `ellipsisText` | `NSAttributedString` | Customizable ellipsis text before "Read More" | `".."` |
 | `readMorePosition` | `ReadMoreLabel.Position` | Position of "Read More" text (`.end`, `.newLine`) | `.end` |
@@ -230,22 +232,14 @@ hebrewLabel.readMoreText = NSAttributedString(string: "קרא עוד")
 
 ## ⚠️ Important Notes
 
-### Protected Properties
-
-ReadMoreLabel overrides certain UILabel properties to ensure proper functionality:
-
-- **`numberOfLines`**: Use `numberOfLinesWhenCollapsed` instead
-- **`lineBreakMode`**: Fixed to `.byWordWrapping`
-
-Attempting to set these properties directly will show debug warnings and be ignored.
-
 
 ### Best Practices
 
 1. **Auto Layout**: Always use Auto Layout constraints for proper text measurement
-2. **Performance**: For large amounts of text, consider setting `numberOfLinesWhenCollapsed = 0` initially and enabling truncation when needed
+2. **Performance**: For large amounts of text, consider setting `numberOfLines = 0` initially and enabling truncation when needed
 3. **Accessibility**: The component automatically supports VoiceOver and Dynamic Type
 4. **Thread Safety**: Always update properties on the main thread
+5. **Multilingual Support**: Uses TextKit2 to resolve glyph calculation issues in various languages and provide accurate text measurement
 
 ## 🔧 Advanced Usage
 

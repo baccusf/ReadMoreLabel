@@ -6,11 +6,13 @@
 
 エレガントなテキストの切り取りと展開機能を提供する、パワフルで柔軟なUILabelサブクラスです。
 
-[한국어](README-ko.md) | [English](README.md) | [العربية](README-ar.md) | **日本語**
+[한국어](README-ko.md) | [English](README.md) | **日本語**
 
 ## 🎬 デモ
 
-![ReadMoreLabel デモ](screenshots/ReadMoreLabel_Demo.mp4)
+> **注意**: 最適な体験のために、[デモ動画](screenshots/ReadMoreLabel_Demo.mp4)をダウンロードしてローカルで表示するか、以下のアニメーションスクリーンショットをご確認ください。
+
+[![デモ動画](https://img.shields.io/badge/📹_デモ動画-ダウンロードクリック-blue.svg)](screenshots/ReadMoreLabel_Demo.mp4)
 
 ## 📱 スクリーンショット
 
@@ -29,7 +31,7 @@
 - **RTL言語サポート**: アラビア語、ヘブライ語など右から左に書く言語の完全サポートとBiDiテキスト処理
 - **滑らかなアニメーション**: 内蔵の展開/折りたたみアニメーションとデリゲートコールバック
 - **カスタマイズ可能な外観**: 「続きを読む」テキストに対するNSAttributedStringスタイリングをサポート
-- **柔軟な設定**: `numberOfLinesWhenCollapsed = 0`で「続きを読む」機能の無効化が可能
+- **柔軟な設定**: `numberOfLines = 0`で「続きを読む」機能の無効化が可能
 - **UILabel互換性**: 最小限のコード変更で既存のUILabelを置き換え可能
 - **Interface Builderサポート**: IBDesignableとIBInspectableプロパティをサポート
 - **安全なAPI設計**: 継承されたUILabelプロパティの直接変更を防止
@@ -251,11 +253,10 @@ let label = MyReadMoreLabel()
 ### ベストプラクティス
 
 1. **Auto Layout**: 適切なテキスト測定のため常にAuto Layout制約を使用
-2. **パフォーマンス**: 大量のテキストの場合、最初に`numberOfLinesWhenCollapsed = 0`に設定し、必要時に切り取りを有効化することを検討
+2. **パフォーマンス**: 大量のテキストの場合、最初に`numberOfLines = 0`に設定し、必要時に切り取りを有効化することを検討
 3. **アクセシビリティ**: コンポーネントは自動的にVoiceOverとDynamic Typeをサポート
 4. **スレッドセーフティ**: 常にメインスレッドでプロパティを更新
-5. **TextKit 1**: 安定したテキスト処理のため検証済みTextKit 1 APIを基盤として構築
-6. **メモリ管理**: 安定性のため適切なTextKitスタック参照を維持するコンポーネント
+5. **多言語サポート**: TextKit2を使用して様々な言語でのグリフ計算の問題を解決し、正確なテキスト測定を提供
 
 ## 🔧 高度な使用法
 
