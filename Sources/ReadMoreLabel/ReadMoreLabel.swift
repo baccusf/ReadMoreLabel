@@ -142,11 +142,7 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
 
     override public var bounds: CGRect {
         didSet {
-            guard bounds.size != oldValue.size else {
-                return
-            }
-
-            reapplyTextStylingAndRefreshDisplay()
+            refreshDisplayIfChanged(bounds.size != oldValue.size)
         }
     }
 
@@ -161,37 +157,25 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
 
     override public var lineBreakMode: NSLineBreakMode {
         didSet {
-            guard lineBreakMode != oldValue else {
-                return
-            }
-            reapplyTextStylingAndRefreshDisplay()
+            refreshDisplayIfChanged(lineBreakMode != oldValue)
         }
     }
 
     override public var font: UIFont! {
         didSet {
-            guard font != oldValue else {
-                return
-            }
-            reapplyTextStylingAndRefreshDisplay()
+            refreshDisplayIfChanged(font != oldValue)
         }
     }
 
     override public var textColor: UIColor! {
         didSet {
-            guard textColor != oldValue else {
-                return
-            }
-            reapplyTextStylingAndRefreshDisplay()
+            refreshDisplayIfChanged(textColor != oldValue)
         }
     }
 
     override public var textAlignment: NSTextAlignment {
         didSet {
-            guard textAlignment != oldValue else {
-                return
-            }
-            reapplyTextStylingAndRefreshDisplay()
+            refreshDisplayIfChanged(textAlignment != oldValue)
         }
     }
 
@@ -288,6 +272,13 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
         super.numberOfLines = lines
     }
 
+    private func refreshDisplayIfChanged(_ hasChanged: Bool) {
+        guard hasChanged else {
+            return
+        }
+        reapplyTextStylingAndRefreshDisplay()
+    }
+
     // MARK: - Helper Methods
     private var safeLineCount: Int {
         numberOfLinesWhenCollapsed == 0 ? 0 : numberOfLinesWhenCollapsed
@@ -348,6 +339,24 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
         }
     }
 
+    private func applyTruncationResult(
+        _ result: TextTruncationResult,
+        fallbackText: NSAttributedString,
+        truncatedLineCount: Int
+    ) {
+        if result.needsTruncation,
+           let (finalText, readMoreRange) = result.textAndRange
+        {
+            super.attributedText = finalText
+            setInternalNumberOfLines(truncatedLineCount)
+            state.readMoreTextRange = readMoreRange
+        } else {
+            super.attributedText = fallbackText
+            setInternalNumberOfLines(safeLineCount)
+            state.readMoreTextRange = nil
+        }
+    }
+
     private func displayTruncatedTextAtEnd(_ attributedText: NSAttributedString, availableWidth: CGFloat) {
         guard attributedText.length > 0, availableWidth > 0, numberOfLinesWhenCollapsed > 0 else {
             super.attributedText = attributedText
@@ -381,17 +390,11 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
             isRTL: self.isRTL
         )
 
-        if result.needsTruncation,
-           let (finalText, readMoreRange) = result.textAndRange
-        {
-            super.attributedText = finalText
-            setInternalNumberOfLines(numberOfLinesWhenCollapsed)
-            state.readMoreTextRange = readMoreRange
-        } else {
-            super.attributedText = alignedText
-            setInternalNumberOfLines(safeLineCount)
-            state.readMoreTextRange = nil
-        }
+        applyTruncationResult(
+            result,
+            fallbackText: alignedText,
+            truncatedLineCount: numberOfLinesWhenCollapsed
+        )
     }
 
     private func displayTruncatedTextAtNewLineBeginning(_ attributedText: NSAttributedString, availableWidth: CGFloat) {
@@ -402,7 +405,13 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
             return
         }
 
-        let result = attributedText.applyingReadMoreForNewLineTextLayout(
+        let alignedText = attributedText.applyingTextAlignment(
+            textAlignment,
+            font: font,
+            textColor: textColor
+        )
+
+        let result = alignedText.applyingReadMoreForNewLineTextLayout(
             numberOfLines: numberOfLinesWhenCollapsed,
             containerWidth: availableWidth,
             textAlignment: textAlignment,
@@ -418,18 +427,11 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
             isRTL: self.isRTL
         )
 
-        if result.needsTruncation,
-           let (finalText, readMoreRange) = result.textAndRange
-        {
-        
-            super.attributedText = finalText
-            setInternalNumberOfLines(numberOfLinesWhenCollapsed + 1)
-            state.readMoreTextRange = readMoreRange
-        } else {
-            super.attributedText = attributedText
-            setInternalNumberOfLines(safeLineCount)
-            state.readMoreTextRange = nil
-        }
+        applyTruncationResult(
+            result,
+            fallbackText: alignedText,
+            truncatedLineCount: numberOfLinesWhenCollapsed + 1
+        )
     }
 
     @objc private func handleTapGesture(_ gesture: UITapGestureRecognizer) {
