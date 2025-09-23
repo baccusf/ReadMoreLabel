@@ -1,6 +1,5 @@
 import Foundation
 import UIKit
-import mach
 
 // MARK: - Memory Profiler Service
 
