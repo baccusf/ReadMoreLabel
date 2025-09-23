@@ -1,5 +1,13 @@
 import UIKit
 
+private typealias LineFragmentInfo = (fragment: NSTextLayoutFragment, lineFragment: NSTextLineFragment)
+
+private struct LastLineContext {
+    let lineFragment: NSTextLineFragment
+    let start: Int
+    let range: NSRange
+}
+
 // MARK: - Public Protocols
 
 /// Configuration interface for ReadMore appearance and behavior
@@ -275,44 +283,6 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
         invalidateDisplayAndLayout()
     }
 
-    private func applyReadMore(
-        originalText: NSAttributedString,
-        numberOfLines: Int,
-        containerWidth: CGFloat,
-        suffix: NSAttributedString,
-        precomputedReadMoreRange: NSRange,
-        isRTL: Bool = false
-    ) -> TextTruncationResult {
-        let alignedText = originalText.applyingTextAlignment(textAlignment, font: font, textColor: textColor)
-        
-        if readMorePosition == .newLine {
-            return alignedText.applyingReadMoreForNewLineTextLayout(
-                numberOfLines: numberOfLines,
-                containerWidth: containerWidth,
-                textAlignment: textAlignment,
-                font: font,
-                textColor: textColor,
-                lineFragmentPadding: lineFragmentPadding,
-                lineBreakMode: lineBreakMode,
-                readMoreText: readMoreText,
-                newLineCharacter: Self.newLineCharacter,
-                attributeKey: AttributeKey.isReadMore,
-                defaultAttributes: defaultTextAttributes,
-                isRTL: isRTL
-            )
-        } else {
-            return alignedText.applyingReadMoreTruncation(
-                numberOfLines: numberOfLines,
-                containerWidth: containerWidth,
-                suffix: suffix,
-                precomputedReadMoreRange: precomputedReadMoreRange,
-                lineFragmentPadding: lineFragmentPadding,
-                lineBreakMode: lineBreakMode,
-                isRTL: isRTL
-            )
-        }
-    }
-
     private func setInternalNumberOfLines(_ lines: Int) {
         state.internalNumberOfLines = lines
         super.numberOfLines = lines
@@ -386,7 +356,13 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
             return
         }
 
-        let suffixInfo = attributedText.creatingReadMoreSuffix(
+        let alignedText = attributedText.applyingTextAlignment(
+            textAlignment,
+            font: font,
+            textColor: textColor
+        )
+
+        let suffixInfo = alignedText.creatingReadMoreSuffix(
             ellipsisText: ellipsisText,
             readMoreText: readMoreText,
             spaceBetween: Self.defaultSpaceBetweenEllipsisAndReadMore,
@@ -395,12 +371,13 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
             isRTL: self.isRTL
         )
 
-        let result = applyReadMore(
-            originalText: attributedText,
+        let result = alignedText.applyingReadMoreTruncation(
             numberOfLines: numberOfLinesWhenCollapsed,
             containerWidth: availableWidth,
             suffix: suffixInfo.attributedString,
             precomputedReadMoreRange: suffixInfo.readMoreRange,
+            lineFragmentPadding: lineFragmentPadding,
+            lineBreakMode: lineBreakMode,
             isRTL: self.isRTL
         )
 
@@ -411,7 +388,7 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
             setInternalNumberOfLines(numberOfLinesWhenCollapsed)
             state.readMoreTextRange = readMoreRange
         } else {
-            super.attributedText = attributedText
+            super.attributedText = alignedText
             setInternalNumberOfLines(safeLineCount)
             state.readMoreTextRange = nil
         }
@@ -433,6 +410,7 @@ public class ReadMoreLabel: UILabel, ReadMoreConfiguration, ReadMoreActions, Rea
             textColor: textColor,
             lineFragmentPadding: lineFragmentPadding,
             lineBreakMode: lineBreakMode,
+            ellipsisText: ellipsisText,
             readMoreText: readMoreText,
             newLineCharacter: Self.newLineCharacter,
             attributeKey: AttributeKey.isReadMore,
@@ -736,9 +714,64 @@ private extension NSAttributedString {
         return (attributes[ReadMoreLabel.AttributeKey.isReadMore] as? Bool) == true
     }
     
+    /// Collects TextKit 2 line fragments for layout operations
+    func collectLineFragments(
+        containerWidth: CGFloat,
+        lineFragmentPadding: CGFloat,
+        lineBreakMode: NSLineBreakMode
+    ) -> (NSTextLayoutManager, [LineFragmentInfo], NSTextLocation) {
+        let (_, textLayoutManager, _) = creatingTextLayoutManagerStack(
+            containerWidth: containerWidth,
+            lineFragmentPadding: lineFragmentPadding,
+            lineBreakMode: lineBreakMode
+        )
+
+        var collectedFragments: [LineFragmentInfo] = []
+        let documentStart = textLayoutManager.documentRange.location
+
+        textLayoutManager.enumerateTextLayoutFragments(from: documentStart, options: []) { fragment in
+            fragment.textLineFragments.forEach { lineFragment in
+                collectedFragments.append((fragment: fragment, lineFragment: lineFragment))
+            }
+            return true
+        }
+
+        return (textLayoutManager, collectedFragments, documentStart)
+    }
+
+    /// Computes the layout context for the last visible line when truncating
+    func lastLineLayoutContext(
+        numberOfLines: Int,
+        fragments: [LineFragmentInfo],
+        textLayoutManager: NSTextLayoutManager,
+        documentStart: NSTextLocation
+    ) -> LastLineContext? {
+        guard numberOfLines < fragments.count else {
+            return nil
+        }
+
+        let fragmentInfo = fragments[numberOfLines - 1]
+        let fragmentStart = textLayoutManager.offset(
+            from: documentStart,
+            to: fragmentInfo.fragment.rangeInElement.location
+        )
+        let lineStart = fragmentStart + fragmentInfo.lineFragment.characterRange.location
+        let lineRange = NSRange(
+            location: lineStart,
+            length: fragmentInfo.lineFragment.characterRange.length
+        )
+
+        return LastLineContext(
+            lineFragment: fragmentInfo.lineFragment,
+            start: lineStart,
+            range: lineRange
+        )
+    }
+
     /// Creates ReadMore suffix with ellipsis and ReadMore text
     /// - Parameters:
     ///   - ellipsisText: Ellipsis text to prepend
+    ///   - ellipsisText: Ellipsis text to append before the ReadMore line
     ///   - readMoreText: ReadMore text to append
     ///   - spaceBetween: Space character between ellipsis and ReadMore
     ///   - attributeKey: Attribute key for ReadMore identification
@@ -810,54 +843,44 @@ private extension NSAttributedString {
         lineBreakMode: NSLineBreakMode = .byWordWrapping,
         isRTL: Bool = false
     ) -> ReadMoreLabel.TextTruncationResult {
-        let (_, textLayoutManager, _) = creatingTextLayoutManagerStack(
+        let (textLayoutManager, lineFragments, documentStart) = collectLineFragments(
             containerWidth: containerWidth,
             lineFragmentPadding: lineFragmentPadding,
             lineBreakMode: lineBreakMode
         )
 
-        var allLineFragments: [(fragment: NSTextLayoutFragment, lineFragment: NSTextLineFragment)] = []
-        let documentStart = textLayoutManager.documentRange.location
-        
-        textLayoutManager.enumerateTextLayoutFragments(from: documentStart, options: []) { fragment in
-            for lineFragment in fragment.textLineFragments {
-                allLineFragments.append((fragment: fragment, lineFragment: lineFragment))
-            }
-            return true
-        }
-        
-        guard numberOfLines < allLineFragments.count else {
+        guard let context = lastLineLayoutContext(
+            numberOfLines: numberOfLines,
+            fragments: lineFragments,
+            textLayoutManager: textLayoutManager,
+            documentStart: documentStart
+        ) else {
             return .noTruncationNeeded
         }
-        
-        let (lastFragment, lastLineFragment) = allLineFragments[numberOfLines - 1]
-        let lastLineStart = textLayoutManager.offset(from: documentStart, 
-                                                   to: lastFragment.rangeInElement.location) + lastLineFragment.characterRange.location
-        
-        let result = NSMutableAttributedString(attributedString: attributedSubstring(from: NSRange(location: 0, length: lastLineStart)))
-        let lastLineRange = NSRange(location: lastLineStart, length: lastLineFragment.characterRange.length)
-        let lastLineText = attributedSubstring(from: lastLineRange)
-        
-        
+
+        let result = NSMutableAttributedString(
+            attributedString: attributedSubstring(from: NSRange(location: 0, length: context.start))
+        )
+        let lastLineText = attributedSubstring(from: context.range)
+
         let suffixWidth = suffix.calculateTextLayoutWidth(
             with: containerWidth,
             lineFragmentPadding: lineFragmentPadding,
             lineBreakMode: lineBreakMode
         )
-        
-        let lastLineUsedWidth = lastLineFragment.typographicBounds.width
-        let maxAvailableWidth = containerWidth - suffixWidth
-        
+
+        let maxAvailableWidth = max(0, containerWidth - suffixWidth)
+
         let truncatePoint: CGPoint
         if isRTL {
-            truncatePoint = CGPoint(x: suffixWidth, y: lastLineFragment.typographicBounds.midY)
+            truncatePoint = CGPoint(x: suffixWidth, y: context.lineFragment.typographicBounds.midY)
         } else {
-            truncatePoint = CGPoint(x: maxAvailableWidth, y: lastLineFragment.typographicBounds.midY)
+            truncatePoint = CGPoint(x: maxAvailableWidth, y: context.lineFragment.typographicBounds.midY)
         }
 
-        let rawTruncateIndex = lastLineFragment.characterIndex(for: truncatePoint)
+        let rawTruncateIndex = context.lineFragment.characterIndex(for: truncatePoint)
         let hasNewlines = result.string.contains("\n") || lastLineText.string.contains("\n")
-        let adjustedIndex = hasNewlines ? rawTruncateIndex : rawTruncateIndex - lastLineStart
+        let adjustedIndex = hasNewlines ? rawTruncateIndex : rawTruncateIndex - context.start
         let truncateIndex = max(0, min(adjustedIndex, lastLineText.length))
         
         let truncated = lastLineText.attributedSubstring(from: NSRange(location: 0, length: truncateIndex)).removingTrailingNewlineIfNeeded()
@@ -882,6 +905,7 @@ private extension NSAttributedString {
     ///   - textColor: Text color to apply
     ///   - lineFragmentPadding: Line fragment padding (default: 0)
     ///   - lineBreakMode: Line break mode (default: .byWordWrapping)
+    ///   - ellipsisText: Ellipsis text appended to the truncated line
     ///   - readMoreText: ReadMore text to append
     ///   - newLineCharacter: Character for new line
     ///   - attributeKey: Attribute key for ReadMore identification
@@ -896,6 +920,7 @@ private extension NSAttributedString {
         textColor: UIColor?,
         lineFragmentPadding: CGFloat = 0,
         lineBreakMode: NSLineBreakMode = .byWordWrapping,
+        ellipsisText: NSAttributedString,
         readMoreText: NSAttributedString,
         newLineCharacter: String,
         attributeKey: NSAttributedString.Key,
@@ -903,41 +928,73 @@ private extension NSAttributedString {
         isRTL: Bool = false
     ) -> ReadMoreLabel.TextTruncationResult {
         let alignedText = applyingTextAlignment(textAlignment, font: font, textColor: textColor)
-        let (_, textLayoutManager, _) = alignedText.creatingTextLayoutManagerStack(
+        let (textLayoutManager, lineFragments, documentStart) = alignedText.collectLineFragments(
             containerWidth: containerWidth,
             lineFragmentPadding: lineFragmentPadding,
             lineBreakMode: lineBreakMode
         )
 
-        var allLineFragments: [(fragment: NSTextLayoutFragment, lineFragment: NSTextLineFragment)] = []
-        let documentStart = textLayoutManager.documentRange.location
-        
-        textLayoutManager.enumerateTextLayoutFragments(from: documentStart, options: []) { fragment in
-            for lineFragment in fragment.textLineFragments {
-                allLineFragments.append((fragment: fragment, lineFragment: lineFragment))
-            }
-            return true
-        }
-
-        guard numberOfLines < allLineFragments.count else {
+        guard let context = alignedText.lastLineLayoutContext(
+            numberOfLines: numberOfLines,
+            fragments: lineFragments,
+            textLayoutManager: textLayoutManager,
+            documentStart: documentStart
+        ) else {
             return .noTruncationNeeded
         }
 
-        let (lastFragment, lastLineFragment) = allLineFragments[numberOfLines - 1]
-        let lastLineStart = textLayoutManager.offset(from: documentStart, 
-                                                   to: lastFragment.rangeInElement.location) + lastLineFragment.characterRange.location
-        let lastLineRange = NSRange(location: lastLineStart, length: lastLineFragment.characterRange.length)
-        
-        let truncateOffset = lastLineRange.location + lastLineRange.length
-        let truncatedSubstring = attributedSubstring(from: NSRange(location: 0, length: truncateOffset))
-        let cleanedTruncatedText = truncatedSubstring.removingTrailingNewlineIfNeeded()
-        
-        let finalText = NSMutableAttributedString(attributedString: cleanedTruncatedText)
+        let prefixRange = NSRange(location: 0, length: context.start)
+        let prefixText = attributedSubstring(from: prefixRange)
+        let lastLineText = attributedSubstring(from: context.range)
+
+        let finalText = NSMutableAttributedString(attributedString: prefixText)
         let lastAttributes = lastTextAttributes(defaultAttributes: defaultAttributes)
-        let readMoreWithOriginalAttributes = readMoreText.createMutableWithAttributes(lastAttributes)
-        
+        let ellipsisWithOriginalAttributes = ellipsisText.createMutableWithAttributes(lastAttributes)
+
+        let ellipsisWidth: CGFloat
+        if ellipsisWithOriginalAttributes.length > 0 {
+            ellipsisWidth = ellipsisWithOriginalAttributes.calculateTextLayoutWidth(
+                with: containerWidth,
+                lineFragmentPadding: lineFragmentPadding,
+                lineBreakMode: lineBreakMode
+            )
+        } else {
+            ellipsisWidth = 0
+        }
+
+        let maxAvailableWidth = max(0, containerWidth - ellipsisWidth)
+
+        let truncatePoint: CGPoint
+        if isRTL {
+            truncatePoint = CGPoint(x: ellipsisWidth, y: context.lineFragment.typographicBounds.midY)
+        } else {
+            truncatePoint = CGPoint(x: maxAvailableWidth, y: context.lineFragment.typographicBounds.midY)
+        }
+
+        let rawTruncateIndex = context.lineFragment.characterIndex(for: truncatePoint)
+        let hasNewlines = finalText.string.contains("\n") || lastLineText.string.contains("\n")
+        let adjustedIndex = hasNewlines ? rawTruncateIndex : rawTruncateIndex - context.start
+        let truncateIndex = max(0, min(adjustedIndex, lastLineText.length))
+
+        let truncatedLastLine = lastLineText
+            .attributedSubstring(from: NSRange(location: 0, length: truncateIndex))
+            .removingTrailingNewlineIfNeeded()
+
+        finalText.append(truncatedLastLine)
+
+        if ellipsisWithOriginalAttributes.length > 0 {
+            finalText.append(ellipsisWithOriginalAttributes)
+        }
+
         finalText.append(NSAttributedString(string: newLineCharacter, attributes: lastAttributes))
+
         let readMoreStartLocation = finalText.length
+        let readMoreWithOriginalAttributes = readMoreText.createMutableWithAttributes(lastAttributes)
+
+        if isRTL {
+            readMoreWithOriginalAttributes.append(NSAttributedString(string: "\u{200F}", attributes: lastAttributes))
+        }
+
         finalText.append(readMoreWithOriginalAttributes)
 
         let finalReadMoreRange = NSRange(location: readMoreStartLocation, length: readMoreWithOriginalAttributes.length)
