@@ -20,7 +20,7 @@ private func creatingTextLayoutManagerStack() -> (NSTextContentStorage, NSTextLa
 ### 2. **TextKit 2 Layout Calculations** (30% of overhead, ~0.15ms)
 **Location**: `ReadMoreLabel.swift:804-874`
 ```swift
-private func applyingReadMoreTruncation() -> NSAttributedString {
+private func applyingTruncationTextLayout() -> NSAttributedString {
     textLayoutManager.enumerateTextLayoutFragments { fragment in
         // Complex geometric calculations: ~0.15ms
     }
@@ -80,7 +80,7 @@ private lazy var layoutCalculator = LayoutCalculator()
 
 ### **Time Profiler Measurement Points**:
 1. `creatingTextLayoutManagerStack()` - Expected highest CPU usage
-2. `applyingReadMoreTruncation()` - Second highest usage
+2. `applyingTruncationTextLayout()` - Second highest usage
 3. `updateDisplay()` - Overall call chain analysis
 
 ### **Memory Graph Monitoring**:
