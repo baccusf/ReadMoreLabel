@@ -1,6 +1,6 @@
 Pod::Spec.new do |spec|
   spec.name         = "ReadMoreLabel"
-  spec.version      = "0.2.0"
+  spec.version      = "0.2.1"
   spec.summary      = "An expandable UILabel with read more functionality using TextKit"
   spec.description  = <<-DESC
     ReadMoreLabel is a custom UILabel subclass that provides expandable text functionality.
