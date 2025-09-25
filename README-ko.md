@@ -4,7 +4,7 @@
 [![iOS](https://img.shields.io/badge/iOS-16.0+-blue.svg)](https://developer.apple.com/ios/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Claude](https://img.shields.io/badge/Built_with-Claude-purple.svg)](https://claude.ai)
-[![Codex](https://img.shields.io/badge/Powered_by-Codex-black.svg)](https://github.com/anthropics/claude-code)
+[![Codex](https://img.shields.io/badge/Powered_by-Codex-black.svg)](https://github.com/openai/codex)
 
 우아한 텍스트 자르기와 확장 기능을 제공하는 강력하고 유연한 UILabel 서브클래스입니다.
 

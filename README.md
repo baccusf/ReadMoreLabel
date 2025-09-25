@@ -4,7 +4,7 @@
 [![iOS](https://img.shields.io/badge/iOS-16.0+-blue.svg)](https://developer.apple.com/ios/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Claude](https://img.shields.io/badge/Built_with-Claude-purple.svg)](https://claude.ai)
-[![Codex](https://img.shields.io/badge/Powered_by-Codex-black.svg)](https://github.com/anthropics/claude-code)
+[![Codex](https://img.shields.io/badge/Powered_by-Codex-black.svg)](https://github.com/openai/codex)
 
 A powerful and flexible UILabel subclass that provides "Read More" functionality with elegant text truncation and expansion capabilities.
 
