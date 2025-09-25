@@ -54,14 +54,14 @@
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/baccusf/ReadMoreLabel.git", from: "0.2.0")
+    .package(url: "https://github.com/baccusf/ReadMoreLabel.git", from: "0.2.1")
 ]
 ```
 
 ### CocoaPods
 
 ```ruby
-pod 'ReadMoreLabel', '~> 0.2.0'
+pod 'ReadMoreLabel', '~> 0.2.1'
 ```
 
 ### 수동 설치
