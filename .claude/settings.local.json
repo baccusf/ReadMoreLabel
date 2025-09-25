@@ -60,7 +60,9 @@
       "mcp__ios-simulator__get_booted_sim_id",
       "Bash(gh issue create:*)",
       "mcp__XcodeBuildMCP__clean",
-      "mcp__XcodeBuildMCP__doctor"
+      "mcp__XcodeBuildMCP__doctor",
+      "Bash(git cherry-pick feature/newline-position)",
+      "Bash(git cherry-pick:*)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits",
