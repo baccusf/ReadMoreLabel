@@ -3,10 +3,22 @@
 [![Swift](https://img.shields.io/badge/Swift-5.0+-orange.svg)](https://swift.org)
 [![iOS](https://img.shields.io/badge/iOS-16.0+-blue.svg)](https://developer.apple.com/ios/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Claude](https://img.shields.io/badge/Built_with-Claude-purple.svg)](https://claude.ai)
+[![Codex](https://img.shields.io/badge/Powered_by-Codex-black.svg)](https://github.com/openai/codex)
 
 エレガントなテキストの切り取りと展開機能を提供する、パワフルで柔軟なUILabelサブクラスです。
 
 [한국어](README-ko.md) | [English](README.md) | **日本語**
+
+## 🆕 v0.2.0 新機能
+
+### バグ修正
+- **newLine位置でのellipsis問題を修正**: `.newLine`位置を使用する際に省略記号（ellipsis）が表示されない問題を解決
+- **テキスト切り取りの改善**: 改行前に省略記号を正しく表示するように切り取りアルゴリズムを改善
+
+### 改善点
+- **より良いコード構成**: 保守性向上のための内部構造のリファクタリング
+- **カスタマイズの強化**: `.end`と`.newLine`の両方の位置で`ellipsisText`の完全なカスタマイズをサポート
 
 ## 🎬 デモ
 
@@ -42,14 +54,14 @@
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/baccusf/ReadMoreLabel.git", from: "0.1.0")
+    .package(url: "https://github.com/baccusf/ReadMoreLabel.git", from: "0.2.0")
 ]
 ```
 
 ### CocoaPods
 
 ```ruby
-pod 'ReadMoreLabel', '~> 0.1.0'
+pod 'ReadMoreLabel', '~> 0.2.0'
 ```
 
 ### 手動インストール
