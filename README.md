@@ -3,10 +3,22 @@
 [![Swift](https://img.shields.io/badge/Swift-5.0+-orange.svg)](https://swift.org)
 [![iOS](https://img.shields.io/badge/iOS-16.0+-blue.svg)](https://developer.apple.com/ios/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Claude](https://img.shields.io/badge/Built_with-Claude-purple.svg)](https://claude.ai)
+[![Codex](https://img.shields.io/badge/Powered_by-Codex-black.svg)](https://github.com/openai/codex)
 
 A powerful and flexible UILabel subclass that provides "Read More" functionality with elegant text truncation and expansion capabilities.
 
 [한국어](README-ko.md) | [日本語](README-ja.md) | **English**
+
+## 🆕 What's New in v0.2.0
+
+### Bug Fixes
+- **Fixed ellipsis issue in newLine position**: Resolved an issue where ellipsis text was not displayed when using `.newLine` position
+- **Improved text truncation**: Enhanced the truncation algorithm to properly show ellipsis before line breaks
+
+### Improvements
+- **Better code organization**: Refactored internal structure for improved maintainability
+- **Enhanced customization**: Full support for `ellipsisText` customization in both `.end` and `.newLine` positions
 
 ## 🎬 Demo
 
@@ -42,14 +54,14 @@ A powerful and flexible UILabel subclass that provides "Read More" functionality
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/baccusf/ReadMoreLabel.git", from: "0.1.0")
+    .package(url: "https://github.com/baccusf/ReadMoreLabel.git", from: "0.2.0")
 ]
 ```
 
 ### CocoaPods
 
 ```ruby
-pod 'ReadMoreLabel', '~> 0.1.0'
+pod 'ReadMoreLabel', '~> 0.2.0'
 ```
 
 ### Manual Installation

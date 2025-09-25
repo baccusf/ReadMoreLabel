@@ -3,10 +3,22 @@
 [![Swift](https://img.shields.io/badge/Swift-5.0+-orange.svg)](https://swift.org)
 [![iOS](https://img.shields.io/badge/iOS-16.0+-blue.svg)](https://developer.apple.com/ios/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Claude](https://img.shields.io/badge/Built_with-Claude-purple.svg)](https://claude.ai)
+[![Codex](https://img.shields.io/badge/Powered_by-Codex-black.svg)](https://github.com/openai/codex)
 
 우아한 텍스트 자르기와 확장 기능을 제공하는 강력하고 유연한 UILabel 서브클래스입니다.
 
 [English](README.md) | [日本語](README-ja.md) | **한국어**
+
+## 🆕 v0.2.0 새로운 기능
+
+### 버그 수정
+- **newLine 위치에서 ellipsis 문제 수정**: `.newLine` 위치를 사용할 때 말줄임표(ellipsis)가 표시되지 않던 문제 해결
+- **텍스트 자르기 개선**: 줄바꿈 전에 말줄임표를 올바르게 표시하도록 자르기 알고리즘 개선
+
+### 개선 사항
+- **더 나은 코드 구성**: 유지보수성 향상을 위한 내부 구조 리팩토링
+- **향상된 커스터마이징**: `.end`와 `.newLine` 위치 모두에서 `ellipsisText` 완전 커스터마이징 지원
 
 ## 🎬 데모
 
@@ -42,14 +54,14 @@
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/baccusf/ReadMoreLabel.git", from: "0.1.0")
+    .package(url: "https://github.com/baccusf/ReadMoreLabel.git", from: "0.2.0")
 ]
 ```
 
 ### CocoaPods
 
 ```ruby
-pod 'ReadMoreLabel', '~> 0.1.0'
+pod 'ReadMoreLabel', '~> 0.2.0'
 ```
 
 ### 수동 설치
